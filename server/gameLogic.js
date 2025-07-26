@@ -154,6 +154,11 @@ class GameLogic {
       }
 
       if (body) {
+        // Apply rotation if specified
+        if (obj.rotation && obj.rotation !== 0) {
+          Matter.Body.setAngle(body, obj.rotation);
+        }
+        
         Matter.World.add(this.world, body);
         this.levelObjects.push({
           ...obj,
