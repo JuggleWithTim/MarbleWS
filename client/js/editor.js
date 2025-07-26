@@ -11,6 +11,10 @@ class LevelEditor {
         this.showGrid = true;
         this.snapToGrid = true;
         
+        // Canvas scaling factors (display size vs logical size)
+        this.scaleX = 1920 / 1280; // 1.5
+        this.scaleY = 1080 / 720;  // 1.5
+        
         this.level = {
             name: 'new-level',
             description: '',
@@ -123,8 +127,9 @@ class LevelEditor {
 
     onMouseDown(e) {
         const rect = this.canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+        // Convert display coordinates to logical coordinates
+        const x = (e.clientX - rect.left) * this.scaleX;
+        const y = (e.clientY - rect.top) * this.scaleY;
         
         this.mousePos = { x, y };
         this.dragStart = { x, y };
@@ -152,8 +157,9 @@ class LevelEditor {
 
     onMouseMove(e) {
         const rect = this.canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+        // Convert display coordinates to logical coordinates
+        const x = (e.clientX - rect.left) * this.scaleX;
+        const y = (e.clientY - rect.top) * this.scaleY;
         
         this.mousePos = { x, y };
         
@@ -162,7 +168,7 @@ class LevelEditor {
             this.mousePos.y = Math.round(y / this.gridSize) * this.gridSize;
         }
         
-        // Update mouse position display
+        // Update mouse position display (show logical coordinates)
         document.getElementById('mousePos').textContent = `Mouse: ${Math.round(this.mousePos.x)}, ${Math.round(this.mousePos.y)}`;
         
         // Handle dragging

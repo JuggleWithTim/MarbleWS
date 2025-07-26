@@ -14,17 +14,9 @@ function setupSocketHandlers(io, gameLogic) {
       socket.emit('gameState', gameLogic.getGameState());
     });
 
-    // Handle player movement
-    socket.on('playerMove', (data) => {
-      const { x, y } = data;
-      gameLogic.updatePlayerPosition(socket.id, x, y);
-      
-      // Broadcast player position to other players
-      socket.broadcast.emit('playerMoved', {
-        playerId: socket.id,
-        x,
-        y
-      });
+    // Handle player input (WASD keys)
+    socket.on('playerInput', (input) => {
+      gameLogic.updatePlayerInput(socket.id, input);
     });
 
     // Handle beam activation

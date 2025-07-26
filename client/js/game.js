@@ -12,7 +12,7 @@ class Game {
         
         // Player movement
         this.playerSpeed = 150; // pixels per second (reduced from 200)
-        this.lastPlayerPosition = { x: 400, y: 300 };
+        this.lastPlayerPosition = { x: 960, y: 540 }; // Center of 1920x1080 canvas
         this.beamActive = false;
         this.lastMovementUpdate = 0; // For throttling movement updates
         
@@ -317,8 +317,19 @@ class Game {
         const movement = this.controls.getMovementVector();
         const currentTime = performance.now();
         
+        // Send input state directly to server (like the reference game)
+        const input = {
+            up: movement.y < 0,
+            down: movement.y > 0,
+            left: movement.x < 0,
+            right: movement.x > 0
+        };
+        
+        // Send input updates at 60 FPS for responsive controls
+        this.networking.sendPlayerInput(input);
+        
+        // Update local position for camera following (approximate)
         if (movement.x !== 0 || movement.y !== 0) {
-            // Calculate new position
             const newX = this.lastPlayerPosition.x + movement.x * this.playerSpeed * deltaTime;
             const newY = this.lastPlayerPosition.y + movement.y * this.playerSpeed * deltaTime;
             
@@ -329,12 +340,6 @@ class Game {
             
             this.lastPlayerPosition.x = clampedX;
             this.lastPlayerPosition.y = clampedY;
-            
-            // Throttle movement updates to 20 FPS (50ms intervals)
-            if (currentTime - this.lastMovementUpdate >= 50) {
-                this.networking.sendPlayerMove(clampedX, clampedY);
-                this.lastMovementUpdate = currentTime;
-            }
         }
     }
 
@@ -357,14 +362,8 @@ class Game {
         
         this.renderer.clear();
         
-        // Update camera to follow current player
-        if (this.currentPlayer) {
-            this.renderer.setCamera(
-                this.lastPlayerPosition.x,
-                this.lastPlayerPosition.y,
-                1
-            );
-        }
+        // Fixed camera view - no following, show entire 1920x1080 game area
+        this.renderer.setCamera(960, 540, 1); // Center of 1920x1080 canvas
         
         // Render level objects (static, no interpolation needed)
         this.gameState.levelObjects.forEach(obj => {

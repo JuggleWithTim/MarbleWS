@@ -44,6 +44,11 @@
         #editorCanvas {
             cursor: crosshair;
             background: #16213e;
+            /* Scale down 1920x1080 to fit comfortably in editor */
+            width: 1280px;
+            height: 720px;
+            display: block;
+            margin: 0 auto;
         }
         
         .tool-section {
@@ -262,7 +267,7 @@
             </div>
             
             <div class="editor-canvas-container">
-                <canvas id="editorCanvas" width="1200" height="800"></canvas>
+                <canvas id="editorCanvas" width="1920" height="1080"></canvas>
             </div>
             
             <div class="status-bar">

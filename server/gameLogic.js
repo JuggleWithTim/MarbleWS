@@ -19,19 +19,19 @@ class GameLogic {
 
   startPhysicsLoop() {
     setInterval(() => {
-      Matter.Engine.update(this.engine, 8.0); // 60 FPS (16.67ms)
+      Matter.Engine.update(this.engine, 1000 / 60); // Fixed 60 FPS timing
       this.updateGameState();
-    }, 8.0);
+    }, 1000 / 60); // 16.67ms intervals
   }
 
   addPlayer(socketId, username, userId) {
     // Create UFO physics body
-    const ufoBody = Matter.Bodies.circle(400, 300, 25, {
+    const ufoBody = Matter.Bodies.circle(960, 540, 25, {
       isStatic: false,
       friction: 0.2,        // Increased from 0.1
       frictionAir: 0.15,    // Increased from 0.05 for better stopping
       restitution: 0.2,     // Reduced from 0.3 for less bouncing
-      density: 0.005,       // Increased from 0.001 for more stability
+      density: 0.001,       // Increased from 0.001 for more stability
       render: {
         fillStyle: '#4ecdc4'
       }
@@ -45,14 +45,14 @@ class GameLogic {
       username,
       userId,
       body: ufoBody,
-      x: 400,
-      y: 300,
+      x: 960,
+      y: 540,
       beamActive: false,
       beamTarget: null,
       xp: 0,
       level: 1,
-      targetX: 400,
-      targetY: 300
+      targetX: 960,
+      targetY: 540
     };
     
     this.players.set(socketId, player);
@@ -62,8 +62,8 @@ class GameLogic {
       id: socketId,
       username,
       userId,
-      x: 400,
-      y: 300,
+      x: 960,
+      y: 540,
       beamActive: false,
       beamTarget: null,
       xp: 0,
@@ -79,57 +79,34 @@ class GameLogic {
     this.players.delete(socketId);
   }
 
-  updatePlayerPosition(socketId, x, y) {
+  updatePlayerInput(socketId, input) {
     const player = this.players.get(socketId);
     if (player) {
-      player.targetX = x;
-      player.targetY = y;
-      
-      // Calculate distance to target
-      const dx = x - player.body.position.x;
-      const dy = y - player.body.position.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      
-      // Stronger force with distance-based scaling
-      const forceMultiplier = Math.min(0.008, distance * 0.0001);
-      
-      // Apply movement force
-      const force = {
-        x: dx * forceMultiplier,
-        y: dy * forceMultiplier
-      };
-      
-      // Add velocity damping when close to target
-      if (distance < 30) {
-        const dampingForce = {
-          x: -player.body.velocity.x * 0.1,
-          y: -player.body.velocity.y * 0.1
-        };
-        force.x += dampingForce.x;
-        force.y += dampingForce.y;
-      }
-      
-      // Apply max velocity limits
-      const maxVelocity = 8;
-      if (Math.abs(player.body.velocity.x) > maxVelocity) {
-        Matter.Body.setVelocity(player.body, {
-          x: Math.sign(player.body.velocity.x) * maxVelocity,
-          y: player.body.velocity.y
-        });
-      }
-      if (Math.abs(player.body.velocity.y) > maxVelocity) {
-        Matter.Body.setVelocity(player.body, {
-          x: player.body.velocity.x,
-          y: Math.sign(player.body.velocity.y) * maxVelocity
-        });
-      }
-      
-      Matter.Body.applyForce(player.body, player.body.position, force);
-      
-      // Update stored position for rendering
-      player.x = player.body.position.x;
-      player.y = player.body.position.y;
+      player.input = input;
     }
+  }
+
+  // Apply input forces directly like the reference game
+  applyPlayerInputs() {
+    this.players.forEach(player => {
+      if (player.input && player.body) {
+        const forceAmount = 0.003; // Similar to reference game's 0.0035
+        let fx = 0, fy = 0;
+        
+        if (player.input.up) fy -= forceAmount;
+        if (player.input.down) fy += forceAmount;
+        if (player.input.left) fx -= forceAmount;
+        if (player.input.right) fx += forceAmount;
+        
+        if (fx !== 0 || fy !== 0) {
+          Matter.Body.applyForce(
+            player.body,
+            player.body.position,
+            { x: fx, y: fy }
+          );
+        }
+      }
+    });
   }
 
   activateBeam(socketId, active) {
@@ -363,6 +340,9 @@ class GameLogic {
   }
 
   updateGameState() {
+    // Apply player inputs first (like the reference game)
+    this.applyPlayerInputs();
+    
     // Update continuous beam effects
     this.updateBeamEffects();
     
@@ -384,8 +364,8 @@ class GameLogic {
       });
     }
 
-    // Remove objects that fell off the world
-    const worldBounds = { minY: 1000 };
+    // Remove objects that fell off the world (updated for 1920x1080 canvas)
+    const worldBounds = { minY: 1200 };
     
     this.marbles = this.marbles.filter(marble => {
       if (marble.body.position.y > worldBounds.minY) {
