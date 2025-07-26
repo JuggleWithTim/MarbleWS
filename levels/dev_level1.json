@@ -90,7 +90,7 @@
       "width": 20,
       "height": 800,
       "color": "#888888",
-      "isStatic": false,
+      "isStatic": true,
       "friction": 0.3,
       "restitution": 0.3,
       "properties": []

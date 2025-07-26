@@ -19,9 +19,9 @@ class GameLogic {
 
   startPhysicsLoop() {
     setInterval(() => {
-      Matter.Engine.update(this.engine, 1.0); // 60 FPS (16.67ms)
+      Matter.Engine.update(this.engine, 8.0); // 60 FPS (16.67ms)
       this.updateGameState();
-    }, 1.0);
+    }, 8.0);
   }
 
   addPlayer(socketId, username, userId) {
