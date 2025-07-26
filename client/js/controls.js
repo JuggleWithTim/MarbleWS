@@ -238,10 +238,22 @@ class Controls {
             const canvasY = e.clientY - rect.top;
             
             this.emit('canvasMouseMove', { x: canvasX, y: canvasY });
+            
+            // Continuous beam interaction while spacebar is held
+            if (this.isBeamActive()) {
+                game.handleBeamTarget(canvasX, canvasY);
+            }
         });
 
-        // Handle beam targeting
+        // Handle beam targeting on click
         this.on('canvasClick', (pos) => {
+            if (this.isBeamActive()) {
+                game.handleBeamTarget(pos.x, pos.y);
+            }
+        });
+        
+        // Continuous beam targeting while moving mouse
+        this.on('canvasMouseMove', (pos) => {
             if (this.isBeamActive()) {
                 game.handleBeamTarget(pos.x, pos.y);
             }

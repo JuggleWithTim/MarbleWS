@@ -11,6 +11,10 @@ class LevelEditor {
         this.showGrid = true;
         this.snapToGrid = true;
         
+        // Canvas scaling factors (display size vs logical size)
+        this.scaleX = 1920 / 1280; // 1.5
+        this.scaleY = 1080 / 720;  // 1.5
+        
         this.level = {
             name: 'new-level',
             description: '',
@@ -76,7 +80,7 @@ class LevelEditor {
         // Property inputs
         const propertyInputs = [
             'objectColor', 'objectWidth', 'objectHeight', 'objectRadius',
-            'objectFriction', 'objectRestitution', 'objectStatic',
+            'objectFriction', 'objectRestitution', 'objectRotation', 'objectStatic',
             'objectSpawnpoint', 'objectGoal'
         ];
         
@@ -123,8 +127,9 @@ class LevelEditor {
 
     onMouseDown(e) {
         const rect = this.canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+        // Convert display coordinates to logical coordinates
+        const x = (e.clientX - rect.left) * this.scaleX;
+        const y = (e.clientY - rect.top) * this.scaleY;
         
         this.mousePos = { x, y };
         this.dragStart = { x, y };
@@ -152,8 +157,9 @@ class LevelEditor {
 
     onMouseMove(e) {
         const rect = this.canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+        // Convert display coordinates to logical coordinates
+        const x = (e.clientX - rect.left) * this.scaleX;
+        const y = (e.clientY - rect.top) * this.scaleY;
         
         this.mousePos = { x, y };
         
@@ -162,7 +168,7 @@ class LevelEditor {
             this.mousePos.y = Math.round(y / this.gridSize) * this.gridSize;
         }
         
-        // Update mouse position display
+        // Update mouse position display (show logical coordinates)
         document.getElementById('mousePos').textContent = `Mouse: ${Math.round(this.mousePos.x)}, ${Math.round(this.mousePos.y)}`;
         
         // Handle dragging
@@ -224,6 +230,7 @@ class LevelEditor {
             y: y,
             width: parseInt(document.getElementById('objectWidth').value),
             height: parseInt(document.getElementById('objectHeight').value),
+            rotation: parseFloat(document.getElementById('objectRotation').value) * Math.PI / 180, // Convert to radians
             color: document.getElementById('objectColor').value,
             isStatic: document.getElementById('objectStatic').checked,
             friction: parseFloat(document.getElementById('objectFriction').value),
@@ -245,6 +252,7 @@ class LevelEditor {
             x: x,
             y: y,
             radius: parseInt(document.getElementById('objectRadius').value),
+            rotation: parseFloat(document.getElementById('objectRotation').value) * Math.PI / 180, // Convert to radians
             color: document.getElementById('objectColor').value,
             isStatic: document.getElementById('objectStatic').checked,
             friction: parseFloat(document.getElementById('objectFriction').value),
@@ -279,6 +287,7 @@ class LevelEditor {
             document.getElementById('objectStatic').checked = obj.isStatic;
             document.getElementById('objectFriction').value = obj.friction;
             document.getElementById('objectRestitution').value = obj.restitution;
+            document.getElementById('objectRotation').value = Math.round((obj.rotation || 0) * 180 / Math.PI); // Convert to degrees
             
             if (obj.shape === 'rectangle') {
                 document.getElementById('objectWidth').value = obj.width;
@@ -308,6 +317,7 @@ class LevelEditor {
         this.selectedObject.isStatic = document.getElementById('objectStatic').checked;
         this.selectedObject.friction = parseFloat(document.getElementById('objectFriction').value);
         this.selectedObject.restitution = parseFloat(document.getElementById('objectRestitution').value);
+        this.selectedObject.rotation = parseFloat(document.getElementById('objectRotation').value) * Math.PI / 180; // Convert to radians
         
         if (this.selectedObject.shape === 'rectangle') {
             this.selectedObject.width = parseInt(document.getElementById('objectWidth').value);
@@ -416,6 +426,15 @@ class LevelEditor {
     }
 
     drawObject(obj) {
+        this.ctx.save(); // Save current context state
+        
+        // Apply rotation if object has rotation
+        if (obj.rotation && obj.rotation !== 0) {
+            this.ctx.translate(obj.x, obj.y);
+            this.ctx.rotate(obj.rotation);
+            this.ctx.translate(-obj.x, -obj.y);
+        }
+        
         this.ctx.fillStyle = obj.color;
         
         if (obj.shape === 'rectangle') {
@@ -430,6 +449,8 @@ class LevelEditor {
             this.ctx.arc(obj.x, obj.y, obj.radius, 0, Math.PI * 2);
             this.ctx.fill();
         }
+        
+        this.ctx.restore(); // Restore context state
         
         // Draw property indicators
         if (obj.properties.includes('spawnpoint')) {

@@ -19,38 +19,94 @@ class GameLogic {
 
   startPhysicsLoop() {
     setInterval(() => {
-      Matter.Engine.update(this.engine, 16.67); // 60 FPS
+      Matter.Engine.update(this.engine, 1000 / 60); // Fixed 60 FPS timing
       this.updateGameState();
-    }, 16.67);
+    }, 1000 / 60); // 16.67ms intervals
   }
 
   addPlayer(socketId, username, userId) {
+    // Create UFO physics body
+    const ufoBody = Matter.Bodies.circle(960, 540, 25, {
+      isStatic: false,
+      friction: 0.2,        // Increased from 0.1
+      frictionAir: 0.15,    // Increased from 0.05 for better stopping
+      restitution: 0.2,     // Reduced from 0.3 for less bouncing
+      density: 0.001,       // Increased from 0.001 for more stability
+      render: {
+        fillStyle: '#4ecdc4'
+      }
+    });
+
+    // Add UFO to physics world
+    Matter.World.add(this.world, ufoBody);
+
     const player = {
       id: socketId,
       username,
       userId,
-      x: 400,
-      y: 300,
+      body: ufoBody,
+      x: 960,
+      y: 540,
+      beamActive: false,
+      beamTarget: null,
+      xp: 0,
+      level: 1,
+      targetX: 960,
+      targetY: 540
+    };
+    
+    this.players.set(socketId, player);
+    
+    // Return clean player data without physics body
+    return {
+      id: socketId,
+      username,
+      userId,
+      x: 960,
+      y: 540,
       beamActive: false,
       beamTarget: null,
       xp: 0,
       level: 1
     };
-    
-    this.players.set(socketId, player);
-    return player;
   }
 
   removePlayer(socketId) {
+    const player = this.players.get(socketId);
+    if (player && player.body) {
+      Matter.World.remove(this.world, player.body);
+    }
     this.players.delete(socketId);
   }
 
-  updatePlayerPosition(socketId, x, y) {
+  updatePlayerInput(socketId, input) {
     const player = this.players.get(socketId);
     if (player) {
-      player.x = x;
-      player.y = y;
+      player.input = input;
     }
+  }
+
+  // Apply input forces directly like the reference game
+  applyPlayerInputs() {
+    this.players.forEach(player => {
+      if (player.input && player.body) {
+        const forceAmount = 0.003; // Similar to reference game's 0.0035
+        let fx = 0, fy = 0;
+        
+        if (player.input.up) fy -= forceAmount;
+        if (player.input.down) fy += forceAmount;
+        if (player.input.left) fx -= forceAmount;
+        if (player.input.right) fx += forceAmount;
+        
+        if (fx !== 0 || fy !== 0) {
+          Matter.Body.applyForce(
+            player.body,
+            player.body.position,
+            { x: fx, y: fy }
+          );
+        }
+      }
+    });
   }
 
   activateBeam(socketId, active) {
@@ -98,6 +154,11 @@ class GameLogic {
       }
 
       if (body) {
+        // Apply rotation if specified
+        if (obj.rotation && obj.rotation !== 0) {
+          Matter.Body.setAngle(body, obj.rotation);
+        }
+        
         Matter.World.add(this.world, body);
         this.levelObjects.push({
           ...obj,
@@ -166,39 +227,104 @@ class GameLogic {
     const player = this.players.get(socketId);
     if (!player || !player.beamActive) return;
 
-    // Find objects within beam range
-    const beamRange = 100;
-    const distance = Math.sqrt(
-      Math.pow(targetX - player.x, 2) + Math.pow(targetY - player.y, 2)
-    );
-
-    if (distance <= beamRange) {
-      // Find closest movable object
-      let closestObject = null;
-      let closestDistance = Infinity;
-
+    // Find objects within beam range (cone shape under UFO)
+    const beamRange = 120;
+    const beamWidth = 80;
+    
+    // Check if target is within beam cone
+    const dx = targetX - player.x;
+    const dy = targetY - player.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    if (distance <= beamRange && dy > -20) { // Must be below or near UFO level
+      // Find all objects within beam area
+      const objectsInBeam = [];
+      
       [...this.marbles, ...this.emotes, ...this.levelObjects.filter(obj => !obj.isStatic)]
         .forEach(obj => {
-          const objDistance = Math.sqrt(
-            Math.pow(obj.body.position.x - targetX, 2) + 
-            Math.pow(obj.body.position.y - targetY, 2)
-          );
-
-          if (objDistance < 30 && objDistance < closestDistance) {
-            closestObject = obj;
-            closestDistance = objDistance;
+          const objDx = obj.body.position.x - player.x;
+          const objDy = obj.body.position.y - player.y;
+          const objDistance = Math.sqrt(objDx * objDx + objDy * objDy);
+          
+          // Check if object is in beam cone
+          if (objDistance <= beamRange && objDy > -30) {
+            const lateralDistance = Math.abs(objDx);
+            const maxLateralDistance = beamWidth * (objDistance / beamRange);
+            
+            if (lateralDistance <= maxLateralDistance) {
+              objectsInBeam.push({
+                obj,
+                distance: objDistance
+              });
+            }
           }
         });
 
-      if (closestObject) {
-        // Apply upward force to lift object
-        Matter.Body.applyForce(closestObject.body, closestObject.body.position, {
-          x: (player.x - closestObject.body.position.x) * 0.001,
-          y: -0.01
-        });
-        player.beamTarget = closestObject.id;
+      // Apply forces to all objects in beam
+      objectsInBeam.forEach(({ obj, distance }) => {
+        const forceMultiplier = Math.max(0.1, 1 - (distance / beamRange));
+        
+        // Strong upward force
+        const upwardForce = -0.05 * forceMultiplier;
+        
+        // Slight attraction towards UFO center
+        const attractionForce = {
+          x: (player.x - obj.body.position.x) * 0.002 * forceMultiplier,
+          y: upwardForce
+        };
+        
+        Matter.Body.applyForce(obj.body, obj.body.position, attractionForce);
+        
+        // Reduce gravity effect while in beam
+        if (obj.body.render) {
+          obj.body.render.strokeStyle = '#4ecdc4';
+          obj.body.render.lineWidth = 2;
+        }
+      });
+      
+      if (objectsInBeam.length > 0) {
+        player.beamTarget = objectsInBeam[0].obj.id;
       }
     }
+  }
+
+  // New method for continuous beam effects
+  updateBeamEffects() {
+    this.players.forEach(player => {
+      if (player.beamActive) {
+        // Apply continuous beam effects in a cone below the UFO
+        const beamRange = 120;
+        const beamWidth = 80;
+        
+        [...this.marbles, ...this.emotes, ...this.levelObjects.filter(obj => !obj.isStatic)]
+          .forEach(obj => {
+            const dx = obj.body.position.x - player.x;
+            const dy = obj.body.position.y - player.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            // Check if object is in beam cone (below UFO)
+            if (distance <= beamRange && dy > -30) {
+              const lateralDistance = Math.abs(dx);
+              const maxLateralDistance = beamWidth * (distance / beamRange);
+              
+              if (lateralDistance <= maxLateralDistance) {
+                const forceMultiplier = Math.max(0.1, 1 - (distance / beamRange));
+                
+                // Continuous upward force
+                const upwardForce = -0.02 * forceMultiplier;
+                
+                // Attraction towards UFO center
+                const attractionForce = {
+                  x: (player.x - obj.body.position.x) * 0.001 * forceMultiplier,
+                  y: upwardForce
+                };
+                
+                Matter.Body.applyForce(obj.body, obj.body.position, attractionForce);
+              }
+            }
+          });
+      }
+    });
   }
 
   checkWinCondition() {
@@ -219,6 +345,18 @@ class GameLogic {
   }
 
   updateGameState() {
+    // Apply player inputs first (like the reference game)
+    this.applyPlayerInputs();
+    
+    // Update continuous beam effects
+    this.updateBeamEffects();
+    
+    // Update player positions from physics bodies
+    this.players.forEach(player => {
+      player.x = player.body.position.x;
+      player.y = player.body.position.y;
+    });
+    
     // Check win condition
     if (this.checkWinCondition()) {
       // Award XP to all players
@@ -231,8 +369,8 @@ class GameLogic {
       });
     }
 
-    // Remove objects that fell off the world
-    const worldBounds = { minY: 1000 };
+    // Remove objects that fell off the world (updated for 1920x1080 canvas)
+    const worldBounds = { minY: 1200 };
     
     this.marbles = this.marbles.filter(marble => {
       if (marble.body.position.y > worldBounds.minY) {
@@ -249,11 +387,32 @@ class GameLogic {
       }
       return true;
     });
+    
+    // Remove players that fell off the world and respawn them
+    this.players.forEach(player => {
+      if (player.body.position.y > worldBounds.minY) {
+        // Respawn UFO at a safe location
+        Matter.Body.setPosition(player.body, { x: 400, y: 200 });
+        Matter.Body.setVelocity(player.body, { x: 0, y: 0 });
+        player.x = 400;
+        player.y = 200;
+      }
+    });
   }
 
   getGameState() {
     return {
-      players: Array.from(this.players.values()),
+      players: Array.from(this.players.values()).map(player => ({
+        id: player.id,
+        username: player.username,
+        userId: player.userId,
+        x: player.x,
+        y: player.y,
+        beamActive: player.beamActive,
+        beamTarget: player.beamTarget,
+        xp: player.xp,
+        level: player.level
+      })),
       marbles: this.marbles.map(marble => ({
         id: marble.id,
         x: marble.body.position.x,

@@ -79,9 +79,9 @@ class Networking {
         }
     }
 
-    sendPlayerMove(x, y) {
+    sendPlayerInput(input) {
         if (this.socket && this.connected) {
-            this.socket.emit('playerMove', { x, y });
+            this.socket.emit('playerInput', input);
         }
     }
 

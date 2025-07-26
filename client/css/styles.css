@@ -164,6 +164,10 @@ body {
     background: #1a1a2e;
     margin: 20px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    /* Scale down 1920x1080 to fit screen while maintaining aspect ratio */
+    width: 1280px;
+    height: 720px;
+    display: block;
 }
 
 /* Controls Info */
