@@ -11,9 +11,10 @@ class Game {
         this.isLoggedIn = false;
         
         // Player movement
-        this.playerSpeed = 200; // pixels per second
+        this.playerSpeed = 150; // pixels per second (reduced from 200)
         this.lastPlayerPosition = { x: 400, y: 300 };
         this.beamActive = false;
+        this.lastMovementUpdate = 0; // For throttling movement updates
         
         // UI elements
         this.loginScreen = null;
@@ -24,6 +25,7 @@ class Game {
     init() {
         this.setupUI();
         this.setupNetworking();
+        this.checkDevMode();
         this.checkAutoLogin();
         
         // Start game loop
@@ -86,6 +88,78 @@ class Game {
         this.networking.on('error', (error) => {
             this.showError(error.message);
         });
+    }
+
+    async checkDevMode() {
+        try {
+            const response = await fetch('/api/config');
+            const config = await response.json();
+            
+            if (config.devMode) {
+                // Show dev login option
+                const devLogin = document.getElementById('devLogin');
+                if (devLogin) {
+                    devLogin.style.display = 'block';
+                    
+                    // Setup dev login button
+                    const devLoginBtn = document.getElementById('devLoginBtn');
+                    const devUsername = document.getElementById('devUsername');
+                    
+                    if (devLoginBtn && devUsername) {
+                        devLoginBtn.addEventListener('click', () => {
+                            this.handleDevLogin();
+                        });
+                        
+                        devUsername.addEventListener('keypress', (e) => {
+                            if (e.key === 'Enter') {
+                                this.handleDevLogin();
+                            }
+                        });
+                    }
+                }
+            }
+        } catch (error) {
+            console.log('Could not check dev mode:', error);
+        }
+    }
+
+    async handleDevLogin() {
+        const devUsername = document.getElementById('devUsername');
+        const username = devUsername.value.trim();
+        
+        if (!username) {
+            this.showError('Please enter a username');
+            return;
+        }
+        
+        try {
+            const response = await fetch('/api/dev-login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ username }),
+            });
+            
+            if (response.ok) {
+                const userData = await response.json();
+                
+                // Login with dev credentials
+                this.networking.on('connected', () => {
+                    this.networking.login(userData.username, userData.userId);
+                });
+                
+                // If already connected, login immediately
+                if (this.networking.isConnected()) {
+                    this.networking.login(userData.username, userData.userId);
+                }
+            } else {
+                const error = await response.json();
+                this.showError(error.error || 'Dev login failed');
+            }
+        } catch (error) {
+            this.showError('Dev login failed: ' + error.message);
+        }
     }
 
     checkAutoLogin() {
@@ -184,6 +258,7 @@ class Game {
         if (this.controls.isDisabled()) return;
         
         const movement = this.controls.getMovementVector();
+        const currentTime = performance.now();
         
         if (movement.x !== 0 || movement.y !== 0) {
             // Calculate new position
@@ -198,8 +273,11 @@ class Game {
             this.lastPlayerPosition.x = clampedX;
             this.lastPlayerPosition.y = clampedY;
             
-            // Send position to server
-            this.networking.sendPlayerMove(clampedX, clampedY);
+            // Throttle movement updates to 20 FPS (50ms intervals)
+            if (currentTime - this.lastMovementUpdate >= 50) {
+                this.networking.sendPlayerMove(clampedX, clampedY);
+                this.lastMovementUpdate = currentTime;
+            }
         }
     }
 

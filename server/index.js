@@ -43,6 +43,33 @@ app.get('/editor', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/editor.html'));
 });
 
+// Dev mode config endpoint
+app.get('/api/config', (req, res) => {
+  res.json({
+    devMode: process.env.DEV_MODE === 'true'
+  });
+});
+
+// Dev mode login
+app.post('/api/dev-login', (req, res) => {
+  if (process.env.DEV_MODE !== 'true') {
+    return res.status(403).json({ error: 'Dev mode not enabled' });
+  }
+  
+  const { username } = req.body;
+  if (!username || username.trim().length === 0) {
+    return res.status(400).json({ error: 'Username required' });
+  }
+  
+  // Generate a unique dev user ID
+  const userId = 'dev_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+  
+  res.json({
+    username: username.trim(),
+    userId: userId
+  });
+});
+
 // Twitch OAuth routes
 app.get('/auth/twitch', (req, res) => {
   const clientId = process.env.TWITCH_CLIENT_ID;
