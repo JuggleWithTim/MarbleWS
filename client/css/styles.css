@@ -1,0 +1,366 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    overflow: hidden;
+}
+
+.screen {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Login Screen */
+.login-container {
+    text-align: center;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 40px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.login-container h1 {
+    font-size: 3em;
+    margin-bottom: 10px;
+    background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.login-container p {
+    font-size: 1.2em;
+    margin-bottom: 30px;
+    opacity: 0.8;
+}
+
+.twitch-btn {
+    background: #9146ff;
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    font-size: 1.1em;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.twitch-btn:hover {
+    background: #7c3aed;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(145, 70, 255, 0.4);
+}
+
+.error-message {
+    color: #ff6b6b;
+    margin-top: 15px;
+    padding: 10px;
+    background: rgba(255, 107, 107, 0.1);
+    border-radius: 5px;
+}
+
+/* Game Screen */
+#gameScreen {
+    position: relative;
+    justify-content: flex-start;
+    align-items: flex-start;
+    padding: 0;
+}
+
+#gameUI {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 100;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 15px;
+    border-radius: 10px;
+    min-width: 200px;
+}
+
+#playerInfo {
+    margin-bottom: 15px;
+}
+
+#playerName {
+    font-size: 1.2em;
+    font-weight: bold;
+    display: block;
+    margin-bottom: 5px;
+}
+
+#playerLevel {
+    font-size: 0.9em;
+    opacity: 0.8;
+    display: block;
+    margin-bottom: 10px;
+}
+
+#xpBar {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+#xpFill {
+    height: 100%;
+    background: linear-gradient(90deg, #4ecdc4, #44a08d);
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+#gameControls {
+    margin-bottom: 15px;
+}
+
+#gameControls button {
+    background: #4ecdc4;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    margin: 2px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background 0.3s ease;
+}
+
+#gameControls button:hover {
+    background: #44a08d;
+}
+
+#onlinePlayers h3 {
+    font-size: 1em;
+    margin-bottom: 10px;
+    opacity: 0.8;
+}
+
+#playersList {
+    font-size: 0.9em;
+}
+
+.player-item {
+    padding: 3px 0;
+    opacity: 0.7;
+}
+
+/* Game Canvas */
+#gameCanvas {
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+    background: #1a1a2e;
+    margin: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+/* Controls Info */
+#controls {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 15px;
+    border-radius: 10px;
+    font-size: 0.9em;
+}
+
+#controls h3 {
+    margin-bottom: 10px;
+    color: #4ecdc4;
+}
+
+#controls p {
+    margin: 5px 0;
+    opacity: 0.8;
+}
+
+/* Chat */
+#chat {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    width: 300px;
+    height: 200px;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+}
+
+#chatMessages {
+    flex: 1;
+    padding: 10px;
+    overflow-y: auto;
+    font-size: 0.8em;
+}
+
+.chat-message {
+    margin: 3px 0;
+    padding: 2px 0;
+}
+
+.chat-username {
+    font-weight: bold;
+    color: #4ecdc4;
+}
+
+#chatInput {
+    display: flex;
+    padding: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#messageInput {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    padding: 8px;
+    border-radius: 5px;
+    color: white;
+    font-size: 0.9em;
+}
+
+#messageInput::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+#sendBtn {
+    background: #4ecdc4;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    margin-left: 5px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+
+#sendBtn:hover {
+    background: #44a08d;
+}
+
+/* Modal */
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: rgba(0, 0, 0, 0.9);
+    padding: 30px;
+    border-radius: 15px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 70vh;
+    overflow-y: auto;
+    position: relative;
+}
+
+.close {
+    position: absolute;
+    right: 15px;
+    top: 15px;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #aaa;
+}
+
+.close:hover {
+    color: white;
+}
+
+.modal-content h2 {
+    margin-bottom: 20px;
+    color: #4ecdc4;
+}
+
+.level-item {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.level-item:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.level-name {
+    font-weight: bold;
+    font-size: 1.1em;
+    margin-bottom: 5px;
+}
+
+.level-description {
+    opacity: 0.7;
+    font-size: 0.9em;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    #gameCanvas {
+        width: calc(100vw - 40px);
+        height: calc(100vh - 200px);
+    }
+    
+    #chat {
+        width: 250px;
+        height: 150px;
+    }
+    
+    #gameUI {
+        font-size: 0.9em;
+    }
+}
+
+/* Game-specific styles */
+.ufo {
+    filter: drop-shadow(0 0 10px #4ecdc4);
+}
+
+.marble {
+    filter: drop-shadow(0 0 5px #ff6b6b);
+}
+
+.emote {
+    filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.5));
+}
+
+.beam {
+    opacity: 0.7;
+    filter: blur(1px);
+}
+
+.goal {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+}

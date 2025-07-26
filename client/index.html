@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AnotherGame - Multiplayer Physics Game</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div id="loginScreen" class="screen">
+        <div class="login-container">
+            <h1>AnotherGame</h1>
+            <p>Multiplayer Physics Marble Game</p>
+            <button id="twitchLoginBtn" class="twitch-btn">Login with Twitch</button>
+            <div id="loginError" class="error-message" style="display: none;"></div>
+        </div>
+    </div>
+
+    <div id="gameScreen" class="screen" style="display: none;">
+        <div id="gameUI">
+            <div id="playerInfo">
+                <span id="playerName">Player</span>
+                <span id="playerLevel">Level 1</span>
+                <div id="xpBar">
+                    <div id="xpFill"></div>
+                </div>
+            </div>
+            
+            <div id="gameControls">
+                <button id="levelSelectBtn">Select Level</button>
+                <button id="editorBtn">Level Editor</button>
+                <button id="testEmoteBtn">Test Emote</button>
+            </div>
+
+            <div id="onlinePlayers">
+                <h3>Online Players</h3>
+                <div id="playersList"></div>
+            </div>
+        </div>
+
+        <canvas id="gameCanvas" width="1200" height="800"></canvas>
+
+        <div id="controls">
+            <div class="control-info">
+                <h3>Controls:</h3>
+                <p><strong>WASD</strong> - Move UFO</p>
+                <p><strong>SPACEBAR</strong> - Activate Beam</p>
+                <p><strong>Goal:</strong> Help the marble reach the finish!</p>
+            </div>
+        </div>
+
+        <div id="chat">
+            <div id="chatMessages"></div>
+            <div id="chatInput">
+                <input type="text" id="messageInput" placeholder="Type a message...">
+                <button id="sendBtn">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="levelSelectModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Select Level</h2>
+            <div id="levelsList"></div>
+        </div>
+    </div>
+
+    <!-- Socket.io -->
+    <script src="/socket.io/socket.io.js"></script>
+    
+    <!-- Game Scripts -->
+    <script src="js/networking.js"></script>
+    <script src="js/renderer.js"></script>
+    <script src="js/controls.js"></script>
+    <script src="js/game.js"></script>
+    
+    <script>
+        // Initialize the game when page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            const game = new Game();
+            game.init();
+        });
+    </script>
+</body>
+</html>

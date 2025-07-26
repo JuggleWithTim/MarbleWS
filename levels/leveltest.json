@@ -1,0 +1,100 @@
+{
+  "name": "leveltest",
+  "description": "test",
+  "version": "1.0",
+  "objects": [
+    {
+      "id": "rect_1",
+      "shape": "rectangle",
+      "x": 120,
+      "y": 300,
+      "width": 200,
+      "height": 20,
+      "color": "#888888",
+      "isStatic": true,
+      "friction": 0.3,
+      "restitution": 0.3,
+      "properties": []
+    },
+    {
+      "id": "circle_2",
+      "shape": "circle",
+      "x": 120,
+      "y": 140,
+      "radius": 25,
+      "color": "#3ff11f",
+      "isStatic": true,
+      "friction": 0.3,
+      "restitution": 0.3,
+      "properties": [
+        "spawnpoint"
+      ]
+    },
+    {
+      "id": "circle_3",
+      "shape": "circle",
+      "x": 880,
+      "y": 640,
+      "radius": 25,
+      "color": "#e62b2f",
+      "isStatic": true,
+      "friction": 0.3,
+      "restitution": 0.3,
+      "properties": [
+        "goal"
+      ]
+    },
+    {
+      "id": "rect_4",
+      "shape": "rectangle",
+      "x": 240,
+      "y": 420,
+      "width": 20,
+      "height": 200,
+      "color": "#888888",
+      "isStatic": true,
+      "friction": 0.3,
+      "restitution": 0.3,
+      "properties": []
+    },
+    {
+      "id": "rect_5",
+      "shape": "rectangle",
+      "x": 40,
+      "y": 200,
+      "width": 20,
+      "height": 200,
+      "color": "#888888",
+      "isStatic": true,
+      "friction": 0.3,
+      "restitution": 0.3,
+      "properties": []
+    },
+    {
+      "id": "rect_6",
+      "shape": "rectangle",
+      "x": 380,
+      "y": 520,
+      "width": 300,
+      "height": 20,
+      "color": "#888888",
+      "isStatic": true,
+      "friction": 0.3,
+      "restitution": 0.3,
+      "properties": []
+    },
+    {
+      "id": "rect_7",
+      "shape": "rectangle",
+      "x": 340,
+      "y": 340,
+      "width": 80,
+      "height": 20,
+      "color": "#c449c7",
+      "isStatic": false,
+      "friction": 0.3,
+      "restitution": 0.3,
+      "properties": []
+    }
+  ]
+}

@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AnotherGame - Level Editor</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .editor-container {
+            display: flex;
+            height: 100vh;
+            background: #1a1a2e;
+        }
+        
+        .editor-sidebar {
+            width: 300px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            overflow-y: auto;
+            border-right: 2px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .editor-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .editor-toolbar {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px 20px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .editor-canvas-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #editorCanvas {
+            cursor: crosshair;
+            background: #16213e;
+        }
+        
+        .tool-section {
+            margin-bottom: 25px;
+        }
+        
+        .tool-section h3 {
+            color: #4ecdc4;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        
+        .tool-button {
+            background: #4ecdc4;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            margin: 3px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background 0.3s ease;
+        }
+        
+        .tool-button:hover {
+            background: #44a08d;
+        }
+        
+        .tool-button.active {
+            background: #ff6b6b;
+        }
+        
+        .property-group {
+            margin-bottom: 15px;
+        }
+        
+        .property-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #ffffff;
+            font-size: 0.9em;
+        }
+        
+        .property-group input,
+        .property-group select {
+            width: 100%;
+            padding: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 0.9em;
+        }
+        
+        .property-group input[type="color"] {
+            height: 35px;
+            padding: 2px;
+        }
+        
+        .property-group input[type="checkbox"] {
+            width: auto;
+            margin-right: 8px;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+        }
+        
+        .level-info {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .object-list {
+            max-height: 200px;
+            overflow-y: auto;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 5px;
+            padding: 10px;
+        }
+        
+        .object-item {
+            padding: 8px;
+            margin: 3px 0;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.8em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .object-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .object-item.selected {
+            background: #4ecdc4;
+        }
+        
+        .delete-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 2px 6px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.7em;
+        }
+        
+        .toolbar-input {
+            padding: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 0.9em;
+        }
+        
+        .status-bar {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 5px 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.8em;
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+    <div class="editor-container">
+        <div class="editor-sidebar">
+            <div class="level-info">
+                <h2>Level Editor</h2>
+                <div class="property-group">
+                    <label>Level Name:</label>
+                    <input type="text" id="levelName" placeholder="Enter level name" value="new-level">
+                </div>
+                <div class="property-group">
+                    <label>Description:</label>
+                    <input type="text" id="levelDescription" placeholder="Level description">
+                </div>
+            </div>
+            
+            <div class="tool-section">
+                <h3>Tools</h3>
+                <button class="tool-button active" data-tool="select">Select</button>
+                <button class="tool-button" data-tool="rectangle">Rectangle</button>
+                <button class="tool-button" data-tool="circle">Circle</button>
+                <button class="tool-button" data-tool="delete">Delete</button>
+            </div>
+            
+            <div class="tool-section">
+                <h3>Object Properties</h3>
+                <div class="property-group">
+                    <label>Color:</label>
+                    <input type="color" id="objectColor" value="#888888">
+                </div>
+                <div class="property-group">
+                    <label>Width:</label>
+                    <input type="number" id="objectWidth" value="100" min="10" max="500">
+                </div>
+                <div class="property-group">
+                    <label>Height:</label>
+                    <input type="number" id="objectHeight" value="20" min="10" max="500">
+                </div>
+                <div class="property-group">
+                    <label>Radius:</label>
+                    <input type="number" id="objectRadius" value="25" min="5" max="200">
+                </div>
+                <div class="property-group">
+                    <label>Friction:</label>
+                    <input type="number" id="objectFriction" value="0.3" min="0" max="2" step="0.1">
+                </div>
+                <div class="property-group">
+                    <label>Restitution:</label>
+                    <input type="number" id="objectRestitution" value="0.3" min="0" max="2" step="0.1">
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="objectStatic" checked>
+                    <label for="objectStatic">Static</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="objectSpawnpoint">
+                    <label for="objectSpawnpoint">Spawnpoint</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="objectGoal">
+                    <label for="objectGoal">Goal</label>
+                </div>
+            </div>
+            
+            <div class="tool-section">
+                <h3>Objects</h3>
+                <div class="object-list" id="objectList">
+                    <!-- Objects will be listed here -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="editor-main">
+            <div class="editor-toolbar">
+                <button class="tool-button" id="newLevel">New</button>
+                <button class="tool-button" id="loadLevel">Load</button>
+                <button class="tool-button" id="saveLevel">Save</button>
+                <button class="tool-button" id="testLevel">Test</button>
+                <span style="margin-left: 20px;">Grid:</span>
+                <input type="checkbox" id="showGrid" checked>
+                <span style="margin-left: 20px;">Snap:</span>
+                <input type="checkbox" id="snapToGrid" checked>
+                <input type="number" id="gridSize" value="20" min="10" max="50" class="toolbar-input" style="width: 60px; margin-left: 10px;">
+            </div>
+            
+            <div class="editor-canvas-container">
+                <canvas id="editorCanvas" width="1200" height="800"></canvas>
+            </div>
+            
+            <div class="status-bar">
+                <span id="statusText">Ready</span>
+                <span style="float: right;" id="mousePos">Mouse: 0, 0</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/editor.js"></script>
+    <script>
+        // Initialize the editor when page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            const editor = new LevelEditor();
+            editor.init();
+        });
+    </script>
+</body>
+</html>
