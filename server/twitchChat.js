@@ -20,8 +20,8 @@ class TwitchChat {
 
     const opts = {
       identity: {
-        username: 'justinfan12345', // Anonymous connection
-        password: 'oauth:' // Anonymous doesn't need real token
+        username: process.env.TWITCH_BOT_USERNAME || 'justinfan12345',
+        password: process.env.TWITCH_BOT_OAUTH_TOKEN || 'oauth:'
       },
       channels: [process.env.TWITCH_CHANNEL]
     };
@@ -95,7 +95,7 @@ class TwitchChat {
       
       if (!emoteUrl) {
         // Construct Twitch emote URL
-        emoteUrl = `https://static-cdn.jtvnw.net/emoticons/v2/${emoteId}/default/dark/1.0`;
+        emoteUrl = `https://static-cdn.jtvnw.net/emoticons/v2/${emoteId}/default/dark/3.0`;
         
         // Verify the emote exists
         try {
