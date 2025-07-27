@@ -7,7 +7,7 @@ class TwitchChat {
     this.client = null;
     this.emoteCache = new Map();
     this.lastEmoteSpawn = 0;
-    this.emoteSpawnCooldown = 2000; // 2 seconds between emote spawns
+    this.emoteSpawnCooldown = 0.1; // 0.1 seconds between emote spawns
     
     this.initializeChat();
   }
@@ -80,7 +80,7 @@ class TwitchChat {
         emotes.push({
           id: emoteId,
           name: emoteName,
-          url: `https://static-cdn.jtvnw.net/emoticons/v2/${emoteId}/default/dark/1.0`
+          url: `https://static-cdn.jtvnw.net/emoticons/v2/${emoteId}/default/dark/3.0`
         });
       }
     }

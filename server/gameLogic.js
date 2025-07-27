@@ -29,9 +29,9 @@ class GameLogic {
     const ufoBody = Matter.Bodies.circle(960, 540, 25, {
       isStatic: false,
       friction: 0.2,        // Increased from 0.1
-      frictionAir: 0.15,    // Increased from 0.05 for better stopping
+      frictionAir: 0.05,    // Increased from 0.05 for better stopping
       restitution: 0.2,     // Reduced from 0.3 for less bouncing
-      density: 0.001,       // Increased from 0.001 for more stability
+      density: 0.0008,       // Increased from 0.001 for more stability
       render: {
         fillStyle: '#4ecdc4'
       }
@@ -174,7 +174,7 @@ class GameLogic {
   }
 
   spawnMarble(x, y) {
-    const marble = Matter.Bodies.circle(x, y, 10, {
+    const marble = Matter.Bodies.circle(x, y, 30, {
       friction: 0.3,
       restitution: 0.6,
       render: {
@@ -200,7 +200,7 @@ class GameLogic {
       const emote = Matter.Bodies.circle(
         spawnpoint.x + Math.random() * 100 - 50,
         spawnpoint.y - 50,
-        8,
+        20,
         {
           friction: 0.3,
           restitution: 0.7,

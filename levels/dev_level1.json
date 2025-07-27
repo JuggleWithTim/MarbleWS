@@ -32,8 +32,8 @@
     {
       "id": "circle_4",
       "shape": "circle",
-      "x": 140,
-      "y": 100,
+      "x": 280,
+      "y": 160,
       "radius": 25,
       "color": "#3eeb25",
       "isStatic": true,
@@ -46,22 +46,23 @@
     {
       "id": "circle_5",
       "shape": "circle",
-      "x": 1820,
-      "y": 1000,
-      "radius": 25,
+      "x": 160,
+      "y": 900,
+      "radius": 40,
       "color": "#e12f53",
       "isStatic": true,
       "friction": 0.3,
       "restitution": 0.3,
       "properties": [
         "goal"
-      ]
+      ],
+      "rotation": 0
     },
     {
       "id": "circle_6",
       "shape": "circle",
-      "x": 420,
-      "y": 400,
+      "x": 1340,
+      "y": 160,
       "radius": 50,
       "color": "#e12f53",
       "isStatic": false,
@@ -99,7 +100,7 @@
       "id": "rect_1",
       "shape": "rectangle",
       "x": 180,
-      "y": 180,
+      "y": 360,
       "width": 500,
       "height": 50,
       "color": "#b551bf",
@@ -107,7 +108,7 @@
       "friction": 0.3,
       "restitution": 0.3,
       "properties": [],
-      "rotation": 0.06981317007977318
+      "rotation": 0.3490658503988659
     },
     {
       "id": "circle_2",
@@ -124,8 +125,8 @@
     {
       "id": "rect_4",
       "shape": "rectangle",
-      "x": 360,
-      "y": 280,
+      "x": 840,
+      "y": 180,
       "width": 423,
       "height": 20,
       "color": "#669faa",
@@ -156,6 +157,48 @@
       "height": 20,
       "rotation": 0,
       "color": "#888888",
+      "isStatic": true,
+      "friction": 0.3,
+      "restitution": 0.3,
+      "properties": []
+    },
+    {
+      "id": "rect_1",
+      "shape": "rectangle",
+      "x": 580,
+      "y": 560,
+      "width": 500,
+      "height": 50,
+      "rotation": 0.3490658503988659,
+      "color": "#b551bf",
+      "isStatic": true,
+      "friction": 0.3,
+      "restitution": 0.3,
+      "properties": []
+    },
+    {
+      "id": "rect_3",
+      "shape": "rectangle",
+      "x": 1220,
+      "y": 800,
+      "width": 800,
+      "height": 50,
+      "rotation": -0.3490658503988659,
+      "color": "#b551bf",
+      "isStatic": true,
+      "friction": 0.3,
+      "restitution": 0.3,
+      "properties": []
+    },
+    {
+      "id": "rect_4",
+      "shape": "rectangle",
+      "x": 420,
+      "y": 980,
+      "width": 800,
+      "height": 50,
+      "rotation": 0,
+      "color": "#b551bf",
       "isStatic": true,
       "friction": 0.3,
       "restitution": 0.3,

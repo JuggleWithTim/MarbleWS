@@ -164,7 +164,7 @@ class Renderer {
 
     drawMarble(x, y, angle = 0) {
         const screenPos = this.worldToScreen(x, y);
-        const radius = 10 * this.camera.zoom;
+        const radius = 30 * this.camera.zoom;
         
         this.ctx.save();
         this.ctx.translate(screenPos.x, screenPos.y);
@@ -192,12 +192,12 @@ class Renderer {
         const img = await this.loadImage(imageUrl);
         if (!img) {
             // Fallback to colored circle if image fails to load
-            this.drawCircle(x, y, 8, '#ffff00', angle);
+            this.drawCircle(x, y, 20, '#ffff00', angle);
             return;
         }
 
         const screenPos = this.worldToScreen(x, y);
-        const size = 16 * this.camera.zoom;
+        const size = 64;
         
         this.ctx.save();
         this.ctx.translate(screenPos.x, screenPos.y);
