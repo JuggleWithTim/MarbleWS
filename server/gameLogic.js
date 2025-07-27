@@ -439,6 +439,7 @@ class GameLogic {
         height: obj.height,
         radius: obj.radius,
         color: obj.color,
+        backgroundImage: obj.backgroundImage,
         isStatic: obj.isStatic,
         properties: obj.properties
       }))

@@ -202,7 +202,9 @@
       "isStatic": true,
       "friction": 0.3,
       "restitution": 0.3,
-      "properties": []
+      "properties": [],
+      "backgroundImage": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Webb%27s_First_Deep_Field.jpg/960px-Webb%27s_First_Deep_Field.jpg"
     }
-  ]
+  ],
+  "backgroundImage": ""
 }
