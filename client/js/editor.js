@@ -87,11 +87,17 @@ class LevelEditor {
             this.render();
         });
         
+        // Show/hide nextLevel field when goal checkbox is toggled
+        document.getElementById('objectGoal').addEventListener('change', (e) => {
+            document.getElementById('nextLevelContainer').style.display = 
+                e.target.checked ? 'block' : 'none';
+        });
+        
         // Property inputs
         const propertyInputs = [
             'objectColor', 'objectBackgroundImage', 'objectWidth', 'objectHeight', 'objectRadius',
             'objectFriction', 'objectRestitution', 'objectRotation', 'objectStatic',
-            'objectSpawnpoint', 'objectGoal'
+            'objectSpawnpoint', 'objectGoal', 'objectNextLevel', 'objectSolid', 'objectZIndex'
         ];
         
         propertyInputs.forEach(id => {
@@ -251,10 +257,18 @@ class LevelEditor {
             color: document.getElementById('objectColor').value,
             backgroundImage: backgroundImage,
             isStatic: document.getElementById('objectStatic').checked,
+            isSolid: document.getElementById('objectSolid').checked,
+            zIndex: parseInt(document.getElementById('objectZIndex').value),
             friction: parseFloat(document.getElementById('objectFriction').value),
             restitution: parseFloat(document.getElementById('objectRestitution').value),
             properties: this.getSelectedProperties()
         };
+        
+        // Add nextLevel property for goal objects
+        const nextLevel = this.getNextLevel();
+        if (nextLevel) {
+            obj.nextLevel = nextLevel;
+        }
         
         this.level.objects.push(obj);
         this.selectObject(obj);
@@ -281,10 +295,18 @@ class LevelEditor {
             color: document.getElementById('objectColor').value,
             backgroundImage: backgroundImage,
             isStatic: document.getElementById('objectStatic').checked,
+            isSolid: document.getElementById('objectSolid').checked,
+            zIndex: parseInt(document.getElementById('objectZIndex').value),
             friction: parseFloat(document.getElementById('objectFriction').value),
             restitution: parseFloat(document.getElementById('objectRestitution').value),
             properties: this.getSelectedProperties()
         };
+        
+        // Add nextLevel property for goal objects
+        const nextLevel = this.getNextLevel();
+        if (nextLevel) {
+            obj.nextLevel = nextLevel;
+        }
         
         this.level.objects.push(obj);
         this.selectObject(obj);
@@ -303,6 +325,13 @@ class LevelEditor {
         }
         return properties;
     }
+    
+    getNextLevel() {
+        if (document.getElementById('objectGoal').checked) {
+            return document.getElementById('objectNextLevel').value.trim();
+        }
+        return '';
+    }
 
     selectObject(obj) {
         this.selectedObject = obj;
@@ -312,6 +341,8 @@ class LevelEditor {
             document.getElementById('objectColor').value = obj.color;
             document.getElementById('objectBackgroundImage').value = obj.backgroundImage || '';
             document.getElementById('objectStatic').checked = obj.isStatic;
+            document.getElementById('objectSolid').checked = obj.isSolid !== false; // Default to true if not specified
+            document.getElementById('objectZIndex').value = obj.zIndex || 0;
             document.getElementById('objectFriction').value = obj.friction;
             document.getElementById('objectRestitution').value = obj.restitution;
             document.getElementById('objectRotation').value = Math.round((obj.rotation || 0) * 180 / Math.PI); // Convert to degrees
@@ -326,6 +357,13 @@ class LevelEditor {
             // Update property checkboxes
             document.getElementById('objectSpawnpoint').checked = obj.properties.includes('spawnpoint');
             document.getElementById('objectGoal').checked = obj.properties.includes('goal');
+            
+            // Show/hide nextLevel field based on goal property
+            document.getElementById('nextLevelContainer').style.display = 
+                obj.properties.includes('goal') ? 'block' : 'none';
+            
+            // Set nextLevel value if it exists
+            document.getElementById('objectNextLevel').value = obj.nextLevel || '';
             
             this.updateStatus(`Selected: ${obj.id}`);
         } else {
@@ -354,6 +392,8 @@ class LevelEditor {
         this.selectedObject.color = document.getElementById('objectColor').value;
         this.selectedObject.backgroundImage = newBackgroundImage;
         this.selectedObject.isStatic = document.getElementById('objectStatic').checked;
+        this.selectedObject.isSolid = document.getElementById('objectSolid').checked;
+        this.selectedObject.zIndex = parseInt(document.getElementById('objectZIndex').value);
         this.selectedObject.friction = parseFloat(document.getElementById('objectFriction').value);
         this.selectedObject.restitution = parseFloat(document.getElementById('objectRestitution').value);
         this.selectedObject.rotation = parseFloat(document.getElementById('objectRotation').value) * Math.PI / 180; // Convert to radians
@@ -367,6 +407,14 @@ class LevelEditor {
         
         // Update properties
         this.selectedObject.properties = this.getSelectedProperties();
+        
+        // Update nextLevel property for goal objects
+        const nextLevel = this.getNextLevel();
+        if (nextLevel) {
+            this.selectedObject.nextLevel = nextLevel;
+        } else if (this.selectedObject.nextLevel) {
+            delete this.selectedObject.nextLevel;
+        }
         
         this.updateObjectList();
         this.render();

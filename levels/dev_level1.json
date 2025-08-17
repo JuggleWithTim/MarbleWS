@@ -46,8 +46,8 @@
     {
       "id": "circle_5",
       "shape": "circle",
-      "x": 160,
-      "y": 900,
+      "x": 840,
+      "y": 860,
       "radius": 40,
       "color": "#e12f53",
       "isStatic": true,
@@ -56,7 +56,11 @@
       "properties": [
         "goal"
       ],
-      "rotation": 0
+      "rotation": 0,
+      "backgroundImage": "",
+      "isSolid": false,
+      "zIndex": 0,
+      "nextLevel": "dev_level2"
     },
     {
       "id": "circle_6",

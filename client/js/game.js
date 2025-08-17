@@ -365,8 +365,13 @@ class Game {
         // Fixed camera view - no following, show entire 1920x1080 game area
         this.renderer.setCamera(960, 540, 1); // Center of 1920x1080 canvas
         
+        // Sort level objects by zIndex (if present) before rendering
+        const sortedObjects = [...this.gameState.levelObjects].sort((a, b) => {
+            return (a.zIndex || 0) - (b.zIndex || 0);
+        });
+        
         // Render level objects (static, no interpolation needed)
-        this.gameState.levelObjects.forEach(obj => {
+        sortedObjects.forEach(obj => {
             this.renderer.drawLevelObject(obj);
         });
         

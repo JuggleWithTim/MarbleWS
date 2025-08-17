@@ -255,6 +255,18 @@
                     <input type="checkbox" id="objectGoal">
                     <label for="objectGoal">Goal</label>
                 </div>
+                <div class="property-group" id="nextLevelContainer" style="display: none;">
+                    <label>Next Level:</label>
+                    <input type="text" id="objectNextLevel" placeholder="Level to load when goal is reached">
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="objectSolid" checked>
+                    <label for="objectSolid">Solid</label>
+                </div>
+                <div class="property-group">
+                    <label>Z-Index:</label>
+                    <input type="number" id="objectZIndex" value="0" min="-10" max="10" step="1">
+                </div>
             </div>
             
             <div class="tool-section">
