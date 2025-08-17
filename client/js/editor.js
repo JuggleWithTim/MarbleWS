@@ -19,8 +19,12 @@ class LevelEditor {
             name: 'new-level',
             description: '',
             version: '1.0',
+            backgroundImage: '',
             objects: []
         };
+        
+        this.backgroundImage = null; // To store the loaded image
+        this.objectImages = new Map(); // Cache for object background images
         
         this.objectIdCounter = 1;
     }
@@ -77,11 +81,23 @@ class LevelEditor {
             this.level.description = e.target.value;
         });
         
+        document.getElementById('backgroundImage').addEventListener('input', (e) => {
+            this.level.backgroundImage = e.target.value;
+            this.loadBackgroundImage();
+            this.render();
+        });
+        
+        // Show/hide nextLevel field when goal checkbox is toggled
+        document.getElementById('objectGoal').addEventListener('change', (e) => {
+            document.getElementById('nextLevelContainer').style.display = 
+                e.target.checked ? 'block' : 'none';
+        });
+        
         // Property inputs
         const propertyInputs = [
-            'objectColor', 'objectWidth', 'objectHeight', 'objectRadius',
+            'objectColor', 'objectBackgroundImage', 'objectWidth', 'objectHeight', 'objectRadius',
             'objectFriction', 'objectRestitution', 'objectRotation', 'objectStatic',
-            'objectSpawnpoint', 'objectGoal'
+            'objectSpawnpoint', 'objectGoal', 'objectNextLevel', 'objectSolid', 'objectZIndex'
         ];
         
         propertyInputs.forEach(id => {
@@ -223,6 +239,13 @@ class LevelEditor {
     }
 
     createRectangle(x, y) {
+        const backgroundImage = document.getElementById('objectBackgroundImage').value;
+        
+        // Load the background image if provided
+        if (backgroundImage) {
+            this.loadObjectImage(backgroundImage);
+        }
+        
         const obj = {
             id: `rect_${this.objectIdCounter++}`,
             shape: 'rectangle',
@@ -232,11 +255,20 @@ class LevelEditor {
             height: parseInt(document.getElementById('objectHeight').value),
             rotation: parseFloat(document.getElementById('objectRotation').value) * Math.PI / 180, // Convert to radians
             color: document.getElementById('objectColor').value,
+            backgroundImage: backgroundImage,
             isStatic: document.getElementById('objectStatic').checked,
+            isSolid: document.getElementById('objectSolid').checked,
+            zIndex: parseInt(document.getElementById('objectZIndex').value),
             friction: parseFloat(document.getElementById('objectFriction').value),
             restitution: parseFloat(document.getElementById('objectRestitution').value),
             properties: this.getSelectedProperties()
         };
+        
+        // Add nextLevel property for goal objects
+        const nextLevel = this.getNextLevel();
+        if (nextLevel) {
+            obj.nextLevel = nextLevel;
+        }
         
         this.level.objects.push(obj);
         this.selectObject(obj);
@@ -246,6 +278,13 @@ class LevelEditor {
     }
 
     createCircle(x, y) {
+        const backgroundImage = document.getElementById('objectBackgroundImage').value;
+        
+        // Load the background image if provided
+        if (backgroundImage) {
+            this.loadObjectImage(backgroundImage);
+        }
+        
         const obj = {
             id: `circle_${this.objectIdCounter++}`,
             shape: 'circle',
@@ -254,11 +293,20 @@ class LevelEditor {
             radius: parseInt(document.getElementById('objectRadius').value),
             rotation: parseFloat(document.getElementById('objectRotation').value) * Math.PI / 180, // Convert to radians
             color: document.getElementById('objectColor').value,
+            backgroundImage: backgroundImage,
             isStatic: document.getElementById('objectStatic').checked,
+            isSolid: document.getElementById('objectSolid').checked,
+            zIndex: parseInt(document.getElementById('objectZIndex').value),
             friction: parseFloat(document.getElementById('objectFriction').value),
             restitution: parseFloat(document.getElementById('objectRestitution').value),
             properties: this.getSelectedProperties()
         };
+        
+        // Add nextLevel property for goal objects
+        const nextLevel = this.getNextLevel();
+        if (nextLevel) {
+            obj.nextLevel = nextLevel;
+        }
         
         this.level.objects.push(obj);
         this.selectObject(obj);
@@ -277,6 +325,13 @@ class LevelEditor {
         }
         return properties;
     }
+    
+    getNextLevel() {
+        if (document.getElementById('objectGoal').checked) {
+            return document.getElementById('objectNextLevel').value.trim();
+        }
+        return '';
+    }
 
     selectObject(obj) {
         this.selectedObject = obj;
@@ -284,7 +339,10 @@ class LevelEditor {
         if (obj) {
             // Update property inputs
             document.getElementById('objectColor').value = obj.color;
+            document.getElementById('objectBackgroundImage').value = obj.backgroundImage || '';
             document.getElementById('objectStatic').checked = obj.isStatic;
+            document.getElementById('objectSolid').checked = obj.isSolid !== false; // Default to true if not specified
+            document.getElementById('objectZIndex').value = obj.zIndex || 0;
             document.getElementById('objectFriction').value = obj.friction;
             document.getElementById('objectRestitution').value = obj.restitution;
             document.getElementById('objectRotation').value = Math.round((obj.rotation || 0) * 180 / Math.PI); // Convert to degrees
@@ -300,6 +358,13 @@ class LevelEditor {
             document.getElementById('objectSpawnpoint').checked = obj.properties.includes('spawnpoint');
             document.getElementById('objectGoal').checked = obj.properties.includes('goal');
             
+            // Show/hide nextLevel field based on goal property
+            document.getElementById('nextLevelContainer').style.display = 
+                obj.properties.includes('goal') ? 'block' : 'none';
+            
+            // Set nextLevel value if it exists
+            document.getElementById('objectNextLevel').value = obj.nextLevel || '';
+            
             this.updateStatus(`Selected: ${obj.id}`);
         } else {
             this.updateStatus('No object selected');
@@ -312,9 +377,23 @@ class LevelEditor {
     updateSelectedObject() {
         if (!this.selectedObject) return;
         
+        // Get the new background image value
+        const newBackgroundImage = document.getElementById('objectBackgroundImage').value;
+        
+        // Check if the background image has changed
+        if (newBackgroundImage !== this.selectedObject.backgroundImage) {
+            // Load the new background image
+            if (newBackgroundImage) {
+                this.loadObjectImage(newBackgroundImage);
+            }
+        }
+        
         // Update properties from inputs
         this.selectedObject.color = document.getElementById('objectColor').value;
+        this.selectedObject.backgroundImage = newBackgroundImage;
         this.selectedObject.isStatic = document.getElementById('objectStatic').checked;
+        this.selectedObject.isSolid = document.getElementById('objectSolid').checked;
+        this.selectedObject.zIndex = parseInt(document.getElementById('objectZIndex').value);
         this.selectedObject.friction = parseFloat(document.getElementById('objectFriction').value);
         this.selectedObject.restitution = parseFloat(document.getElementById('objectRestitution').value);
         this.selectedObject.rotation = parseFloat(document.getElementById('objectRotation').value) * Math.PI / 180; // Convert to radians
@@ -328,6 +407,14 @@ class LevelEditor {
         
         // Update properties
         this.selectedObject.properties = this.getSelectedProperties();
+        
+        // Update nextLevel property for goal objects
+        const nextLevel = this.getNextLevel();
+        if (nextLevel) {
+            this.selectedObject.nextLevel = nextLevel;
+        } else if (this.selectedObject.nextLevel) {
+            delete this.selectedObject.nextLevel;
+        }
         
         this.updateObjectList();
         this.render();
@@ -377,16 +464,75 @@ class LevelEditor {
         });
     }
 
+    loadObjectImage(url) {
+        if (!url) return null;
+        
+        // Check if image is already cached
+        if (this.objectImages.has(url)) {
+            return this.objectImages.get(url);
+        }
+        
+        // Create a new image and cache it
+        const img = new Image();
+        img.src = url;
+        
+        // Store a promise that resolves when the image loads
+        const promise = new Promise((resolve) => {
+            img.onload = () => {
+                this.objectImages.set(url, img);
+                this.render(); // Re-render when image loads
+                resolve(img);
+            };
+            img.onerror = () => {
+                this.objectImages.set(url, null);
+                resolve(null);
+            };
+        });
+        
+        this.objectImages.set(url, promise);
+        return promise;
+    }
+
+    loadBackgroundImage() {
+        if (!this.level.backgroundImage) {
+            this.backgroundImage = null;
+            return;
+        }
+        
+        // Create a new image
+        const img = new Image();
+        img.onload = () => {
+            this.backgroundImage = img;
+            this.render();
+            this.updateStatus('Background image loaded');
+        };
+        img.onerror = () => {
+            this.backgroundImage = null;
+            this.updateStatus('Failed to load background image');
+        };
+        img.src = this.level.backgroundImage;
+    }
+
     render() {
         // Clear canvas
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
         // Draw background
-        const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
-        gradient.addColorStop(0, '#1a1a2e');
-        gradient.addColorStop(1, '#16213e');
-        this.ctx.fillStyle = gradient;
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        if (this.backgroundImage) {
+            // Draw the background image
+            this.ctx.drawImage(this.backgroundImage, 0, 0, this.canvas.width, this.canvas.height);
+            
+            // Add a slight overlay to ensure objects are visible
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        } else {
+            // Draw default gradient background
+            const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
+            gradient.addColorStop(0, '#1a1a2e');
+            gradient.addColorStop(1, '#16213e');
+            this.ctx.fillStyle = gradient;
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        }
         
         // Draw grid
         if (this.showGrid) {
@@ -435,19 +581,74 @@ class LevelEditor {
             this.ctx.translate(-obj.x, -obj.y);
         }
         
-        this.ctx.fillStyle = obj.color;
-        
-        if (obj.shape === 'rectangle') {
-            this.ctx.fillRect(
-                obj.x - obj.width/2,
-                obj.y - obj.height/2,
-                obj.width,
-                obj.height
-            );
-        } else if (obj.shape === 'circle') {
-            this.ctx.beginPath();
-            this.ctx.arc(obj.x, obj.y, obj.radius, 0, Math.PI * 2);
-            this.ctx.fill();
+        // Check if object has a background image
+        if (obj.backgroundImage) {
+            // Try to get the image from cache or load it
+            if (!this.objectImages.has(obj.backgroundImage)) {
+                this.loadObjectImage(obj.backgroundImage);
+            }
+            
+            const image = this.objectImages.get(obj.backgroundImage);
+            
+            if (image instanceof HTMLImageElement) {
+                // Draw the background image
+                if (obj.shape === 'rectangle') {
+                    this.ctx.drawImage(
+                        image,
+                        obj.x - obj.width/2,
+                        obj.y - obj.height/2,
+                        obj.width,
+                        obj.height
+                    );
+                } else if (obj.shape === 'circle') {
+                    // For circles, we need to clip the image to a circle shape
+                    this.ctx.save();
+                    this.ctx.beginPath();
+                    this.ctx.arc(obj.x, obj.y, obj.radius, 0, Math.PI * 2);
+                    this.ctx.clip();
+                    
+                    this.ctx.drawImage(
+                        image,
+                        obj.x - obj.radius,
+                        obj.y - obj.radius,
+                        obj.radius * 2,
+                        obj.radius * 2
+                    );
+                    this.ctx.restore();
+                }
+            } else {
+                // Image is still loading or failed to load, use color as fallback
+                this.ctx.fillStyle = obj.color;
+                
+                if (obj.shape === 'rectangle') {
+                    this.ctx.fillRect(
+                        obj.x - obj.width/2,
+                        obj.y - obj.height/2,
+                        obj.width,
+                        obj.height
+                    );
+                } else if (obj.shape === 'circle') {
+                    this.ctx.beginPath();
+                    this.ctx.arc(obj.x, obj.y, obj.radius, 0, Math.PI * 2);
+                    this.ctx.fill();
+                }
+            }
+        } else {
+            // No background image, just use color
+            this.ctx.fillStyle = obj.color;
+            
+            if (obj.shape === 'rectangle') {
+                this.ctx.fillRect(
+                    obj.x - obj.width/2,
+                    obj.y - obj.height/2,
+                    obj.width,
+                    obj.height
+                );
+            } else if (obj.shape === 'circle') {
+                this.ctx.beginPath();
+                this.ctx.arc(obj.x, obj.y, obj.radius, 0, Math.PI * 2);
+                this.ctx.fill();
+            }
         }
         
         this.ctx.restore(); // Restore context state
@@ -515,11 +716,14 @@ class LevelEditor {
                 name: 'new-level',
                 description: '',
                 version: '1.0',
+                backgroundImage: '',
                 objects: []
             };
             
             document.getElementById('levelName').value = this.level.name;
             document.getElementById('levelDescription').value = this.level.description;
+            document.getElementById('backgroundImage').value = '';
+            this.backgroundImage = null;
             
             this.selectedObject = null;
             this.objectIdCounter = 1;
@@ -541,6 +745,21 @@ class LevelEditor {
                 
                 document.getElementById('levelName').value = this.level.name;
                 document.getElementById('levelDescription').value = this.level.description || '';
+                
+                // Ensure backgroundImage property exists
+                if (!this.level.hasOwnProperty('backgroundImage')) {
+                    this.level.backgroundImage = '';
+                }
+                
+                document.getElementById('backgroundImage').value = this.level.backgroundImage || '';
+                this.loadBackgroundImage();
+                
+                // Load background images for objects
+                this.level.objects.forEach(obj => {
+                    if (obj.backgroundImage) {
+                        this.loadObjectImage(obj.backgroundImage);
+                    }
+                });
                 
                 this.selectedObject = null;
                 this.updateObjectList();
@@ -577,6 +796,7 @@ class LevelEditor {
         
         this.level.name = levelName;
         this.level.description = document.getElementById('levelDescription').value;
+        this.level.backgroundImage = document.getElementById('backgroundImage').value;
         
         try {
             const response = await fetch(`/api/levels/${levelName}`, {

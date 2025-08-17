@@ -164,7 +164,7 @@ class Renderer {
 
     drawMarble(x, y, angle = 0) {
         const screenPos = this.worldToScreen(x, y);
-        const radius = 10 * this.camera.zoom;
+        const radius = 30 * this.camera.zoom;
         
         this.ctx.save();
         this.ctx.translate(screenPos.x, screenPos.y);
@@ -192,12 +192,12 @@ class Renderer {
         const img = await this.loadImage(imageUrl);
         if (!img) {
             // Fallback to colored circle if image fails to load
-            this.drawCircle(x, y, 8, '#ffff00', angle);
+            this.drawCircle(x, y, 20, '#ffff00', angle);
             return;
         }
 
         const screenPos = this.worldToScreen(x, y);
-        const size = 16 * this.camera.zoom;
+        const size = 64;
         
         this.ctx.save();
         this.ctx.translate(screenPos.x, screenPos.y);
@@ -207,10 +207,46 @@ class Renderer {
     }
 
     drawLevelObject(obj) {
-        if (obj.shape === 'rectangle') {
-            this.drawRectangle(obj.x, obj.y, obj.width, obj.height, obj.color, obj.angle);
-        } else if (obj.shape === 'circle') {
-            this.drawCircle(obj.x, obj.y, obj.radius, obj.color, obj.angle);
+        // Check if object has a background image
+        if (obj.backgroundImage) {
+            if (obj.shape === 'rectangle') {
+                this.drawImage(obj.backgroundImage, obj.x, obj.y, obj.width, obj.height, obj.angle);
+            } else if (obj.shape === 'circle') {
+                // For circles, we need a special handling
+                // First try to get the image
+                this.loadImage(obj.backgroundImage).then(img => {
+                    if (img) {
+                        // Create a circular clipping path
+                        const screenPos = this.worldToScreen(obj.x, obj.y);
+                        
+                        this.ctx.save();
+                        this.ctx.translate(screenPos.x, screenPos.y);
+                        if (obj.angle) this.ctx.rotate(obj.angle);
+                        
+                        // Create clipping circle
+                        this.ctx.beginPath();
+                        this.ctx.arc(0, 0, obj.radius * this.camera.zoom, 0, Math.PI * 2);
+                        this.ctx.clip();
+                        
+                        // Draw the image
+                        this.ctx.drawImage(img, 
+                            -obj.radius * this.camera.zoom, -obj.radius * this.camera.zoom,
+                            obj.radius * 2 * this.camera.zoom, obj.radius * 2 * this.camera.zoom);
+                        
+                        this.ctx.restore();
+                    } else {
+                        // Fallback to regular circle if image fails
+                        this.drawCircle(obj.x, obj.y, obj.radius, obj.color, obj.angle);
+                    }
+                });
+            }
+        } else {
+            // No background image, use regular drawing
+            if (obj.shape === 'rectangle') {
+                this.drawRectangle(obj.x, obj.y, obj.width, obj.height, obj.color, obj.angle);
+            } else if (obj.shape === 'circle') {
+                this.drawCircle(obj.x, obj.y, obj.radius, obj.color, obj.angle);
+            }
         }
 
         // Draw special property indicators

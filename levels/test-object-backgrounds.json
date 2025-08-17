@@ -1,0 +1,76 @@
+{
+  "name": "Test Object Backgrounds",
+  "description": "A test level with objects that have background images",
+  "version": "1.0",
+  "backgroundImage": "",
+  "objects": [
+    {
+      "id": "spawn",
+      "shape": "rectangle",
+      "x": 200,
+      "y": 100,
+      "width": 60,
+      "height": 20,
+      "color": "#00ff00",
+      "backgroundImage": "",
+      "isStatic": true,
+      "friction": 0.3,
+      "restitution": 0.3,
+      "properties": ["spawnpoint"]
+    },
+    {
+      "id": "image_rectangle",
+      "shape": "rectangle",
+      "x": 300,
+      "y": 200,
+      "width": 100,
+      "height": 100,
+      "color": "#888888",
+      "backgroundImage": "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&q=80",
+      "isStatic": true,
+      "friction": 0.3,
+      "restitution": 0.3,
+      "properties": []
+    },
+    {
+      "id": "image_circle",
+      "shape": "circle",
+      "x": 500,
+      "y": 200,
+      "radius": 50,
+      "color": "#888888",
+      "backgroundImage": "https://images.unsplash.com/photo-1614730321146-b6fa6a46bcb4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&q=80",
+      "isStatic": true,
+      "friction": 0.3,
+      "restitution": 0.3,
+      "properties": []
+    },
+    {
+      "id": "goal",
+      "shape": "circle",
+      "x": 700,
+      "y": 400,
+      "radius": 30,
+      "color": "#ffff00",
+      "backgroundImage": "",
+      "isStatic": true,
+      "friction": 0.3,
+      "restitution": 0.3,
+      "properties": ["goal"]
+    },
+    {
+      "id": "ground",
+      "shape": "rectangle",
+      "x": 400,
+      "y": 500,
+      "width": 800,
+      "height": 40,
+      "color": "#654321",
+      "backgroundImage": "",
+      "isStatic": true,
+      "friction": 0.8,
+      "restitution": 0.1,
+      "properties": []
+    }
+  ]
+}

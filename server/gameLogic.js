@@ -9,12 +9,27 @@ class GameLogic {
     this.emotes = [];
     this.currentLevel = null;
     this.levelObjects = [];
+    this.eventListeners = new Map();
     
     // Configure physics
     this.engine.world.gravity.y = 0.8;
     
     // Start physics loop
     this.startPhysicsLoop();
+  }
+  
+  // Event system
+  on(event, callback) {
+    if (!this.eventListeners.has(event)) {
+      this.eventListeners.set(event, []);
+    }
+    this.eventListeners.get(event).push(callback);
+  }
+  
+  emit(event, data) {
+    if (this.eventListeners.has(event)) {
+      this.eventListeners.get(event).forEach(callback => callback(data));
+    }
   }
 
   startPhysicsLoop() {
@@ -29,9 +44,9 @@ class GameLogic {
     const ufoBody = Matter.Bodies.circle(960, 540, 25, {
       isStatic: false,
       friction: 0.2,        // Increased from 0.1
-      frictionAir: 0.15,    // Increased from 0.05 for better stopping
+      frictionAir: 0.05,    // Increased from 0.05 for better stopping
       restitution: 0.2,     // Reduced from 0.3 for less bouncing
-      density: 0.001,       // Increased from 0.001 for more stability
+      density: 0.0008,       // Increased from 0.001 for more stability
       render: {
         fillStyle: '#4ecdc4'
       }
@@ -133,11 +148,23 @@ class GameLogic {
     levelData.objects.forEach(obj => {
       let body;
       
+      // Set up collision filtering based on isSolid property
+      const collisionFilter = {
+        category: 0x0001, // Default category
+        mask: 0xFFFFFFFF  // Default mask (collide with everything)
+      };
+      
+      // If isSolid is explicitly set to false, set up collision filtering
+      if (obj.isSolid === false) {
+        collisionFilter.mask = 0x0000; // Don't collide with anything
+      }
+      
       if (obj.shape === 'rectangle') {
         body = Matter.Bodies.rectangle(obj.x, obj.y, obj.width, obj.height, {
           isStatic: obj.isStatic,
           friction: obj.friction || 0.3,
           restitution: obj.restitution || 0.3,
+          collisionFilter: collisionFilter,
           render: {
             fillStyle: obj.color || '#888888'
           }
@@ -147,6 +174,7 @@ class GameLogic {
           isStatic: obj.isStatic,
           friction: obj.friction || 0.3,
           restitution: obj.restitution || 0.3,
+          collisionFilter: collisionFilter,
           render: {
             fillStyle: obj.color || '#888888'
           }
@@ -174,7 +202,7 @@ class GameLogic {
   }
 
   spawnMarble(x, y) {
-    const marble = Matter.Bodies.circle(x, y, 10, {
+    const marble = Matter.Bodies.circle(x, y, 30, {
       friction: 0.3,
       restitution: 0.6,
       render: {
@@ -200,7 +228,7 @@ class GameLogic {
       const emote = Matter.Bodies.circle(
         spawnpoint.x + Math.random() * 100 - 50,
         spawnpoint.y - 50,
-        8,
+        20,
         {
           friction: 0.3,
           restitution: 0.7,
@@ -328,20 +356,31 @@ class GameLogic {
   }
 
   checkWinCondition() {
-    const goal = this.levelObjects.find(obj => 
+    const goals = this.levelObjects.filter(obj => 
       obj.properties && obj.properties.includes('goal')
     );
 
-    if (!goal) return false;
+    if (goals.length === 0) return false;
 
-    // Check if any marble reached the goal
-    return this.marbles.some(marble => {
-      const distance = Math.sqrt(
-        Math.pow(marble.body.position.x - goal.x, 2) + 
-        Math.pow(marble.body.position.y - goal.y, 2)
-      );
-      return distance < 50;
-    });
+    // Check if any marble reached any goal
+    for (const goal of goals) {
+      for (const marble of this.marbles) {
+        const distance = Math.sqrt(
+          Math.pow(marble.body.position.x - goal.x, 2) + 
+          Math.pow(marble.body.position.y - goal.y, 2)
+        );
+        
+        if (distance < 50) {
+          // If this goal has a nextLevel property, return it
+          if (goal.nextLevel) {
+            return { win: true, nextLevel: goal.nextLevel };
+          }
+          return { win: true };
+        }
+      }
+    }
+    
+    return { win: false };
   }
 
   updateGameState() {
@@ -358,7 +397,8 @@ class GameLogic {
     });
     
     // Check win condition
-    if (this.checkWinCondition()) {
+    const winResult = this.checkWinCondition();
+    if (winResult.win) {
       // Award XP to all players
       this.players.forEach(player => {
         player.xp += 100;
@@ -367,6 +407,13 @@ class GameLogic {
           player.xp = 0;
         }
       });
+      
+      // If there's a next level to load, load it
+      if (winResult.nextLevel) {
+        // Use the socketHandlers to load the next level
+        // We'll emit an event that can be caught by the socket handlers
+        this.emit('loadNextLevel', winResult.nextLevel);
+      }
     }
 
     // Remove objects that fell off the world (updated for 1920x1080 canvas)
@@ -439,7 +486,11 @@ class GameLogic {
         height: obj.height,
         radius: obj.radius,
         color: obj.color,
+        backgroundImage: obj.backgroundImage,
         isStatic: obj.isStatic,
+        isSolid: obj.isSolid !== false, // Default to true if not specified
+        zIndex: obj.zIndex || 0,
+        nextLevel: obj.nextLevel,
         properties: obj.properties
       }))
     };

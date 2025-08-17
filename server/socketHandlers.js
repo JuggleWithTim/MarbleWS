@@ -1,4 +1,25 @@
 function setupSocketHandlers(io, gameLogic) {
+  // Listen for loadNextLevel events from gameLogic
+  gameLogic.on('loadNextLevel', (nextLevelName) => {
+    // Load the next level
+    const fs = require('fs');
+    const path = require('path');
+    const levelPath = path.join(__dirname, '../levels', `${nextLevelName}.json`);
+    
+    if (fs.existsSync(levelPath)) {
+      const levelData = JSON.parse(fs.readFileSync(levelPath, 'utf8'));
+      gameLogic.loadLevel(levelData);
+      
+      // Broadcast level change to all players
+      io.emit('levelLoaded', {
+        levelName: nextLevelName,
+        levelData
+      });
+    } else {
+      console.error(`Next level not found: ${nextLevelName}`);
+    }
+  });
+
   io.on('connection', (socket) => {
     console.log('Player connected:', socket.id);
 
