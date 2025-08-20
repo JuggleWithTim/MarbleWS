@@ -207,7 +207,9 @@
       "friction": 0.3,
       "restitution": 0.3,
       "properties": [],
-      "backgroundImage": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Webb%27s_First_Deep_Field.jpg/960px-Webb%27s_First_Deep_Field.jpg"
+      "backgroundImage": "./img/alienplanet1.png",
+      "isSolid": false,
+      "zIndex": 0
     }
   ],
   "backgroundImage": ""
