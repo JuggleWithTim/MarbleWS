@@ -417,14 +417,23 @@ class GameLogic {
     }
 
     // Remove objects that fell off the world (updated for 1920x1080 canvas)
-    const worldBounds = { minY: 1200 };
-    
-    this.marbles = this.marbles.filter(marble => {
+    const worldBounds = { minY: 1200 };// Check marbles that fell off the world and respawn them
+    this.marbles.forEach(marble => {
       if (marble.body.position.y > worldBounds.minY) {
-        Matter.World.remove(this.world, marble.body);
-        return false;
+        // Find spawnpoint
+        const spawnpoint = this.levelObjects.find(obj => 
+          obj.properties && obj.properties.includes('spawnpoint')
+        );
+
+        if (spawnpoint) {
+          // Respawn marble at spawnpoint
+          Matter.Body.setPosition(marble.body, { 
+            x: spawnpoint.x, 
+            y: spawnpoint.y - 50 
+          });
+          Matter.Body.setVelocity(marble.body, { x: 0, y: 0 });
+        }
       }
-      return true;
     });
 
     this.emotes = this.emotes.filter(emote => {
