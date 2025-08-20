@@ -85,8 +85,8 @@
       "isStatic": true,
       "isSolid": true,
       "zIndex": 0,
-      "friction": 0.3,
-      "restitution": 0.3,
+      "friction": 0.01,
+      "restitution": 0.01,
       "properties": []
     },
     {
