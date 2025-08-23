@@ -24,6 +24,9 @@ class Game {
         this.loginScreen = null;
         this.gameScreen = null;
         this.levelSelectModal = null;
+
+        // Track if a level has been loaded to prevent double-loading
+        this.levelLoaded = false;
     }
 
     // Linear interpolation function
@@ -173,6 +176,32 @@ class Game {
                             }
                         });
                     }
+                }
+
+                // Show dev-only UI elements
+                const devOnlyIds = [
+                    'playerInfo',
+                    'gameControls',
+                    'onlinePlayers',
+                    'chat',
+                    'gameUI'
+                ];
+                devOnlyIds.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        // Use '' to revert to CSS default, or 'block' for block elements
+                        if (id === 'chat') {
+                            el.style.display = '';
+                        } else {
+                            el.style.display = '';
+                        }
+                    }
+                });
+            } else {
+                // Auto-load level1.json if not in dev mode
+                if (!this.levelLoaded) {
+                    this.loadLevel('level1');
+                    this.levelLoaded = true;
                 }
             }
         } catch (error) {
@@ -370,9 +399,20 @@ class Game {
             return (a.zIndex || 0) - (b.zIndex || 0);
         });
         
-        // Render level objects (static, no interpolation needed)
+        // Render level objects (interpolated for movable, static as before)
         sortedObjects.forEach(obj => {
-            this.renderer.drawLevelObject(obj);
+            if (obj.isStatic === false) {
+                const interpolated = this.getInterpolatedPosition(`levelobj_${obj.id}`);
+                if (interpolated) {
+                    // Use interpolated position/angle
+                    const objCopy = { ...obj, x: interpolated.x, y: interpolated.y, angle: interpolated.angle };
+                    this.renderer.drawLevelObject(objCopy);
+                } else {
+                    this.renderer.drawLevelObject(obj);
+                }
+            } else {
+                this.renderer.drawLevelObject(obj);
+            }
         });
         
         // Render marbles with smooth interpolation
@@ -507,6 +547,15 @@ class Game {
                 this.updateInterpolationData(`emote_${emote.id}`, emote.x, emote.y, emote.angle);
             });
         }
+
+        // Update interpolation data for movable level objects
+        if (gameState.levelObjects) {
+            gameState.levelObjects.forEach(obj => {
+                if (obj.isStatic === false) {
+                    this.updateInterpolationData(`levelobj_${obj.id}`, obj.x, obj.y, obj.angle || 0);
+                }
+            });
+        }
         
         // Clean up interpolation data for objects that no longer exist
         this.cleanupInterpolationData(gameState);
@@ -525,6 +574,13 @@ class Game {
         }
         if (gameState.emotes) {
             gameState.emotes.forEach(emote => existingIds.add(`emote_${emote.id}`));
+        }
+        if (gameState.levelObjects) {
+            gameState.levelObjects.forEach(obj => {
+                if (obj.isStatic === false) {
+                    existingIds.add(`levelobj_${obj.id}`);
+                }
+            });
         }
         
         // Remove interpolation data for objects that no longer exist
