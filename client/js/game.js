@@ -174,6 +174,26 @@ class Game {
                         });
                     }
                 }
+
+                // Show dev-only UI elements
+                const devOnlyIds = [
+                    'playerInfo',
+                    'gameControls',
+                    'onlinePlayers',
+                    'chat',
+                    'gameUI'
+                ];
+                devOnlyIds.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        // Use '' to revert to CSS default, or 'block' for block elements
+                        if (id === 'chat') {
+                            el.style.display = '';
+                        } else {
+                            el.style.display = '';
+                        }
+                    }
+                });
             }
         } catch (error) {
             console.log('Could not check dev mode:', error);
