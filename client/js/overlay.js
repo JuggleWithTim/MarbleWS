@@ -88,6 +88,17 @@ class TransparentRenderer extends Renderer {
             });
         }
 
+        // Movable level objects
+        if (gameState.levelObjects) {
+            gameState.levelObjects.forEach(obj => {
+                if (obj.isStatic === false) {
+                    const id = `levelobj_${obj.id}`;
+                    updateInterpolationData(id, obj.x, obj.y, obj.angle || 0);
+                    existingIds.add(id);
+                }
+            });
+        }
+
         // Cleanup
         for (const [objectId] of interpolatedObjects) {
             if (!existingIds.has(objectId)) {
@@ -101,10 +112,22 @@ class TransparentRenderer extends Renderer {
         renderer.clear();
         renderer.setCamera(960, 540, 1);
 
-        // Draw level objects
+        // Draw level objects (interpolated for movable, static as before)
         if (gameState.levelObjects) {
             const sortedObjects = [...gameState.levelObjects].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
-            sortedObjects.forEach(obj => renderer.drawLevelObject(obj));
+            sortedObjects.forEach(obj => {
+                if (obj.isStatic === false) {
+                    const interpolated = getInterpolatedPosition(`levelobj_${obj.id}`);
+                    if (interpolated) {
+                        const objCopy = { ...obj, x: interpolated.x, y: interpolated.y, angle: interpolated.angle };
+                        renderer.drawLevelObject(objCopy);
+                    } else {
+                        renderer.drawLevelObject(obj);
+                    }
+                } else {
+                    renderer.drawLevelObject(obj);
+                }
+            });
         }
 
         // Draw marbles with interpolation
