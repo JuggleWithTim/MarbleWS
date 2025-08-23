@@ -24,6 +24,9 @@ class Game {
         this.loginScreen = null;
         this.gameScreen = null;
         this.levelSelectModal = null;
+
+        // Track if a level has been loaded to prevent double-loading
+        this.levelLoaded = false;
     }
 
     // Linear interpolation function
@@ -194,6 +197,12 @@ class Game {
                         }
                     }
                 });
+            } else {
+                // Auto-load level1.json if not in dev mode
+                if (!this.levelLoaded) {
+                    this.loadLevel('level1');
+                    this.levelLoaded = true;
+                }
             }
         } catch (error) {
             console.log('Could not check dev mode:', error);

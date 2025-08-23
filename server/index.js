@@ -25,8 +25,19 @@ const GameLogic = require('./gameLogic');
 const TwitchChat = require('./twitchChat');
 const { setupSocketHandlers } = require('./socketHandlers');
 
-// Initialize game logic
+ // Initialize game logic
 const gameLogic = new GameLogic();
+
+ // Load default level at server start
+const fs = require('fs');
+const defaultLevelPath = path.join(__dirname, '../levels/level1.json');
+if (fs.existsSync(defaultLevelPath)) {
+  const levelData = JSON.parse(fs.readFileSync(defaultLevelPath, 'utf8'));
+  gameLogic.loadLevel(levelData);
+  console.log('Default level loaded at server start.');
+} else {
+  console.error('Default level file not found!');
+}
 
 // Initialize Twitch chat integration
 const twitchChat = new TwitchChat(gameLogic);
