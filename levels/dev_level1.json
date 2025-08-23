@@ -208,7 +208,7 @@
       "restitution": 0.3,
       "properties": [],
       "backgroundImage": "./img/alienplanet1.png",
-      "isSolid": false,
+      "isSolid": true,
       "zIndex": 0
     }
   ],
