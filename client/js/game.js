@@ -386,10 +386,10 @@ class Game {
         this.networking.sendBeamInteraction(worldPos.x, worldPos.y);
     }
 
-    render() {
-        if (!this.renderer || !this.gameState) return;
+    render() {if (!this.renderer || !this.gameState) return;
         
-        this.renderer.clear();
+        // Draw level background if provided, else gradient fallback
+        this.renderer.drawBackground(this.gameState.backgroundImage);
         
         // Fixed camera view - no following, show entire 1920x1080 game area
         this.renderer.setCamera(960, 540, 1); // Center of 1920x1080 canvas

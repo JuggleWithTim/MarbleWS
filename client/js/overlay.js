@@ -3,6 +3,23 @@ class TransparentRenderer extends Renderer {
         // Only clear the canvas, do not fill with any color or gradient
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     }
+
+    drawBackground(imageUrl) {
+        // Keep overlay transparent unless a background image is provided
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        if (imageUrl) {
+            const cached = this.images.get(imageUrl);
+            if (cached) {
+                // Draw image stretched to canvas; PNG alpha is preserved by drawImage
+                this.ctx.drawImage(cached, 0, 0, this.canvas.width, this.canvas.height);
+                return;
+            }
+            // Start async load; remain transparent until it's loaded
+            this.loadImage(imageUrl);
+        }
+        // No gradient fallback for overlay; stays transparent
+    }
 }
 
 (function() {
@@ -108,8 +125,8 @@ class TransparentRenderer extends Renderer {
     }
 
     // Set camera to show the full board (centered, 1920x1080)
-    function renderGameState(gameState) {
-        renderer.clear();
+    function renderGameState(gameState) {// Draw level background (remove to keep transparent overlay)
+        renderer.drawBackground(gameState.backgroundImage);
         renderer.setCamera(960, 540, 1);
 
         // Draw level objects (interpolated for movable, static as before)

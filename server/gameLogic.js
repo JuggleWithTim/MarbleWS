@@ -462,10 +462,9 @@ class GameLogic {
         player.y = 200;
       }
     });
-  }
-
-  getGameState() {
+  }getGameState() {
     return {
+      backgroundImage: (this.currentLevel && this.currentLevel.backgroundImage) ? this.currentLevel.backgroundImage : '',
       players: Array.from(this.players.values()).map(player => ({
         id: player.id,
         username: player.username,
