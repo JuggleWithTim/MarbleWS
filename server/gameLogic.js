@@ -429,17 +429,36 @@ class GameLogic {
     this.marbles.forEach(marble => {
       if (marble.body.position.y > worldBounds.minY) {
         // Find spawnpoint
-        const spawnpoint = this.levelObjects.find(obj => 
+        const spawnpoint = this.levelObjects.find(obj =>
           obj.properties && obj.properties.includes('spawnpoint')
         );
 
         if (spawnpoint) {
           // Respawn marble at spawnpoint
-          Matter.Body.setPosition(marble.body, { 
-            x: spawnpoint.x, 
-            y: spawnpoint.y - 50 
+          Matter.Body.setPosition(marble.body, {
+            x: spawnpoint.x,
+            y: spawnpoint.y - 50
           });
           Matter.Body.setVelocity(marble.body, { x: 0, y: 0 });
+        }
+      }
+    });
+
+    // Check movable level objects that fell off the world and respawn them
+    this.levelObjects.forEach(obj => {
+      if (!obj.isStatic && obj.body && obj.body.position.y > worldBounds.minY) {
+        // Find spawnpoint
+        const spawnpoint = this.levelObjects.find(sp =>
+          sp.properties && sp.properties.includes('spawnpoint')
+        );
+
+        if (spawnpoint) {
+          // Respawn object at spawnpoint
+          Matter.Body.setPosition(obj.body, {
+            x: spawnpoint.x,
+            y: spawnpoint.y - 50
+          });
+          Matter.Body.setVelocity(obj.body, { x: 0, y: 0 });
         }
       }
     });
