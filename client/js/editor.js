@@ -10,11 +10,11 @@ class LevelEditor {
         this.gridSize = 20;
         this.showGrid = true;
         this.snapToGrid = true;
-        
+
         // Canvas scaling factors (display size vs logical size)
         this.scaleX = 1920 / 1280; // 1.5
         this.scaleY = 1080 / 720;  // 1.5
-        
+
         this.level = {
             name: 'new-level',
             description: '',
@@ -22,11 +22,17 @@ class LevelEditor {
             backgroundImage: '',
             objects: []
         };
-        
+
         this.backgroundImage = null; // To store the loaded image
         this.objectImages = new Map(); // Cache for object background images
-        
+
         this.objectIdCounter = 1;
+
+        // Resize state
+        this.isResizing = false;
+        this.resizeCorner = null;
+        this.originalSize = null;
+        this.resizeHandleSize = 8;
     }
 
     init() {
@@ -176,32 +182,82 @@ class LevelEditor {
         // Convert display coordinates to logical coordinates
         const x = (e.clientX - rect.left) * this.scaleX;
         const y = (e.clientY - rect.top) * this.scaleY;
-        
+
         this.mousePos = { x, y };
-        
+
         if (this.snapToGrid) {
             this.mousePos.x = Math.round(x / this.gridSize) * this.gridSize;
             this.mousePos.y = Math.round(y / this.gridSize) * this.gridSize;
         }
-        
+
         // Update mouse position display (show logical coordinates)
         document.getElementById('mousePos').textContent = `Mouse: ${Math.round(this.mousePos.x)}, ${Math.round(this.mousePos.y)}`;
-        
+
+        // Handle resizing
+        if (this.isResizing) {
+            this.performResize(this.mousePos.x, this.mousePos.y);
+            return;
+        }
+
         // Handle dragging
         if (this.isDragging && this.selectedObject) {
             this.selectedObject.x = this.mousePos.x;
             this.selectedObject.y = this.mousePos.y;
             this.render();
+            return;
+        }
+
+        // Update cursor based on resize handles
+        if (this.currentTool === 'select' && this.selectedObject) {
+            const resizeHandle = this.getResizeHandleAt(this.mousePos.x, this.mousePos.y);
+            if (resizeHandle) {
+                switch (resizeHandle) {
+                    case 'nw':
+                        this.canvas.style.cursor = 'nw-resize';
+                        break;
+                    case 'ne':
+                        this.canvas.style.cursor = 'ne-resize';
+                        break;
+                    case 'sw':
+                        this.canvas.style.cursor = 'sw-resize';
+                        break;
+                    case 'se':
+                        this.canvas.style.cursor = 'se-resize';
+                        break;
+                    case 'radius':
+                        this.canvas.style.cursor = 'ew-resize';
+                        break;
+                }
+            } else {
+                // Check if mouse is over the object for moving
+                const objectAtMouse = this.getObjectAt(this.mousePos.x, this.mousePos.y);
+                if (objectAtMouse === this.selectedObject) {
+                    this.canvas.style.cursor = 'move';
+                } else {
+                    this.canvas.style.cursor = 'default';
+                }
+            }
         }
     }
 
     onMouseUp(e) {
         this.isDragging = false;
+        this.isResizing = false;
+        this.resizeCorner = null;
+        this.originalSize = null;
+        this.updateStatus('Ready');
     }
 
     handleSelect(x, y) {
+        // First check if clicking on a resize handle
+        const resizeHandle = this.getResizeHandleAt(x, y);
+        if (resizeHandle) {
+            this.startResizing(resizeHandle);
+            return;
+        }
+
         const clickedObject = this.getObjectAt(x, y);
-        
+
         if (clickedObject) {
             this.selectObject(clickedObject);
             this.isDragging = true;
@@ -221,7 +277,7 @@ class LevelEditor {
         // Check objects in reverse order (top to bottom)
         for (let i = this.level.objects.length - 1; i >= 0; i--) {
             const obj = this.level.objects[i];
-            
+
             if (obj.shape === 'rectangle') {
                 if (x >= obj.x - obj.width/2 && x <= obj.x + obj.width/2 &&
                     y >= obj.y - obj.height/2 && y <= obj.y + obj.height/2) {
@@ -234,8 +290,131 @@ class LevelEditor {
                 }
             }
         }
-        
+
         return null;
+    }
+
+    getResizeHandleAt(x, y) {
+        if (!this.selectedObject) return null;
+
+        const obj = this.selectedObject;
+        const handleSize = this.resizeHandleSize;
+
+        if (obj.shape === 'rectangle') {
+            // Check all 4 corners
+            const corners = [
+                { name: 'nw', x: obj.x - obj.width/2, y: obj.y - obj.height/2 },
+                { name: 'ne', x: obj.x + obj.width/2, y: obj.y - obj.height/2 },
+                { name: 'sw', x: obj.x - obj.width/2, y: obj.y + obj.height/2 },
+                { name: 'se', x: obj.x + obj.width/2, y: obj.y + obj.height/2 }
+            ];
+
+            for (const corner of corners) {
+                if (x >= corner.x - handleSize && x <= corner.x + handleSize &&
+                    y >= corner.y - handleSize && y <= corner.y + handleSize) {
+                    return corner.name;
+                }
+            }
+        } else if (obj.shape === 'circle') {
+            // For circles, use a single resize handle on the right edge
+            const handleX = obj.x + obj.radius;
+            const handleY = obj.y;
+
+            if (x >= handleX - handleSize && x <= handleX + handleSize &&
+                y >= handleY - handleSize && y <= handleY + handleSize) {
+                return 'radius';
+            }
+        }
+
+        return null;
+    }
+
+    startResizing(corner) {
+        if (!this.selectedObject) return;
+
+        this.isResizing = true;
+        this.resizeCorner = corner;
+        this.originalSize = {
+            width: this.selectedObject.width,
+            height: this.selectedObject.height,
+            radius: this.selectedObject.radius,
+            x: this.selectedObject.x,
+            y: this.selectedObject.y
+        };
+
+        this.updateStatus(`Resizing ${this.selectedObject.id} from ${corner} corner`);
+    }
+
+    performResize(x, y) {
+        if (!this.isResizing || !this.selectedObject) return;
+
+        const obj = this.selectedObject;
+        const original = this.originalSize;
+        const preserveAspectRatio = event.shiftKey; // Check if Shift is held
+
+        if (obj.shape === 'rectangle') {
+            let newWidth = original.width;
+            let newHeight = original.height;
+
+            switch (this.resizeCorner) {
+                case 'nw':
+                    newWidth = original.x + original.width/2 - x;
+                    newHeight = original.y + original.height/2 - y;
+                    obj.x = x + newWidth/2;
+                    obj.y = y + newHeight/2;
+                    break;
+                case 'ne':
+                    newWidth = x - (original.x - original.width/2);
+                    newHeight = original.y + original.height/2 - y;
+                    obj.x = original.x - original.width/2 + newWidth/2;
+                    obj.y = y + newHeight/2;
+                    break;
+                case 'sw':
+                    newWidth = original.x + original.width/2 - x;
+                    newHeight = y - (original.y - original.height/2);
+                    obj.x = x + newWidth/2;
+                    obj.y = original.y - original.height/2 + newHeight/2;
+                    break;
+                case 'se':
+                    newWidth = x - (original.x - original.width/2);
+                    newHeight = y - (original.y - original.height/2);
+                    obj.x = original.x - original.width/2 + newWidth/2;
+                    obj.y = original.y - original.height/2 + newHeight/2;
+                    break;
+            }
+
+            // Prevent negative sizes
+            newWidth = Math.max(10, newWidth);
+            newHeight = Math.max(10, newHeight);
+
+            // Preserve aspect ratio if Shift is held
+            if (preserveAspectRatio) {
+                const aspectRatio = original.width / original.height;
+                if (Math.abs(newWidth - original.width) > Math.abs(newHeight - original.height)) {
+                    newHeight = newWidth / aspectRatio;
+                } else {
+                    newWidth = newHeight * aspectRatio;
+                }
+            }
+
+            obj.width = Math.round(newWidth);
+            obj.height = Math.round(newHeight);
+
+        } else if (obj.shape === 'circle') {
+            // For circles, resize based on distance from center to mouse
+            const distance = Math.sqrt(Math.pow(x - original.x, 2) + Math.pow(y - original.y, 2));
+            obj.radius = Math.max(5, Math.round(distance));
+        }
+
+        // Update property inputs
+        if (obj.shape === 'rectangle') {
+            document.getElementById('objectWidth').value = obj.width;
+            document.getElementById('objectHeight').value = obj.height;
+        } else if (obj.shape === 'circle') {
+            document.getElementById('objectRadius').value = obj.radius;
+        }
+
+        this.render();
     }
 
     createRectangle(x, y) {
@@ -695,7 +874,7 @@ class LevelEditor {
         this.ctx.strokeStyle = '#ff6b6b';
         this.ctx.lineWidth = 3;
         this.ctx.setLineDash([]);
-        
+
         if (obj.shape === 'rectangle') {
             this.ctx.strokeRect(
                 obj.x - obj.width/2 - 2,
@@ -703,10 +882,42 @@ class LevelEditor {
                 obj.width + 4,
                 obj.height + 4
             );
+
+            // Draw resize handles
+            this.ctx.fillStyle = '#ff6b6b';
+            const handleSize = this.resizeHandleSize;
+            const corners = [
+                { x: obj.x - obj.width/2, y: obj.y - obj.height/2 },
+                { x: obj.x + obj.width/2, y: obj.y - obj.height/2 },
+                { x: obj.x - obj.width/2, y: obj.y + obj.height/2 },
+                { x: obj.x + obj.width/2, y: obj.y + obj.height/2 }
+            ];
+
+            corners.forEach(corner => {
+                this.ctx.fillRect(
+                    corner.x - handleSize/2,
+                    corner.y - handleSize/2,
+                    handleSize,
+                    handleSize
+                );
+            });
         } else if (obj.shape === 'circle') {
             this.ctx.beginPath();
             this.ctx.arc(obj.x, obj.y, obj.radius + 2, 0, Math.PI * 2);
             this.ctx.stroke();
+
+            // Draw resize handle for circle
+            this.ctx.fillStyle = '#ff6b6b';
+            const handleSize = this.resizeHandleSize;
+            const handleX = obj.x + obj.radius;
+            const handleY = obj.y;
+
+            this.ctx.fillRect(
+                handleX - handleSize/2,
+                handleY - handleSize/2,
+                handleSize,
+                handleSize
+            );
         }
     }
 
