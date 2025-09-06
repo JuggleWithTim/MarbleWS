@@ -32,7 +32,7 @@ class LevelEditor {
         this.isResizing = false;
         this.resizeCorner = null;
         this.originalSize = null;
-        this.resizeHandleSize = 8;
+        this.resizeHandleSize = 10;
     }
 
     init() {
@@ -178,65 +178,99 @@ class LevelEditor {
     }
 
     onMouseMove(e) {
-        const rect = this.canvas.getBoundingClientRect();
-        // Convert display coordinates to logical coordinates
-        const x = (e.clientX - rect.left) * this.scaleX;
-        const y = (e.clientY - rect.top) * this.scaleY;
+        try {
+            const rect = this.canvas.getBoundingClientRect();
+            // Convert display coordinates to logical coordinates
+            const x = (e.clientX - rect.left) * this.scaleX;
+            const y = (e.clientY - rect.top) * this.scaleY;
 
-        this.mousePos = { x, y };
+            this.mousePos = { x, y };
 
-        if (this.snapToGrid) {
-            this.mousePos.x = Math.round(x / this.gridSize) * this.gridSize;
-            this.mousePos.y = Math.round(y / this.gridSize) * this.gridSize;
+            if (this.snapToGrid) {
+                this.mousePos.x = Math.round(x / this.gridSize) * this.gridSize;
+                this.mousePos.y = Math.round(y / this.gridSize) * this.gridSize;
+            }
+
+            // Update mouse position display (show logical coordinates)
+            const mousePosElement = document.getElementById('mousePos');
+            if (mousePosElement) {
+                mousePosElement.textContent = `Mouse: ${Math.round(this.mousePos.x)}, ${Math.round(this.mousePos.y)}`;
+            }
+
+            // Handle resizing
+            if (this.isResizing) {
+                this.performResize(this.mousePos.x, this.mousePos.y, e.shiftKey);
+                return;
+            }
+
+            // Handle dragging
+            if (this.isDragging && this.selectedObject) {
+                this.selectedObject.x = this.mousePos.x;
+                this.selectedObject.y = this.mousePos.y;
+                this.render();
+                return;
+            }
+
+            // Update cursor based on resize handles
+            this.updateCursor();
+        } catch (error) {
+            console.error('Error in onMouseMove:', error);
+            this.resetCursor();
         }
+    }
 
-        // Update mouse position display (show logical coordinates)
-        document.getElementById('mousePos').textContent = `Mouse: ${Math.round(this.mousePos.x)}, ${Math.round(this.mousePos.y)}`;
+    updateCursor() {
+        if (!this.canvas) return;
 
-        // Handle resizing
-        if (this.isResizing) {
-            this.performResize(this.mousePos.x, this.mousePos.y);
-            return;
-        }
+        // Reset cursor to default first
+        let cursor = 'default';
 
-        // Handle dragging
-        if (this.isDragging && this.selectedObject) {
-            this.selectedObject.x = this.mousePos.x;
-            this.selectedObject.y = this.mousePos.y;
-            this.render();
-            return;
-        }
-
-        // Update cursor based on resize handles
         if (this.currentTool === 'select' && this.selectedObject) {
             const resizeHandle = this.getResizeHandleAt(this.mousePos.x, this.mousePos.y);
             if (resizeHandle) {
                 switch (resizeHandle) {
                     case 'nw':
-                        this.canvas.style.cursor = 'nw-resize';
+                        cursor = 'nw-resize';
                         break;
                     case 'ne':
-                        this.canvas.style.cursor = 'ne-resize';
+                        cursor = 'ne-resize';
                         break;
                     case 'sw':
-                        this.canvas.style.cursor = 'sw-resize';
+                        cursor = 'sw-resize';
                         break;
                     case 'se':
-                        this.canvas.style.cursor = 'se-resize';
+                        cursor = 'se-resize';
                         break;
                     case 'radius':
-                        this.canvas.style.cursor = 'ew-resize';
+                        cursor = 'ew-resize';
                         break;
                 }
             } else {
                 // Check if mouse is over the object for moving
                 const objectAtMouse = this.getObjectAt(this.mousePos.x, this.mousePos.y);
                 if (objectAtMouse === this.selectedObject) {
-                    this.canvas.style.cursor = 'move';
-                } else {
-                    this.canvas.style.cursor = 'default';
+                    cursor = 'move';
                 }
             }
+        } else {
+            // Set cursor based on current tool
+            switch (this.currentTool) {
+                case 'rectangle':
+                case 'circle':
+                    cursor = 'crosshair';
+                    break;
+                case 'delete':
+                    cursor = 'not-allowed';
+                    break;
+            }
+        }
+
+        this.canvas.style.cursor = cursor;
+    }
+
+    resetCursor() {
+        if (this.canvas) {
+            this.canvas.style.cursor = 'default';
         }
     }
 
@@ -300,8 +334,27 @@ class LevelEditor {
         const obj = this.selectedObject;
         const handleSize = this.resizeHandleSize;
 
+        // If object has rotation, we need to transform the mouse coordinates
+        // by the inverse rotation to check against the unrotated handle positions
+        let checkX = x;
+        let checkY = y;
+
+        if (obj.rotation && obj.rotation !== 0) {
+            // Apply inverse rotation to mouse coordinates
+            const cos = Math.cos(-obj.rotation);
+            const sin = Math.sin(-obj.rotation);
+
+            // Translate to object center
+            const dx = x - obj.x;
+            const dy = y - obj.y;
+
+            // Apply inverse rotation
+            checkX = dx * cos - dy * sin + obj.x;
+            checkY = dx * sin + dy * cos + obj.y;
+        }
+
         if (obj.shape === 'rectangle') {
-            // Check all 4 corners
+            // Check all 4 corners in the unrotated coordinate system
             const corners = [
                 { name: 'nw', x: obj.x - obj.width/2, y: obj.y - obj.height/2 },
                 { name: 'ne', x: obj.x + obj.width/2, y: obj.y - obj.height/2 },
@@ -310,8 +363,8 @@ class LevelEditor {
             ];
 
             for (const corner of corners) {
-                if (x >= corner.x - handleSize && x <= corner.x + handleSize &&
-                    y >= corner.y - handleSize && y <= corner.y + handleSize) {
+                if (checkX >= corner.x - handleSize && checkX <= corner.x + handleSize &&
+                    checkY >= corner.y - handleSize && checkY <= corner.y + handleSize) {
                     return corner.name;
                 }
             }
@@ -320,8 +373,8 @@ class LevelEditor {
             const handleX = obj.x + obj.radius;
             const handleY = obj.y;
 
-            if (x >= handleX - handleSize && x <= handleX + handleSize &&
-                y >= handleY - handleSize && y <= handleY + handleSize) {
+            if (checkX >= handleX - handleSize && checkX <= handleX + handleSize &&
+                checkY >= handleY - handleSize && checkY <= handleY + handleSize) {
                 return 'radius';
             }
         }
@@ -345,76 +398,111 @@ class LevelEditor {
         this.updateStatus(`Resizing ${this.selectedObject.id} from ${corner} corner`);
     }
 
-    performResize(x, y) {
+    performResize(x, y, shiftKey = false) {
         if (!this.isResizing || !this.selectedObject) return;
 
-        const obj = this.selectedObject;
-        const original = this.originalSize;
-        const preserveAspectRatio = event.shiftKey; // Check if Shift is held
+        try {
+            const obj = this.selectedObject;
+            const original = this.originalSize;
+            const preserveAspectRatio = shiftKey; // Check if Shift is held
 
-        if (obj.shape === 'rectangle') {
-            let newWidth = original.width;
-            let newHeight = original.height;
+            if (obj.shape === 'rectangle') {
+                let newWidth = original.width;
+                let newHeight = original.height;
 
-            switch (this.resizeCorner) {
-                case 'nw':
-                    newWidth = original.x + original.width/2 - x;
-                    newHeight = original.y + original.height/2 - y;
-                    obj.x = x + newWidth/2;
-                    obj.y = y + newHeight/2;
-                    break;
-                case 'ne':
-                    newWidth = x - (original.x - original.width/2);
-                    newHeight = original.y + original.height/2 - y;
-                    obj.x = original.x - original.width/2 + newWidth/2;
-                    obj.y = y + newHeight/2;
-                    break;
-                case 'sw':
-                    newWidth = original.x + original.width/2 - x;
-                    newHeight = y - (original.y - original.height/2);
-                    obj.x = x + newWidth/2;
-                    obj.y = original.y - original.height/2 + newHeight/2;
-                    break;
-                case 'se':
-                    newWidth = x - (original.x - original.width/2);
-                    newHeight = y - (original.y - original.height/2);
-                    obj.x = original.x - original.width/2 + newWidth/2;
-                    obj.y = original.y - original.height/2 + newHeight/2;
-                    break;
-            }
-
-            // Prevent negative sizes
-            newWidth = Math.max(10, newWidth);
-            newHeight = Math.max(10, newHeight);
-
-            // Preserve aspect ratio if Shift is held
-            if (preserveAspectRatio) {
-                const aspectRatio = original.width / original.height;
-                if (Math.abs(newWidth - original.width) > Math.abs(newHeight - original.height)) {
-                    newHeight = newWidth / aspectRatio;
-                } else {
-                    newWidth = newHeight * aspectRatio;
+                switch (this.resizeCorner) {
+                    case 'nw':
+                        newWidth = original.x + original.width/2 - x;
+                        newHeight = original.y + original.height/2 - y;
+                        obj.x = x + newWidth/2;
+                        obj.y = y + newHeight/2;
+                        break;
+                    case 'ne':
+                        newWidth = x - (original.x - original.width/2);
+                        newHeight = original.y + original.height/2 - y;
+                        obj.x = original.x - original.width/2 + newWidth/2;
+                        obj.y = y + newHeight/2;
+                        break;
+                    case 'sw':
+                        newWidth = original.x + original.width/2 - x;
+                        newHeight = y - (original.y - original.height/2);
+                        obj.x = x + newWidth/2;
+                        obj.y = original.y - original.height/2 + newHeight/2;
+                        break;
+                    case 'se':
+                        newWidth = x - (original.x - original.width/2);
+                        newHeight = y - (original.y - original.height/2);
+                        obj.x = original.x - original.width/2 + newWidth/2;
+                        obj.y = original.y - original.height/2 + newHeight/2;
+                        break;
                 }
+
+                // Prevent negative sizes
+                newWidth = Math.max(10, newWidth);
+                newHeight = Math.max(10, newHeight);
+
+                // Preserve aspect ratio if Shift is held
+                if (preserveAspectRatio) {
+                    const aspectRatio = original.width / original.height;
+                    if (Math.abs(newWidth - original.width) > Math.abs(newHeight - original.height)) {
+                        newHeight = newWidth / aspectRatio;
+                    } else {
+                        newWidth = newHeight * aspectRatio;
+                    }
+                }
+
+                obj.width = Math.round(newWidth);
+                obj.height = Math.round(newHeight);
+
+            } else if (obj.shape === 'circle') {
+                // For circles, resize based on distance from center to mouse
+                const distance = Math.sqrt(Math.pow(x - original.x, 2) + Math.pow(y - original.y, 2));
+                obj.radius = Math.max(5, Math.round(distance));
             }
 
-            obj.width = Math.round(newWidth);
-            obj.height = Math.round(newHeight);
+            // Update property inputs with error handling
+            this.updatePropertyInputs(obj);
 
-        } else if (obj.shape === 'circle') {
-            // For circles, resize based on distance from center to mouse
-            const distance = Math.sqrt(Math.pow(x - original.x, 2) + Math.pow(y - original.y, 2));
-            obj.radius = Math.max(5, Math.round(distance));
+            this.render();
+        } catch (error) {
+            console.error('Error in performResize:', error);
+            this.resetResizeState();
         }
+    }
 
-        // Update property inputs
-        if (obj.shape === 'rectangle') {
-            document.getElementById('objectWidth').value = obj.width;
-            document.getElementById('objectHeight').value = obj.height;
-        } else if (obj.shape === 'circle') {
-            document.getElementById('objectRadius').value = obj.radius;
+    updatePropertyInputs(obj) {
+        try {
+            if (obj.shape === 'rectangle') {
+                const widthInput = document.getElementById('objectWidth');
+                const heightInput = document.getElementById('objectHeight');
+                if (widthInput) widthInput.value = obj.width;
+                if (heightInput) heightInput.value = obj.height;
+            } else if (obj.shape === 'circle') {
+                const radiusInput = document.getElementById('objectRadius');
+                if (radiusInput) radiusInput.value = obj.radius;
+            }
+        } catch (error) {
+            console.error('Error updating property inputs:', error);
         }
+    }
 
-        this.render();
+    resetResizeState() {
+        this.isResizing = false;
+        this.resizeCorner = null;
+        this.originalSize = null;
+        this.resetCursor();
+    }
+
+    validateCanvasState() {
+        if (!this.canvas) {
+            console.error('Canvas element not found');
+            return false;
+        }
+        if (!this.ctx) {
+            console.error('Canvas context not available');
+            return false;
+        }
+        return true;
     }
 
     createRectangle(x, y) {
@@ -693,39 +781,48 @@ class LevelEditor {
     }
 
     render() {
-        // Clear canvas
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        
-        // Draw background
-        if (this.backgroundImage) {
-            // Draw the background image
-            this.ctx.drawImage(this.backgroundImage, 0, 0, this.canvas.width, this.canvas.height);
-            
-            // Add a slight overlay to ensure objects are visible
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        } else {
-            // Draw default gradient background
-            const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
-            gradient.addColorStop(0, '#1a1a2e');
-            gradient.addColorStop(1, '#16213e');
-            this.ctx.fillStyle = gradient;
-            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        }
-        
-        // Draw grid
-        if (this.showGrid) {
-            this.drawGrid();
-        }
-        
-        // Draw objects
-        this.level.objects.forEach(obj => {
-            this.drawObject(obj);
-        });
-        
-        // Highlight selected object
-        if (this.selectedObject) {
-            this.drawObjectOutline(this.selectedObject);
+        try {
+            if (!this.validateCanvasState()) {
+                console.error('Canvas state invalid, skipping render');
+                return;
+            }
+
+            // Clear canvas
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+            // Draw background
+            if (this.backgroundImage) {
+                // Draw the background image
+                this.ctx.drawImage(this.backgroundImage, 0, 0, this.canvas.width, this.canvas.height);
+
+                // Add a slight overlay to ensure objects are visible
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            } else {
+                // Draw default gradient background
+                const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
+                gradient.addColorStop(0, '#1a1a2e');
+                gradient.addColorStop(1, '#16213e');
+                this.ctx.fillStyle = gradient;
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            }
+
+            // Draw grid
+            if (this.showGrid) {
+                this.drawGrid();
+            }
+
+            // Draw objects
+            this.level.objects.forEach(obj => {
+                this.drawObject(obj);
+            });
+
+            // Highlight selected object
+            if (this.selectedObject) {
+                this.drawObjectOutline(this.selectedObject);
+            }
+        } catch (error) {
+            console.error('Error in render:', error);
         }
     }
 
@@ -871,6 +968,15 @@ class LevelEditor {
     }
 
     drawObjectOutline(obj) {
+        this.ctx.save(); // Save context state
+
+        // Apply the same rotation transformation as drawObject
+        if (obj.rotation && obj.rotation !== 0) {
+            this.ctx.translate(obj.x, obj.y);
+            this.ctx.rotate(obj.rotation);
+            this.ctx.translate(-obj.x, -obj.y);
+        }
+
         this.ctx.strokeStyle = '#ff6b6b';
         this.ctx.lineWidth = 3;
         this.ctx.setLineDash([]);
@@ -919,6 +1025,8 @@ class LevelEditor {
                 handleSize
             );
         }
+
+        this.ctx.restore(); // Restore context state
     }
 
     newLevel() {
