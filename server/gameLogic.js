@@ -255,102 +255,110 @@ class GameLogic {
     const player = this.players.get(socketId);
     if (!player || !player.beamActive) return;
 
-    // Find objects within beam range (cone shape under UFO)
+    // Define beam polygon (trapezoid) under UFO
     const beamRange = 120;
     const beamWidth = 80;
-    
-    // Check if target is within beam cone
-    const dx = targetX - player.x;
-    const dy = targetY - player.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    
-    if (distance <= beamRange && dy > -20) { // Must be below or near UFO level
-      // Find all objects within beam area
-      const objectsInBeam = [];
-      
-      [...this.marbles, ...this.emotes, ...this.levelObjects.filter(obj => !obj.isStatic)]
-        .forEach(obj => {
-          const objDx = obj.body.position.x - player.x;
-          const objDy = obj.body.position.y - player.y;
-          const objDistance = Math.sqrt(objDx * objDx + objDy * objDy);
-          
-          // Check if object is in beam cone
-          if (objDistance <= beamRange && objDy > -30) {
-            const lateralDistance = Math.abs(objDx);
-            const maxLateralDistance = beamWidth * (objDistance / beamRange);
-            
-            if (lateralDistance <= maxLateralDistance) {
-              objectsInBeam.push({
-                obj,
-                distance: objDistance
-              });
-            }
-          }
-        });
+    const px = player.x;
+    const py = player.y;
 
-      // Apply forces to all objects in beam
-      objectsInBeam.forEach(({ obj, distance }) => {
-        const forceMultiplier = Math.max(0.1, 1 - (distance / beamRange));
-        
-        // Strong upward force
-        const upwardForce = -0.05 * forceMultiplier;
-        
-        // Slight attraction towards UFO center
-        const attractionForce = {
-          x: (player.x - obj.body.position.x) * 0.002 * forceMultiplier,
-          y: upwardForce
-        };
-        
-        Matter.Body.applyForce(obj.body, obj.body.position, attractionForce);
-        
-        // Reduce gravity effect while in beam
-        if (obj.body.render) {
-          obj.body.render.strokeStyle = '#4ecdc4';
-          obj.body.render.lineWidth = 2;
-        }
-      });
-      
-      if (objectsInBeam.length > 0) {
-        player.beamTarget = objectsInBeam[0].obj.id;
+    // Vertices of the beam polygon (trapezoid)
+    const beamPolygon = [
+      { x: px - beamWidth * 0.5, y: py + 18 }, // left top
+      { x: px + beamWidth * 0.5, y: py + 18 }, // right top
+      { x: px + beamWidth * 1.5, y: py + beamRange }, // right bottom
+      { x: px - beamWidth * 1.5, y: py + beamRange }  // left bottom
+    ];
+
+    // Create a Matter.Vertices object for the beam polygon
+    const MatterVertices = Matter.Vertices || require('matter-js').Vertices;
+    const beamVerts = beamPolygon.map(v => ({ x: v.x, y: v.y }));
+
+    // Find all objects whose body overlaps the beam polygon
+    const candidates = [...this.marbles, ...this.emotes, ...this.levelObjects.filter(obj => !obj.isStatic)];
+    const objectsInBeam = [];
+
+    candidates.forEach(obj => {
+      // Use Matter.Query.region to check for overlap
+      // Get the object's bounds
+      const bounds = obj.body.bounds;
+      // Check if any of the object's vertices are inside the beam polygon
+      const objVerts = obj.body.vertices;
+      const overlap = objVerts.some(v => Matter.Vertices.contains(beamVerts, v));
+      // Also check if any of the beam polygon's vertices are inside the object (for full overlap)
+      const beamOverlap = beamVerts.some(v => Matter.Vertices.contains(objVerts, v));
+      if (overlap || beamOverlap) {
+        // Use distance for force scaling
+        const objDx = obj.body.position.x - px;
+        const objDy = obj.body.position.y - py;
+        const objDistance = Math.sqrt(objDx * objDx + objDy * objDy);
+        objectsInBeam.push({
+          obj,
+          distance: objDistance
+        });
       }
+    });
+
+    // Apply forces to all objects in beam
+    objectsInBeam.forEach(({ obj, distance }) => {
+      const forceMultiplier = Math.max(0.1, 1 - (distance / beamRange));
+      // Strong upward force
+      const upwardForce = -0.05 * forceMultiplier;
+      // Slight attraction towards UFO center
+      const attractionForce = {
+        x: (px - obj.body.position.x) * 0.002 * forceMultiplier,
+        y: upwardForce
+      };
+      Matter.Body.applyForce(obj.body, obj.body.position, attractionForce);
+      // Reduce gravity effect while in beam
+      if (obj.body.render) {
+        obj.body.render.strokeStyle = '#4ecdc4';
+        obj.body.render.lineWidth = 2;
+      }
+    });
+
+    if (objectsInBeam.length > 0) {
+      player.beamTarget = objectsInBeam[0].obj.id;
     }
   }
 
   // New method for continuous beam effects
   updateBeamEffects() {
+    const MatterVertices = Matter.Vertices || require('matter-js').Vertices;
     this.players.forEach(player => {
       if (player.beamActive) {
-        // Apply continuous beam effects in a cone below the UFO
+        // Define beam polygon (trapezoid) under UFO
         const beamRange = 120;
         const beamWidth = 80;
-        
-        [...this.marbles, ...this.emotes, ...this.levelObjects.filter(obj => !obj.isStatic)]
-          .forEach(obj => {
-            const dx = obj.body.position.x - player.x;
-            const dy = obj.body.position.y - player.y;
+        const px = player.x;
+        const py = player.y;
+        const beamPolygon = [
+          { x: px - beamWidth * 0.5, y: py + 18 },
+          { x: px + beamWidth * 0.5, y: py + 18 },
+          { x: px + beamWidth * 1.5, y: py + beamRange },
+          { x: px - beamWidth * 1.5, y: py + beamRange }
+        ];
+        const beamVerts = beamPolygon.map(v => ({ x: v.x, y: v.y }));
+
+        const candidates = [...this.marbles, ...this.emotes, ...this.levelObjects.filter(obj => !obj.isStatic)];
+        candidates.forEach(obj => {
+          const objVerts = obj.body.vertices;
+          const overlap = objVerts.some(v => Matter.Vertices.contains(beamVerts, v));
+          const beamOverlap = beamVerts.some(v => Matter.Vertices.contains(objVerts, v));
+          if (overlap || beamOverlap) {
+            const dx = obj.body.position.x - px;
+            const dy = obj.body.position.y - py;
             const distance = Math.sqrt(dx * dx + dy * dy);
-            
-            // Check if object is in beam cone (below UFO)
-            if (distance <= beamRange && dy > -30) {
-              const lateralDistance = Math.abs(dx);
-              const maxLateralDistance = beamWidth * (distance / beamRange);
-              
-              if (lateralDistance <= maxLateralDistance) {
-                const forceMultiplier = Math.max(0.1, 1 - (distance / beamRange));
-                
-                // Continuous upward force
-                const upwardForce = -0.02 * forceMultiplier;
-                
-                // Attraction towards UFO center
-                const attractionForce = {
-                  x: (player.x - obj.body.position.x) * 0.001 * forceMultiplier,
-                  y: upwardForce
-                };
-                
-                Matter.Body.applyForce(obj.body, obj.body.position, attractionForce);
-              }
-            }
-          });
+            const forceMultiplier = Math.max(0.1, 1 - (distance / beamRange));
+            // Continuous upward force
+            const upwardForce = -0.02 * forceMultiplier;
+            // Attraction towards UFO center
+            const attractionForce = {
+              x: (px - obj.body.position.x) * 0.001 * forceMultiplier,
+              y: upwardForce
+            };
+            Matter.Body.applyForce(obj.body, obj.body.position, attractionForce);
+          }
+        });
       }
     });
   }
@@ -454,10 +462,9 @@ class GameLogic {
         player.y = 200;
       }
     });
-  }
-
-  getGameState() {
+  }getGameState() {
     return {
+      backgroundImage: (this.currentLevel && this.currentLevel.backgroundImage) ? this.currentLevel.backgroundImage : '',
       players: Array.from(this.players.values()).map(player => ({
         id: player.id,
         username: player.username,

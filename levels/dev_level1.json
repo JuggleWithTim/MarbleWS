@@ -208,9 +208,9 @@
       "restitution": 0.3,
       "properties": [],
       "backgroundImage": "./img/alienplanet1.png",
-      "isSolid": false,
+      "isSolid": true,
       "zIndex": 0
     }
   ],
-  "backgroundImage": ""
+  "backgroundImage": "https://media.discordapp.net/attachments/459402932178124800/1383499183260045312/IMG_2242.png?ex=68ac9e05&is=68ab4c85&hm=5a5085a1b70966ed3612a9a0a6cc9921713b72967d0c4d38f0a934648207aa20&=&format=webp&quality=lossless"
 }

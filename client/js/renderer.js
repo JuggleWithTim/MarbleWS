@@ -9,12 +9,33 @@ class Renderer {
         };
         this.images = new Map();
         this.loadedImages = new Set();
-    }
-
-    clear() {
+    }clear() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
         // Draw background
+        const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
+        gradient.addColorStop(0, '#1a1a2e');
+        gradient.addColorStop(1, '#16213e');
+        this.ctx.fillStyle = gradient;
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+
+    drawBackground(imageUrl) {
+        // Clear the canvas
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        if (imageUrl) {
+            const cached = this.images.get(imageUrl);
+            if (cached) {
+                // Stretch background to full canvas
+                this.ctx.drawImage(cached, 0, 0, this.canvas.width, this.canvas.height);
+                return;
+            }
+            // Start async load, will be used next frame once loaded
+            this.loadImage(imageUrl);
+        }
+
+        // Fallback gradient if no image or not yet loaded
         const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
         gradient.addColorStop(0, '#1a1a2e');
         gradient.addColorStop(1, '#16213e');
@@ -40,16 +61,15 @@ class Renderer {
             x: (screenX - this.canvas.width / 2) / this.camera.zoom + this.camera.x,
             y: (screenY - this.canvas.height / 2) / this.camera.zoom + this.camera.y
         };
-    }
-
-    async loadImage(url) {
+    }async loadImage(url) {
         if (this.images.has(url)) {
             return this.images.get(url);
         }
 
         return new Promise((resolve, reject) => {
             const img = new Image();
-            img.crossOrigin = 'anonymous';
+            // Removed crossOrigin to avoid blocking remote images without CORS
+            // img.crossOrigin = 'anonymous';
             img.onload = () => {
                 this.images.set(url, img);
                 this.loadedImages.add(url);

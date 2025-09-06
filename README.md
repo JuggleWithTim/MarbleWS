@@ -47,11 +47,20 @@ A real-time multiplayer 2D physics game built with Node.js, Socket.io, and Matte
    - Create a Twitch application at https://dev.twitch.tv/console
    - Update `.env` file with your credentials:
    ```env
+
+   # Twitch API Configuration
    TWITCH_CLIENT_ID=your_twitch_client_id_here
    TWITCH_CLIENT_SECRET=your_twitch_client_secret_here
-   TWITCH_REDIRECT_URI=http://localhost:3000/auth/twitch/callback
-   TWITCH_CHANNEL=your_twitch_channel_here
+   TWITCH_REDIRECT_URI=http://localhost:3000/auth/twitch/callback/
+   TWITCH_CHANNEL=channelname
+
+   # Twitch Bot Configuration
+   TWITCH_BOT_USERNAME=botusername
+   TWITCH_BOT_OAUTH_TOKEN=oauth:00000000000
+
+   # Server Configuration
    PORT=3000
+   DEV_MODE=true
    ```
 
 3. **Start the Server**
