@@ -1,0 +1,79 @@
+{
+  "name": "level1",
+  "description": "",
+  "version": "1.0",
+  "backgroundImage": "",
+  "objects": [
+    {
+      "id": "circle_1",
+      "shape": "circle",
+      "x": 920,
+      "y": 80,
+      "radius": 40,
+      "rotation": 0,
+      "color": "#00ff40",
+      "backgroundImage": "",
+      "isStatic": true,
+      "isSolid": false,
+      "zIndex": 0,
+      "friction": 0.3,
+      "restitution": 0.3,
+      "properties": [
+        "spawnpoint"
+      ]
+    },
+    {
+      "id": "circle_2",
+      "shape": "circle",
+      "x": 1700,
+      "y": 940,
+      "radius": 40,
+      "rotation": 0,
+      "color": "#ff8000",
+      "backgroundImage": "",
+      "isStatic": true,
+      "isSolid": false,
+      "zIndex": 0,
+      "friction": 0.3,
+      "restitution": 0.3,
+      "properties": [
+        "goal"
+      ],
+      "nextLevel": "dev_level2"
+    },
+    {
+      "id": "rect_4",
+      "shape": "rectangle",
+      "x": 900,
+      "y": 500,
+      "width": 540,
+      "height": 86,
+      "rotation": 0,
+      "color": "#00ffff",
+      "backgroundImage": "",
+      "isStatic": true,
+      "isSolid": true,
+      "zIndex": 0,
+      "friction": 0.3,
+      "restitution": 0.3,
+      "properties": []
+    },
+    {
+      "id": "rect_3",
+      "shape": "rectangle",
+      "x": 820,
+      "y": 880,
+      "width": 540,
+      "height": 86,
+      "rotation": 0,
+      "color": "#00ffff",
+      "backgroundImage": "",
+      "isStatic": true,
+      "isSolid": true,
+      "zIndex": 0,
+      "friction": 0.3,
+      "restitution": 0.3,
+      "properties": []
+    }
+  ]
+}
