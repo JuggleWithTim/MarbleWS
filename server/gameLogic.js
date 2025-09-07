@@ -274,7 +274,8 @@ class GameLogic {
     const beamVerts = beamPolygon.map(v => ({ x: v.x, y: v.y }));
 
     // Find all objects whose body overlaps the beam polygon
-    const candidates = [...this.marbles, ...this.emotes, ...this.levelObjects.filter(obj => !obj.isStatic)];
+    const otherPlayers = Array.from(this.players.values()).filter(p => p.id !== player.id);
+    const candidates = [...this.marbles, ...this.emotes, ...this.levelObjects.filter(obj => !obj.isStatic), ...otherPlayers];
     const objectsInBeam = [];
 
     candidates.forEach(obj => {
@@ -339,7 +340,9 @@ class GameLogic {
         ];
         const beamVerts = beamPolygon.map(v => ({ x: v.x, y: v.y }));
 
-        const candidates = [...this.marbles, ...this.emotes, ...this.levelObjects.filter(obj => !obj.isStatic)];
+        // Include other players in beam candidates
+        const otherPlayers = Array.from(this.players.values()).filter(p => p.id !== player.id);
+        const candidates = [...this.marbles, ...this.emotes, ...this.levelObjects.filter(obj => !obj.isStatic), ...otherPlayers];
         candidates.forEach(obj => {
           const objVerts = obj.body.vertices;
           const overlap = objVerts.some(v => Matter.Vertices.contains(beamVerts, v));
@@ -357,6 +360,11 @@ class GameLogic {
               y: upwardForce
             };
             Matter.Body.applyForce(obj.body, obj.body.position, attractionForce);
+            // Visual effect for objects in beam
+            if (obj.body.render) {
+              obj.body.render.strokeStyle = '#4ecdc4';
+              obj.body.render.lineWidth = 2;
+            }
           }
         });
       }
