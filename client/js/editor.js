@@ -20,19 +20,26 @@ class LevelEditor {
             description: '',
             version: '1.0',
             backgroundImage: '',
-            objects: []
+            objects: [],
+            connections: []
         };
 
         this.backgroundImage = null; // To store the loaded image
         this.objectImages = new Map(); // Cache for object background images
 
         this.objectIdCounter = 1;
+        this.connectionIdCounter = 1;
 
         // Resize state
         this.isResizing = false;
         this.resizeCorner = null;
         this.originalSize = null;
         this.resizeHandleSize = 10;
+
+        // Connection state
+        this.isConnecting = false;
+        this.connectionStart = null;
+        this.connections = [];
     }
 
     init() {
@@ -139,6 +146,9 @@ class LevelEditor {
             case 'circle':
                 this.canvas.style.cursor = 'crosshair';
                 break;
+            case 'connect':
+                this.canvas.style.cursor = 'pointer';
+                break;
             case 'delete':
                 this.canvas.style.cursor = 'not-allowed';
                 break;
@@ -170,6 +180,9 @@ class LevelEditor {
                 break;
             case 'circle':
                 this.createCircle(this.mousePos.x, this.mousePos.y);
+                break;
+            case 'connect':
+                this.handleConnect(this.mousePos.x, this.mousePos.y);
                 break;
             case 'delete':
                 this.handleDelete(this.mousePos.x, this.mousePos.y);
@@ -259,6 +272,9 @@ class LevelEditor {
                 case 'circle':
                     cursor = 'crosshair';
                     break;
+                case 'connect':
+                    cursor = 'pointer';
+                    break;
                 case 'delete':
                     cursor = 'not-allowed';
                     break;
@@ -298,6 +314,82 @@ class LevelEditor {
         } else {
             this.selectObject(null);
         }
+    }
+
+    handleConnect(x, y) {
+        const clickedObject = this.getObjectAt(x, y);
+
+        if (clickedObject) {
+            if (!this.connectionStart) {
+                // First click - select starting object
+                this.connectionStart = clickedObject;
+                this.updateStatus(`Connecting from: ${clickedObject.id}`);
+            } else if (this.connectionStart === clickedObject) {
+                // Clicked same object - cancel connection
+                this.connectionStart = null;
+                this.updateStatus('Connection cancelled');
+            } else {
+                // Second click - create connection between the two objects
+                this.createConnection(this.connectionStart, clickedObject);
+                this.connectionStart = null;
+                this.updateStatus('Connection created. Click another object to start a new connection.');
+            }
+        } else if (this.connectionStart) {
+            // Clicked empty space - cancel connection
+            this.connectionStart = null;
+            this.updateStatus('Connection cancelled');
+        }
+    }
+
+    createConnection(objA, objB) {
+        // Get selected connection type from dropdown
+        const connectionType = document.getElementById('connectionType').value;
+
+        // Create connection properties based on type
+        const connection = {
+            id: `connection_${this.connectionIdCounter++}`,
+            type: connectionType,
+            bodyA: objA.id,
+            bodyB: objB.id,
+            pointA: { x: 0, y: 0 }, // Center of object A
+            pointB: { x: 0, y: 0 }, // Center of object B
+            length: Math.sqrt(Math.pow(objB.x - objA.x, 2) + Math.pow(objB.y - objA.y, 2)), // Distance between centers
+            stiffness: 1,
+            damping: 0.1
+        };
+
+        // Adjust properties based on connection type
+        switch (connectionType) {
+            case 'revolute':
+                // Revolute joint - fixed stiffness, low damping
+                connection.stiffness = 1;
+                connection.damping = 0.1;
+                break;
+            case 'rope':
+                // Rope - no stiffness (slack), low damping
+                connection.stiffness = 0;
+                connection.damping = 0.05;
+                break;
+            case 'spring':
+                // Spring - medium stiffness, medium damping
+                connection.stiffness = 0.1;
+                connection.damping = 0.05;
+                break;
+            case 'distance':
+                // Distance - high stiffness (fixed length), low damping
+                connection.stiffness = 1;
+                connection.damping = 0.1;
+                break;
+        }
+
+        // Initialize connections array if it doesn't exist
+        if (!this.level.connections) {
+            this.level.connections = [];
+        }
+
+        this.level.connections.push(connection);
+        this.render();
+        this.updateStatus(`Created ${connection.type} connection: ${objA.id} ↔ ${objB.id}`);
     }
 
     handleDelete(x, y) {
@@ -690,13 +782,22 @@ class LevelEditor {
     deleteObject(obj) {
         const index = this.level.objects.indexOf(obj);
         if (index > -1) {
+            // Remove the object from the objects array
             this.level.objects.splice(index, 1);
+
+            // Remove any connections that reference this object
+            if (this.level.connections) {
+                this.level.connections = this.level.connections.filter(connection =>
+                    connection.bodyA !== obj.id && connection.bodyB !== obj.id
+                );
+            }
+
             if (this.selectedObject === obj) {
                 this.selectObject(null);
             }
             this.updateObjectList();
             this.render();
-            this.updateStatus(`Deleted: ${obj.id}`);
+            this.updateStatus(`Deleted: ${obj.id} and related connections`);
         }
     }
 
@@ -810,6 +911,13 @@ class LevelEditor {
             // Draw grid
             if (this.showGrid) {
                 this.drawGrid();
+            }
+
+            // Draw connections first (behind objects)
+            if (this.level.connections) {
+                this.level.connections.forEach(connection => {
+                    this.drawConnection(connection);
+                });
             }
 
             // Draw objects
@@ -1029,6 +1137,70 @@ class LevelEditor {
         this.ctx.restore(); // Restore context state
     }
 
+    drawConnection(connection) {
+        // Find the connected objects
+        const objA = this.level.objects.find(obj => obj.id === connection.bodyA);
+        const objB = this.level.objects.find(obj => obj.id === connection.bodyB);
+
+        if (!objA || !objB) return;
+
+        // Calculate connection points (centers for now, could be enhanced to use pointA/pointB)
+        const startX = objA.x;
+        const startY = objA.y;
+        const endX = objB.x;
+        const endY = objB.y;
+
+        // Set line style based on connection type
+        this.ctx.save();
+        this.ctx.lineWidth = 3;
+        this.ctx.setLineDash([]);
+
+        switch (connection.type) {
+            case 'revolute':
+                this.ctx.strokeStyle = '#ff6b6b'; // Red for revolute joints
+                break;
+            case 'rope':
+                this.ctx.strokeStyle = '#4ecdc4'; // Teal for ropes
+                this.ctx.setLineDash([10, 5]);
+                break;
+            case 'spring':
+                this.ctx.strokeStyle = '#ffff00'; // Yellow for springs
+                this.ctx.setLineDash([5, 5]);
+                break;
+            case 'distance':
+                this.ctx.strokeStyle = '#00ff00'; // Green for distance constraints
+                break;
+            default:
+                this.ctx.strokeStyle = '#ffffff'; // White for unknown types
+        }
+
+        // Draw the connection line
+        this.ctx.beginPath();
+        this.ctx.moveTo(startX, startY);
+        this.ctx.lineTo(endX, endY);
+        this.ctx.stroke();
+
+        // Draw connection points
+        this.ctx.fillStyle = this.ctx.strokeStyle;
+        this.ctx.beginPath();
+        this.ctx.arc(startX, startY, 4, 0, Math.PI * 2);
+        this.ctx.fill();
+
+        this.ctx.beginPath();
+        this.ctx.arc(endX, endY, 4, 0, Math.PI * 2);
+        this.ctx.fill();
+
+        // Draw connection type label
+        const midX = (startX + endX) / 2;
+        const midY = (startY + endY) / 2;
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.font = '10px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText(connection.type.toUpperCase(), midX, midY - 5);
+
+        this.ctx.restore();
+    }
+
     newLevel() {
         if (confirm('Create a new level? This will clear the current level.')) {
             this.level = {
@@ -1036,16 +1208,18 @@ class LevelEditor {
                 description: '',
                 version: '1.0',
                 backgroundImage: '',
-                objects: []
+                objects: [],
+                connections: []
             };
-            
+
             document.getElementById('levelName').value = this.level.name;
             document.getElementById('levelDescription').value = this.level.description;
             document.getElementById('backgroundImage').value = '';
             this.backgroundImage = null;
-            
+
             this.selectedObject = null;
             this.objectIdCounter = 1;
+            this.connectionIdCounter = 1;
             this.updateObjectList();
             this.render();
             this.updateStatus('New level created');

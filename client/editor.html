@@ -206,7 +206,21 @@
                 <button class="tool-button active" data-tool="select">Select</button>
                 <button class="tool-button" data-tool="rectangle">Rectangle</button>
                 <button class="tool-button" data-tool="circle">Circle</button>
+                <button class="tool-button" data-tool="connect">Connect</button>
                 <button class="tool-button" data-tool="delete">Delete</button>
+            </div>
+
+            <div class="tool-section">
+                <h3>Connection Type</h3>
+                <div class="property-group">
+                    <label>Type:</label>
+                    <select id="connectionType">
+                        <option value="revolute">Revolute (Hinge)</option>
+                        <option value="rope">Rope</option>
+                        <option value="spring">Spring</option>
+                        <option value="distance">Distance</option>
+                    </select>
+                </div>
             </div>
             
             <div class="tool-section">
