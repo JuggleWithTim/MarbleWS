@@ -7,11 +7,11 @@
     {
       "id": "circle_1",
       "shape": "circle",
-      "x": 920,
-      "y": 80,
-      "radius": 40,
+      "x": 940,
+      "y": 140,
+      "radius": 25,
       "rotation": 0,
-      "color": "#00ff40",
+      "color": "#37fc14",
       "backgroundImage": "",
       "isStatic": true,
       "isSolid": false,
@@ -23,13 +23,30 @@
       ]
     },
     {
-      "id": "circle_2",
-      "shape": "circle",
-      "x": 1700,
-      "y": 940,
-      "radius": 40,
+      "id": "rect_2",
+      "shape": "rectangle",
+      "x": 930,
+      "y": 380,
+      "width": 540,
+      "height": 40,
       "rotation": 0,
-      "color": "#ff8000",
+      "color": "#888888",
+      "backgroundImage": "",
+      "isStatic": true,
+      "isSolid": true,
+      "zIndex": 0,
+      "friction": 0.3,
+      "restitution": 0.3,
+      "properties": []
+    },
+    {
+      "id": "circle_3",
+      "shape": "circle",
+      "x": 1660,
+      "y": 820,
+      "radius": 25,
+      "rotation": 0,
+      "color": "#b45c5c",
       "backgroundImage": "",
       "isStatic": true,
       "isSolid": false,
@@ -39,17 +56,16 @@
       "properties": [
         "goal"
       ],
-      "nextLevel": "dev_level2"
+      "nextLevel": "level2"
     },
     {
-      "id": "rect_4",
-      "shape": "rectangle",
-      "x": 900,
-      "y": 500,
-      "width": 540,
-      "height": 86,
+      "id": "circle_4",
+      "shape": "circle",
+      "x": 1340,
+      "y": 180,
+      "radius": 25,
       "rotation": 0,
-      "color": "#00ffff",
+      "color": "#629bae",
       "backgroundImage": "",
       "isStatic": true,
       "isSolid": true,
@@ -59,21 +75,40 @@
       "properties": []
     },
     {
-      "id": "rect_3",
+      "id": "rect_5",
       "shape": "rectangle",
-      "x": 820,
-      "y": 880,
-      "width": 540,
-      "height": 86,
+      "x": 1340,
+      "y": 460,
+      "width": 510,
+      "height": 20,
       "rotation": 0,
-      "color": "#00ffff",
+      "color": "#629bae",
       "backgroundImage": "",
-      "isStatic": true,
+      "isStatic": false,
       "isSolid": true,
       "zIndex": 0,
       "friction": 0.3,
       "restitution": 0.3,
       "properties": []
+    }
+  ],
+  "connections": [
+    {
+      "id": "connection_1",
+      "type": "spring",
+      "bodyA": "circle_4",
+      "bodyB": "rect_5",
+      "pointA": {
+        "x": 0,
+        "y": 0
+      },
+      "pointB": {
+        "x": 0,
+        "y": 0
+      },
+      "length": 280,
+      "stiffness": 0.1,
+      "damping": 0.05
     }
   ]
 }

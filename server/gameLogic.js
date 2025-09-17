@@ -9,11 +9,12 @@ class GameLogic {
     this.emotes = [];
     this.currentLevel = null;
     this.levelObjects = [];
+    this.constraints = [];
     this.eventListeners = new Map();
-    
+
     // Configure physics
     this.engine.world.gravity.y = 0.8;
-    
+
     // Start physics loop
     this.startPhysicsLoop();
   }
@@ -140,6 +141,13 @@ class GameLogic {
       Matter.World.remove(this.world, obj.body);
     });
     this.levelObjects = [];
+
+    // Clear existing constraints
+    this.constraints.forEach(constraint => {
+      Matter.World.remove(this.world, constraint);
+    });
+    this.constraints = [];
+
     this.marbles = [];
 
     this.currentLevel = levelData;
@@ -147,18 +155,18 @@ class GameLogic {
     // Create physics bodies for level objects
     levelData.objects.forEach(obj => {
       let body;
-      
+
       // Set up collision filtering based on isSolid property
       const collisionFilter = {
         category: 0x0001, // Default category
         mask: 0xFFFFFFFF  // Default mask (collide with everything)
       };
-      
+
       // If isSolid is explicitly set to false, set up collision filtering
       if (obj.isSolid === false) {
         collisionFilter.mask = 0x0000; // Don't collide with anything
       }
-      
+
       if (obj.shape === 'rectangle') {
         body = Matter.Bodies.rectangle(obj.x, obj.y, obj.width, obj.height, {
           isStatic: obj.isStatic,
@@ -186,7 +194,7 @@ class GameLogic {
         if (obj.rotation && obj.rotation !== 0) {
           Matter.Body.setAngle(body, obj.rotation);
         }
-        
+
         Matter.World.add(this.world, body);
         this.levelObjects.push({
           ...obj,
@@ -199,12 +207,116 @@ class GameLogic {
         }
       }
     });
+
+    // Create constraints between objects
+    if (levelData.connections) {
+      levelData.connections.forEach(connection => {
+        this.createConstraint(connection);
+      });
+    }
+  }
+
+  createConstraint(connection) {
+    // Find the bodies by their object IDs
+    const bodyA = this.levelObjects.find(obj => obj.id === connection.bodyA)?.body;
+    const bodyB = this.levelObjects.find(obj => obj.id === connection.bodyB)?.body;
+
+    if (!bodyA || !bodyB) {
+      console.warn(`Could not create constraint: bodies not found for ${connection.bodyA} and ${connection.bodyB}`);
+      return;
+    }
+
+    let constraint;
+
+    switch (connection.type) {
+      case 'revolute':
+        // Revolute joint (hinge) - allows rotation around a point
+        constraint = Matter.Constraint.create({
+          bodyA: bodyA,
+          bodyB: bodyB,
+          pointA: connection.pointA || { x: 0, y: 0 },
+          pointB: connection.pointB || { x: 0, y: 0 },
+          length: connection.length || 0,
+          stiffness: connection.stiffness || 1,
+          damping: connection.damping || 0.1,
+          render: {
+            visible: true,
+            lineWidth: 2,
+            strokeStyle: '#ff6b6b'
+          }
+        });
+        break;
+
+      case 'rope':
+        // Rope constraint - maximum distance, can go slack
+        constraint = Matter.Constraint.create({
+          bodyA: bodyA,
+          bodyB: bodyB,
+          pointA: connection.pointA || { x: 0, y: 0 },
+          pointB: connection.pointB || { x: 0, y: 0 },
+          length: connection.length || 100,
+          stiffness: 0, // Rope should be slack
+          render: {
+            visible: true,
+            lineWidth: 2,
+            strokeStyle: '#4ecdc4'
+          }
+        });
+        break;
+
+      case 'spring':
+        // Spring constraint - elastic connection
+        constraint = Matter.Constraint.create({
+          bodyA: bodyA,
+          bodyB: bodyB,
+          pointA: connection.pointA || { x: 0, y: 0 },
+          pointB: connection.pointB || { x: 0, y: 0 },
+          length: connection.length || 100,
+          stiffness: connection.stiffness || 0.1,
+          damping: connection.damping || 0.05,
+          render: {
+            visible: true,
+            lineWidth: 2,
+            strokeStyle: '#ffff00'
+          }
+        });
+        break;
+
+      case 'distance':
+        // Fixed distance constraint
+        constraint = Matter.Constraint.create({
+          bodyA: bodyA,
+          bodyB: bodyB,
+          pointA: connection.pointA || { x: 0, y: 0 },
+          pointB: connection.pointB || { x: 0, y: 0 },
+          length: connection.length || 100,
+          stiffness: 1, // Fixed length
+          render: {
+            visible: true,
+            lineWidth: 2,
+            strokeStyle: '#00ff00'
+          }
+        });
+        break;
+
+      default:
+        console.warn(`Unknown constraint type: ${connection.type}`);
+        return;
+    }
+
+    if (constraint) {
+      Matter.World.add(this.world, constraint);
+      this.constraints.push({
+        ...connection,
+        constraint
+      });
+    }
   }
 
   spawnMarble(x, y) {
     const marble = Matter.Bodies.circle(x, y, 30, {
-      friction: 0.3,
-      restitution: 0.6,
+      friction: 0.01,
+      restitution: 0.7,
       render: {
         fillStyle: '#ff6b6b'
       }
@@ -535,6 +647,17 @@ class GameLogic {
         zIndex: obj.zIndex || 0,
         nextLevel: obj.nextLevel,
         properties: obj.properties
+      })),
+      connections: this.constraints.map(constraint => ({
+        id: constraint.id,
+        type: constraint.type,
+        bodyA: constraint.bodyA,
+        bodyB: constraint.bodyB,
+        pointA: constraint.pointA,
+        pointB: constraint.pointB,
+        length: constraint.length,
+        stiffness: constraint.stiffness,
+        damping: constraint.damping
       }))
     };
   }
