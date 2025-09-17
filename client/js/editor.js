@@ -40,12 +40,15 @@ class LevelEditor {
         this.isConnecting = false;
         this.connectionStart = null;
         this.connections = [];
+
+        // JSON panel state
+        this.jsonPanelVisible = false;
     }
 
     init() {
         this.canvas = document.getElementById('editorCanvas');
         this.ctx = this.canvas.getContext('2d');
-        
+
         this.setupEventListeners();
         this.updateObjectList();
         this.render();
@@ -126,6 +129,13 @@ class LevelEditor {
                 this.deleteObject(this.selectedObject);
             }
         });
+
+        // JSON panel event listeners
+        document.getElementById('toggleJsonPanel').addEventListener('click', () => this.toggleJsonPanel());
+        document.getElementById('closeJsonPanel').addEventListener('click', () => this.hideJsonPanel());
+        document.getElementById('formatJson').addEventListener('click', () => this.formatJson());
+        document.getElementById('applyJson').addEventListener('click', () => this.applyJsonChanges());
+        document.getElementById('resetJson').addEventListener('click', () => this.resetJson());
     }
 
     setTool(tool) {
@@ -389,6 +399,7 @@ class LevelEditor {
 
         this.level.connections.push(connection);
         this.render();
+        this.updateJsonDisplay();
         this.updateStatus(`Created ${connection.type} connection: ${objA.id} ↔ ${objB.id}`);
     }
 
@@ -633,6 +644,7 @@ class LevelEditor {
         this.selectObject(obj);
         this.updateObjectList();
         this.render();
+        this.updateJsonDisplay();
         this.updateStatus(`Created rectangle: ${obj.id}`);
     }
 
@@ -671,6 +683,7 @@ class LevelEditor {
         this.selectObject(obj);
         this.updateObjectList();
         this.render();
+        this.updateJsonDisplay();
         this.updateStatus(`Created circle: ${obj.id}`);
     }
 
@@ -797,6 +810,7 @@ class LevelEditor {
             }
             this.updateObjectList();
             this.render();
+            this.updateJsonDisplay();
             this.updateStatus(`Deleted: ${obj.id} and related connections`);
         }
     }
@@ -1222,6 +1236,7 @@ class LevelEditor {
             this.connectionIdCounter = 1;
             this.updateObjectList();
             this.render();
+            this.updateJsonDisplay();
             this.updateStatus('New level created');
         }
     }
@@ -1257,6 +1272,7 @@ class LevelEditor {
                 this.selectedObject = null;
                 this.updateObjectList();
                 this.render();
+                this.updateJsonDisplay();
                 this.updateStatus(`Loaded level: ${levelName}`);
             } else {
                 alert('Level not found!');
@@ -1323,5 +1339,93 @@ class LevelEditor {
 
     updateStatus(message) {
         document.getElementById('statusText').textContent = message;
+    }
+
+    // JSON Panel Methods
+    toggleJsonPanel() {
+        this.jsonPanelVisible = !this.jsonPanelVisible;
+        const panel = document.getElementById('jsonPanel');
+        if (this.jsonPanelVisible) {
+            panel.classList.add('visible');
+            this.updateJsonDisplay();
+        } else {
+            panel.classList.remove('visible');
+        }
+    }
+
+    hideJsonPanel() {
+        this.jsonPanelVisible = false;
+        const panel = document.getElementById('jsonPanel');
+        panel.classList.remove('visible');
+    }
+
+    updateJsonDisplay() {
+        if (!this.jsonPanelVisible) return;
+
+        const textarea = document.getElementById('levelJsonTextarea');
+        if (textarea) {
+            // Create a deep copy of the level data for display
+            const levelCopy = JSON.parse(JSON.stringify(this.level));
+            textarea.value = JSON.stringify(levelCopy, null, 2);
+        }
+    }
+
+    formatJson() {
+        const textarea = document.getElementById('levelJsonTextarea');
+        if (!textarea) return;
+
+        try {
+            const parsed = JSON.parse(textarea.value);
+            textarea.value = JSON.stringify(parsed, null, 2);
+            this.updateStatus('JSON formatted');
+        } catch (error) {
+            this.updateStatus('Invalid JSON - cannot format');
+        }
+    }
+
+    applyJsonChanges() {
+        const textarea = document.getElementById('levelJsonTextarea');
+        if (!textarea) return;
+
+        try {
+            const newLevelData = JSON.parse(textarea.value);
+
+            // Basic validation
+            if (!newLevelData.objects || !Array.isArray(newLevelData.objects)) {
+                throw new Error('Invalid level data: objects array required');
+            }
+
+            // Update the level data
+            this.level = newLevelData;
+
+            // Update UI elements
+            document.getElementById('levelName').value = this.level.name || '';
+            document.getElementById('levelDescription').value = this.level.description || '';
+            document.getElementById('backgroundImage').value = this.level.backgroundImage || '';
+
+            // Load background image if changed
+            this.loadBackgroundImage();
+
+            // Load object background images
+            this.level.objects.forEach(obj => {
+                if (obj.backgroundImage) {
+                    this.loadObjectImage(obj.backgroundImage);
+                }
+            });
+
+            // Reset selection and update UI
+            this.selectedObject = null;
+            this.updateObjectList();
+            this.render();
+            this.updateStatus('JSON changes applied successfully');
+        } catch (error) {
+            this.updateStatus(`Error applying JSON: ${error.message}`);
+            console.error('JSON apply error:', error);
+        }
+    }
+
+    resetJson() {
+        this.updateJsonDisplay();
+        this.updateStatus('JSON reset to current level state');
     }
 }
