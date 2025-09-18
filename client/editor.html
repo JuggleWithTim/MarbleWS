@@ -10,6 +10,7 @@
             display: flex;
             height: 100vh;
             background: #1a1a2e;
+            position: relative;
         }
         
         .editor-sidebar {
@@ -102,6 +103,16 @@
             color: white;
             font-size: 0.9em;
         }
+
+        .property-group select {
+            background: rgba(0, 0, 0, 0.5);
+            color: #ffffff;
+        }
+
+        .property-group select option {
+            background: rgba(0, 0, 0, 0.9);
+            color: #ffffff;
+        }
         
         .property-group input[type="color"] {
             height: 35px;
@@ -179,6 +190,98 @@
             border-top: 1px solid rgba(255, 255, 255, 0.1);
             font-size: 0.8em;
             color: #aaa;
+        }
+
+        .json-panel {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 400px;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.9);
+            border-left: 2px solid rgba(255, 255, 255, 0.1);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .json-panel.visible {
+            transform: translateX(0);
+        }
+
+        .json-panel-header {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .json-panel-header h3 {
+            color: #4ecdc4;
+            margin: 0;
+            font-size: 1.1em;
+        }
+
+        .json-panel-content {
+            flex: 1;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .json-textarea {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            color: #ffffff;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8em;
+            padding: 10px;
+            resize: none;
+            line-height: 1.4;
+            white-space: pre;
+            overflow-wrap: normal;
+            overflow-x: auto;
+        }
+
+        .json-textarea:focus {
+            outline: none;
+            border-color: #4ecdc4;
+            box-shadow: 0 0 5px rgba(78, 205, 196, 0.3);
+        }
+
+        .json-panel-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .json-button {
+            background: #4ecdc4;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: background 0.3s ease;
+        }
+
+        .json-button:hover {
+            background: #44a08d;
+        }
+
+        .json-button.danger {
+            background: #ff6b6b;
+        }
+
+        .json-button.danger:hover {
+            background: #e55a5a;
         }
     </style>
 </head>
@@ -302,6 +405,7 @@
                 <span style="margin-left: 20px;">Snap:</span>
                 <input type="checkbox" id="snapToGrid" checked>
                 <input type="number" id="gridSize" value="20" min="10" max="50" class="toolbar-input" style="width: 60px; margin-left: 10px;">
+                <button class="tool-button" id="toggleJsonPanel" style="margin-left: auto;">📄 JSON</button>
             </div>
             
             <div class="editor-canvas-container">
@@ -311,6 +415,22 @@
             <div class="status-bar">
                 <span id="statusText">Ready</span>
                 <span style="float: right;" id="mousePos">Mouse: 0, 0</span>
+            </div>
+        </div>
+
+        <!-- JSON Panel -->
+        <div class="json-panel" id="jsonPanel">
+            <div class="json-panel-header">
+                <h3>Level JSON</h3>
+                <button class="json-button" id="closeJsonPanel">✕</button>
+            </div>
+            <div class="json-panel-content">
+                <textarea class="json-textarea" id="levelJsonTextarea" placeholder="Level JSON will appear here..."></textarea>
+                <div class="json-panel-buttons">
+                    <button class="json-button" id="formatJson">Format</button>
+                    <button class="json-button" id="applyJson">Apply Changes</button>
+                    <button class="json-button danger" id="resetJson">Reset</button>
+                </div>
             </div>
         </div>
     </div>
