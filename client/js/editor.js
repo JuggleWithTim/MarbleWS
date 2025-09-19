@@ -610,14 +610,14 @@ class LevelEditor {
 
     createRectangle(x, y) {
         const backgroundImage = document.getElementById('objectBackgroundImage').value;
-        
+
         // Load the background image if provided
         if (backgroundImage) {
             this.loadObjectImage(backgroundImage);
         }
-        
+
         const obj = {
-            id: `rect_${this.objectIdCounter++}`,
+            id: this.generateUniqueObjectName('rect'),
             shape: 'rectangle',
             x: x,
             y: y,
@@ -633,13 +633,13 @@ class LevelEditor {
             restitution: parseFloat(document.getElementById('objectRestitution').value),
             properties: this.getSelectedProperties()
         };
-        
+
         // Add nextLevel property for goal objects
         const nextLevel = this.getNextLevel();
         if (nextLevel) {
             obj.nextLevel = nextLevel;
         }
-        
+
         this.level.objects.push(obj);
         this.selectObject(obj);
         this.updateObjectList();
@@ -650,14 +650,14 @@ class LevelEditor {
 
     createCircle(x, y) {
         const backgroundImage = document.getElementById('objectBackgroundImage').value;
-        
+
         // Load the background image if provided
         if (backgroundImage) {
             this.loadObjectImage(backgroundImage);
         }
-        
+
         const obj = {
-            id: `circle_${this.objectIdCounter++}`,
+            id: this.generateUniqueObjectName('circle'),
             shape: 'circle',
             x: x,
             y: y,
@@ -672,13 +672,13 @@ class LevelEditor {
             restitution: parseFloat(document.getElementById('objectRestitution').value),
             properties: this.getSelectedProperties()
         };
-        
+
         // Add nextLevel property for goal objects
         const nextLevel = this.getNextLevel();
         if (nextLevel) {
             obj.nextLevel = nextLevel;
         }
-        
+
         this.level.objects.push(obj);
         this.selectObject(obj);
         this.updateObjectList();
@@ -1244,31 +1244,37 @@ class LevelEditor {
     async loadLevel() {
         const levelName = prompt('Enter level name to load:');
         if (!levelName) return;
-        
+
         try {
             const response = await fetch(`/api/levels/${levelName}`);
             if (response.ok) {
                 const levelData = await response.json();
                 this.level = levelData;
-                
+
                 document.getElementById('levelName').value = this.level.name;
                 document.getElementById('levelDescription').value = this.level.description || '';
-                
+
                 // Ensure backgroundImage property exists
                 if (!this.level.hasOwnProperty('backgroundImage')) {
                     this.level.backgroundImage = '';
                 }
-                
+
                 document.getElementById('backgroundImage').value = this.level.backgroundImage || '';
                 this.loadBackgroundImage();
-                
+
                 // Load background images for objects
                 this.level.objects.forEach(obj => {
                     if (obj.backgroundImage) {
                         this.loadObjectImage(obj.backgroundImage);
                     }
                 });
-                
+
+                // Update counters based on existing objects to prevent duplicates
+                this.updateObjectCounters();
+
+                // Validate and fix any duplicate IDs that might exist
+                this.validateAndFixDuplicateIds();
+
                 this.selectedObject = null;
                 this.updateObjectList();
                 this.render();
@@ -1413,6 +1419,12 @@ class LevelEditor {
                 }
             });
 
+            // Update counters based on existing objects to prevent duplicates
+            this.updateObjectCounters();
+
+            // Validate and fix any duplicate IDs that might exist
+            this.validateAndFixDuplicateIds();
+
             // Reset selection and update UI
             this.selectedObject = null;
             this.updateObjectList();
@@ -1427,5 +1439,100 @@ class LevelEditor {
     resetJson() {
         this.updateJsonDisplay();
         this.updateStatus('JSON reset to current level state');
+    }
+
+    // Generate a unique object name that doesn't conflict with existing objects
+    generateUniqueObjectName(baseName) {
+        let counter = 1;
+        let candidateName = `${baseName}_${counter}`;
+
+        // Keep incrementing counter until we find a unique name
+        while (this.level.objects.some(obj => obj.id === candidateName)) {
+            counter++;
+            candidateName = `${baseName}_${counter}`;
+        }
+
+        return candidateName;
+    }
+
+    // Update object ID counters based on existing objects
+    updateObjectCounters() {
+        let maxRectId = 0;
+        let maxCircleId = 0;
+        let maxConnectionId = 0;
+
+        // Scan existing objects to find highest IDs
+        this.level.objects.forEach(obj => {
+            if (obj.id.startsWith('rect_')) {
+                const idNum = parseInt(obj.id.replace('rect_', ''));
+                if (!isNaN(idNum) && idNum > maxRectId) {
+                    maxRectId = idNum;
+                }
+            } else if (obj.id.startsWith('circle_')) {
+                const idNum = parseInt(obj.id.replace('circle_', ''));
+                if (!isNaN(idNum) && idNum > maxCircleId) {
+                    maxCircleId = idNum;
+                }
+            }
+        });
+
+        // Scan connections for highest ID
+        if (this.level.connections) {
+            this.level.connections.forEach(conn => {
+                if (conn.id.startsWith('connection_')) {
+                    const idNum = parseInt(conn.id.replace('connection_', ''));
+                    if (!isNaN(idNum) && idNum > maxConnectionId) {
+                        maxConnectionId = idNum;
+                    }
+                }
+            });
+        }
+
+        // Set counters to next available numbers
+        this.objectIdCounter = Math.max(maxRectId, maxCircleId) + 1;
+        this.connectionIdCounter = maxConnectionId + 1;
+    }
+
+    // Validate and fix duplicate object IDs in the level
+    validateAndFixDuplicateIds() {
+        const seenIds = new Set();
+        const duplicates = [];
+
+        // Find duplicates
+        this.level.objects.forEach(obj => {
+            if (seenIds.has(obj.id)) {
+                duplicates.push(obj);
+            } else {
+                seenIds.add(obj.id);
+            }
+        });
+
+        // Fix duplicates by generating new unique names
+        duplicates.forEach(obj => {
+            const baseName = obj.shape; // 'rectangle' or 'circle'
+            const newId = this.generateUniqueObjectName(baseName);
+            console.warn(`Fixed duplicate ID: ${obj.id} -> ${newId}`);
+            obj.id = newId;
+        });
+
+        // Update connections that reference the old IDs
+        if (this.level.connections) {
+            this.level.connections.forEach(conn => {
+                if (duplicates.some(obj => obj.id === conn.bodyA)) {
+                    const oldObj = duplicates.find(obj => obj.id === conn.bodyA);
+                    if (oldObj) conn.bodyA = oldObj.id;
+                }
+                if (duplicates.some(obj => obj.id === conn.bodyB)) {
+                    const oldObj = duplicates.find(obj => obj.id === conn.bodyB);
+                    if (oldObj) conn.bodyB = oldObj.id;
+                }
+            });
+        }
+
+        if (duplicates.length > 0) {
+            console.log(`Fixed ${duplicates.length} duplicate object IDs`);
+            this.updateObjectList();
+            this.render();
+        }
     }
 }
