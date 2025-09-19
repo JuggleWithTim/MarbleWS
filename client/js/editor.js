@@ -934,8 +934,13 @@ class LevelEditor {
                 });
             }
 
+            // Sort level objects by zIndex (if present) before rendering
+            const sortedObjects = [...this.level.objects].sort((a, b) => {
+                return (a.zIndex || 0) - (b.zIndex || 0);
+            });
+
             // Draw objects
-            this.level.objects.forEach(obj => {
+            sortedObjects.forEach(obj => {
                 this.drawObject(obj);
             });
 
