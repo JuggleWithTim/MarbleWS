@@ -39,6 +39,7 @@ class LevelEditor {
         // Connection state
         this.isConnecting = false;
         this.connectionStart = null;
+        this.connectionStartPoint = null; // Store click position relative to object center
         this.connections = [];
 
         // JSON panel state
@@ -331,29 +332,69 @@ class LevelEditor {
 
         if (clickedObject) {
             if (!this.connectionStart) {
-                // First click - select starting object
+                // First click - select starting object and store click position relative to center
                 this.connectionStart = clickedObject;
+                this.connectionStartPoint = this.getRelativeClickPosition(clickedObject, x, y);
                 this.updateStatus(`Connecting from: ${clickedObject.id}`);
             } else if (this.connectionStart === clickedObject) {
                 // Clicked same object - cancel connection
                 this.connectionStart = null;
+                this.connectionStartPoint = null;
                 this.updateStatus('Connection cancelled');
             } else {
                 // Second click - create connection between the two objects
-                this.createConnection(this.connectionStart, clickedObject);
+                const endPoint = this.getRelativeClickPosition(clickedObject, x, y);
+                this.createConnection(this.connectionStart, clickedObject, this.connectionStartPoint, endPoint);
                 this.connectionStart = null;
+                this.connectionStartPoint = null;
                 this.updateStatus('Connection created. Click another object to start a new connection.');
             }
         } else if (this.connectionStart) {
             // Clicked empty space - cancel connection
             this.connectionStart = null;
+            this.connectionStartPoint = null;
             this.updateStatus('Connection cancelled');
         }
     }
 
-    createConnection(objA, objB) {
+    createConnection(objA, objB, pointA, pointB) {
         // Get selected connection type from dropdown
         const connectionType = document.getElementById('connectionType').value;
+
+        // Calculate the actual attachment points in world coordinates
+        let attachPointA = { x: objA.x, y: objA.y };
+        let attachPointB = { x: objB.x, y: objB.y };
+
+        // Apply pointA offset to object A
+        if (pointA) {
+            if (objA.rotation && objA.rotation !== 0) {
+                // Apply rotation to the offset point
+                const cos = Math.cos(objA.rotation);
+                const sin = Math.sin(objA.rotation);
+                attachPointA.x += pointA.x * cos - pointA.y * sin;
+                attachPointA.y += pointA.x * sin + pointA.y * cos;
+            } else {
+                attachPointA.x += pointA.x;
+                attachPointA.y += pointA.y;
+            }
+        }
+
+        // Apply pointB offset to object B
+        if (pointB) {
+            if (objB.rotation && objB.rotation !== 0) {
+                // Apply rotation to the offset point
+                const cos = Math.cos(objB.rotation);
+                const sin = Math.sin(objB.rotation);
+                attachPointB.x += pointB.x * cos - pointB.y * sin;
+                attachPointB.y += pointB.x * sin + pointB.y * cos;
+            } else {
+                attachPointB.x += pointB.x;
+                attachPointB.y += pointB.y;
+            }
+        }
+
+        // Calculate the actual distance between attachment points
+        const length = Math.sqrt(Math.pow(attachPointB.x - attachPointA.x, 2) + Math.pow(attachPointB.y - attachPointA.y, 2));
 
         // Create connection properties based on type
         const connection = {
@@ -361,9 +402,9 @@ class LevelEditor {
             type: connectionType,
             bodyA: objA.id,
             bodyB: objB.id,
-            pointA: { x: 0, y: 0 }, // Center of object A
-            pointB: { x: 0, y: 0 }, // Center of object B
-            length: Math.sqrt(Math.pow(objB.x - objA.x, 2) + Math.pow(objB.y - objA.y, 2)), // Distance between centers
+            pointA: pointA, // Use the captured click position relative to object center
+            pointB: pointB, // Use the captured click position relative to object center
+            length: length, // Distance between actual attachment points
             stiffness: 1,
             damping: 0.1
         };
@@ -429,6 +470,27 @@ class LevelEditor {
         }
 
         return null;
+    }
+
+    getRelativeClickPosition(obj, clickX, clickY) {
+        // Calculate click position relative to object center
+        let relativeX = clickX - obj.x;
+        let relativeY = clickY - obj.y;
+
+        // If object has rotation, we need to apply inverse rotation to get the relative position
+        // in the object's local coordinate system
+        if (obj.rotation && obj.rotation !== 0) {
+            const cos = Math.cos(-obj.rotation);
+            const sin = Math.sin(-obj.rotation);
+
+            const rotatedX = relativeX * cos - relativeY * sin;
+            const rotatedY = relativeX * sin + relativeY * cos;
+
+            relativeX = rotatedX;
+            relativeY = rotatedY;
+        }
+
+        return { x: relativeX, y: relativeY };
     }
 
     getResizeHandleAt(x, y) {
@@ -1163,11 +1225,39 @@ class LevelEditor {
 
         if (!objA || !objB) return;
 
-        // Calculate connection points (centers for now, could be enhanced to use pointA/pointB)
-        const startX = objA.x;
-        const startY = objA.y;
-        const endX = objB.x;
-        const endY = objB.y;
+        // Calculate connection points using stored pointA/pointB offsets
+        let startX = objA.x;
+        let startY = objA.y;
+        let endX = objB.x;
+        let endY = objB.y;
+
+        // Apply pointA offset to object A
+        if (connection.pointA) {
+            if (objA.rotation && objA.rotation !== 0) {
+                // Apply rotation to the offset point
+                const cos = Math.cos(objA.rotation);
+                const sin = Math.sin(objA.rotation);
+                startX += connection.pointA.x * cos - connection.pointA.y * sin;
+                startY += connection.pointA.x * sin + connection.pointA.y * cos;
+            } else {
+                startX += connection.pointA.x;
+                startY += connection.pointA.y;
+            }
+        }
+
+        // Apply pointB offset to object B
+        if (connection.pointB) {
+            if (objB.rotation && objB.rotation !== 0) {
+                // Apply rotation to the offset point
+                const cos = Math.cos(objB.rotation);
+                const sin = Math.sin(objB.rotation);
+                endX += connection.pointB.x * cos - connection.pointB.y * sin;
+                endY += connection.pointB.x * sin + connection.pointB.y * cos;
+            } else {
+                endX += connection.pointB.x;
+                endY += connection.pointB.y;
+            }
+        }
 
         // Set line style based on connection type
         this.ctx.save();
