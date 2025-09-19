@@ -361,6 +361,41 @@ class LevelEditor {
         // Get selected connection type from dropdown
         const connectionType = document.getElementById('connectionType').value;
 
+        // Calculate the actual attachment points in world coordinates
+        let attachPointA = { x: objA.x, y: objA.y };
+        let attachPointB = { x: objB.x, y: objB.y };
+
+        // Apply pointA offset to object A
+        if (pointA) {
+            if (objA.rotation && objA.rotation !== 0) {
+                // Apply rotation to the offset point
+                const cos = Math.cos(objA.rotation);
+                const sin = Math.sin(objA.rotation);
+                attachPointA.x += pointA.x * cos - pointA.y * sin;
+                attachPointA.y += pointA.x * sin + pointA.y * cos;
+            } else {
+                attachPointA.x += pointA.x;
+                attachPointA.y += pointA.y;
+            }
+        }
+
+        // Apply pointB offset to object B
+        if (pointB) {
+            if (objB.rotation && objB.rotation !== 0) {
+                // Apply rotation to the offset point
+                const cos = Math.cos(objB.rotation);
+                const sin = Math.sin(objB.rotation);
+                attachPointB.x += pointB.x * cos - pointB.y * sin;
+                attachPointB.y += pointB.x * sin + pointB.y * cos;
+            } else {
+                attachPointB.x += pointB.x;
+                attachPointB.y += pointB.y;
+            }
+        }
+
+        // Calculate the actual distance between attachment points
+        const length = Math.sqrt(Math.pow(attachPointB.x - attachPointA.x, 2) + Math.pow(attachPointB.y - attachPointA.y, 2));
+
         // Create connection properties based on type
         const connection = {
             id: `connection_${this.connectionIdCounter++}`,
@@ -369,7 +404,7 @@ class LevelEditor {
             bodyB: objB.id,
             pointA: pointA, // Use the captured click position relative to object center
             pointB: pointB, // Use the captured click position relative to object center
-            length: Math.sqrt(Math.pow(objB.x - objA.x, 2) + Math.pow(objB.y - objA.y, 2)), // Distance between centers
+            length: length, // Distance between actual attachment points
             stiffness: 1,
             damping: 0.1
         };
