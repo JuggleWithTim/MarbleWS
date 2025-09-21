@@ -148,7 +148,17 @@ class GameLogic {
     });
     this.constraints = [];
 
+    // Clear existing marbles
+    this.marbles.forEach(marble => {
+      Matter.World.remove(this.world, marble.body);
+    });
     this.marbles = [];
+
+    // Clear existing emotes
+    this.emotes.forEach(emote => {
+      Matter.World.remove(this.world, emote.body);
+    });
+    this.emotes = [];
 
     this.currentLevel = levelData;
 
