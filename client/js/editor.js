@@ -117,17 +117,25 @@ class LevelEditor {
         
         // Property inputs
         const propertyInputs = [
-            'objectColor', 'objectBackgroundImage', 'objectWidth', 'objectHeight', 'objectRadius',
+            'objectColor', 'objectAlpha', 'objectBackgroundImage', 'objectWidth', 'objectHeight', 'objectRadius',
             'objectFriction', 'objectRestitution', 'objectRotation', 'objectStatic',
             'objectSpawnpoint', 'objectGoal', 'objectNextLevel', 'objectSolid', 'objectZIndex'
         ];
-        
+
         propertyInputs.forEach(id => {
             const element = document.getElementById(id);
             if (element) {
                 element.addEventListener('input', () => this.updateSelectedObject());
             }
         });
+
+        // Special handling for alpha slider to update display
+        const alphaInput = document.getElementById('objectAlpha');
+        if (alphaInput) {
+            alphaInput.addEventListener('input', (e) => {
+                this.updateAlphaDisplay(e.target.value);
+            });
+        }
         
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
@@ -772,6 +780,8 @@ class LevelEditor {
 
     createRectangle(x, y) {
         const backgroundImage = document.getElementById('objectBackgroundImage').value;
+        const hexColor = document.getElementById('objectColor').value;
+        const alpha = parseInt(document.getElementById('objectAlpha').value);
 
         // Load the background image if provided
         if (backgroundImage) {
@@ -786,7 +796,7 @@ class LevelEditor {
             width: parseInt(document.getElementById('objectWidth').value),
             height: parseInt(document.getElementById('objectHeight').value),
             rotation: parseFloat(document.getElementById('objectRotation').value) * Math.PI / 180, // Convert to radians
-            color: document.getElementById('objectColor').value,
+            color: this.createRgba(hexColor, alpha),
             backgroundImage: backgroundImage,
             isStatic: document.getElementById('objectStatic').checked,
             isSolid: document.getElementById('objectSolid').checked,
@@ -812,6 +822,8 @@ class LevelEditor {
 
     createCircle(x, y) {
         const backgroundImage = document.getElementById('objectBackgroundImage').value;
+        const hexColor = document.getElementById('objectColor').value;
+        const alpha = parseInt(document.getElementById('objectAlpha').value);
 
         // Load the background image if provided
         if (backgroundImage) {
@@ -825,7 +837,7 @@ class LevelEditor {
             y: y,
             radius: parseInt(document.getElementById('objectRadius').value),
             rotation: parseFloat(document.getElementById('objectRotation').value) * Math.PI / 180, // Convert to radians
-            color: document.getElementById('objectColor').value,
+            color: this.createRgba(hexColor, alpha),
             backgroundImage: backgroundImage,
             isStatic: document.getElementById('objectStatic').checked,
             isSolid: document.getElementById('objectSolid').checked,
@@ -867,12 +879,69 @@ class LevelEditor {
         return '';
     }
 
+    // Helper function to convert hex color to RGB components
+    hexToRgb(hex) {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? {
+            r: parseInt(result[1], 16),
+            g: parseInt(result[2], 16),
+            b: parseInt(result[3], 16)
+        } : null;
+    }
+
+    // Helper function to convert RGB to hex
+    rgbToHex(r, g, b) {
+        return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+    }
+
+    // Helper function to parse RGBA string and return components
+    parseRgba(rgbaString) {
+        const match = rgbaString.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+        if (match) {
+            return {
+                r: parseInt(match[1]),
+                g: parseInt(match[2]),
+                b: parseInt(match[3]),
+                a: match[4] ? parseFloat(match[4]) : 1
+            };
+        }
+        return null;
+    }
+
+    // Helper function to create RGBA string from hex and alpha
+    createRgba(hexColor, alpha) {
+        const rgb = this.hexToRgb(hexColor);
+        if (rgb) {
+            return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha / 255})`;
+        }
+        return hexColor; // fallback
+    }
+
     selectObject(obj) {
         this.selectedObject = obj;
-        
+
         if (obj) {
+            // Parse color and alpha from stored RGBA string or convert from hex
+            let colorHex = obj.color;
+            let alpha = 255; // default full opacity
+
+            if (obj.color && obj.color.startsWith('rgba(')) {
+                const rgba = this.parseRgba(obj.color);
+                if (rgba) {
+                    colorHex = this.rgbToHex(rgba.r, rgba.g, rgba.b);
+                    alpha = Math.round(rgba.a * 255);
+                }
+            } else if (obj.color && obj.color.startsWith('#')) {
+                // Legacy hex color, keep alpha at full
+                colorHex = obj.color;
+                alpha = 255;
+            }
+
             // Update property inputs
-            document.getElementById('objectColor').value = obj.color;
+            document.getElementById('objectColor').value = colorHex;
+            document.getElementById('objectAlpha').value = alpha;
+            this.updateAlphaDisplay(alpha);
+
             document.getElementById('objectBackgroundImage').value = obj.backgroundImage || '';
             document.getElementById('objectStatic').checked = obj.isStatic;
             document.getElementById('objectSolid').checked = obj.isSolid !== false; // Default to true if not specified
@@ -880,40 +949,49 @@ class LevelEditor {
             document.getElementById('objectFriction').value = obj.friction;
             document.getElementById('objectRestitution').value = obj.restitution;
             document.getElementById('objectRotation').value = Math.round((obj.rotation || 0) * 180 / Math.PI); // Convert to degrees
-            
+
             if (obj.shape === 'rectangle') {
                 document.getElementById('objectWidth').value = obj.width;
                 document.getElementById('objectHeight').value = obj.height;
             } else if (obj.shape === 'circle') {
                 document.getElementById('objectRadius').value = obj.radius;
             }
-            
+
             // Update property checkboxes
             document.getElementById('objectSpawnpoint').checked = obj.properties.includes('spawnpoint');
             document.getElementById('objectGoal').checked = obj.properties.includes('goal');
-            
+
             // Show/hide nextLevel field based on goal property
-            document.getElementById('nextLevelContainer').style.display = 
+            document.getElementById('nextLevelContainer').style.display =
                 obj.properties.includes('goal') ? 'block' : 'none';
-            
+
             // Set nextLevel value if it exists
             document.getElementById('objectNextLevel').value = obj.nextLevel || '';
-            
+
             this.updateStatus(`Selected: ${obj.id}`);
         } else {
             this.updateStatus('No object selected');
         }
-        
+
         this.updateObjectList();
         this.render();
     }
 
+    // Update alpha display percentage
+    updateAlphaDisplay(alpha) {
+        const alphaValueElement = document.getElementById('alphaValue');
+        if (alphaValueElement) {
+            const percentage = Math.round((alpha / 255) * 100);
+            alphaValueElement.textContent = `${percentage}%`;
+        }
+    }
+
     updateSelectedObject() {
         if (!this.selectedObject) return;
-        
+
         // Get the new background image value
         const newBackgroundImage = document.getElementById('objectBackgroundImage').value;
-        
+
         // Check if the background image has changed
         if (newBackgroundImage !== this.selectedObject.backgroundImage) {
             // Load the new background image
@@ -921,9 +999,12 @@ class LevelEditor {
                 this.loadObjectImage(newBackgroundImage);
             }
         }
-        
+
         // Update properties from inputs
-        this.selectedObject.color = document.getElementById('objectColor').value;
+        const hexColor = document.getElementById('objectColor').value;
+        const alpha = parseInt(document.getElementById('objectAlpha').value);
+        this.selectedObject.color = this.createRgba(hexColor, alpha);
+
         this.selectedObject.backgroundImage = newBackgroundImage;
         this.selectedObject.isStatic = document.getElementById('objectStatic').checked;
         this.selectedObject.isSolid = document.getElementById('objectSolid').checked;
@@ -931,17 +1012,17 @@ class LevelEditor {
         this.selectedObject.friction = parseFloat(document.getElementById('objectFriction').value);
         this.selectedObject.restitution = parseFloat(document.getElementById('objectRestitution').value);
         this.selectedObject.rotation = parseFloat(document.getElementById('objectRotation').value) * Math.PI / 180; // Convert to radians
-        
+
         if (this.selectedObject.shape === 'rectangle') {
             this.selectedObject.width = parseInt(document.getElementById('objectWidth').value);
             this.selectedObject.height = parseInt(document.getElementById('objectHeight').value);
         } else if (this.selectedObject.shape === 'circle') {
             this.selectedObject.radius = parseInt(document.getElementById('objectRadius').value);
         }
-        
+
         // Update properties
         this.selectedObject.properties = this.getSelectedProperties();
-        
+
         // Update nextLevel property for goal objects
         const nextLevel = this.getNextLevel();
         if (nextLevel) {
@@ -949,7 +1030,7 @@ class LevelEditor {
         } else if (this.selectedObject.nextLevel) {
             delete this.selectedObject.nextLevel;
         }
-        
+
         this.updateObjectList();
         this.render();
     }
