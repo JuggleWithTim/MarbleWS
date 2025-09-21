@@ -1215,32 +1215,13 @@ class LevelEditor {
                 this.ctx.fill();
             }
         }
-        
 
-
-        this.ctx.restore(); // Restore context state
-        
-        // Draw property indicators
-        if (obj.properties.includes('spawnpoint')) {
-            this.ctx.fillStyle = '#00ff00';
-            this.ctx.font = '12px Arial';
-            this.ctx.textAlign = 'center';
-            this.ctx.fillText('SPAWN', obj.x, obj.y - 20);
-        }
-        
-        if (obj.properties.includes('goal')) {
-            this.ctx.fillStyle = '#ffff00';
-            this.ctx.font = '12px Arial';
-            this.ctx.textAlign = 'center';
-            this.ctx.fillText('GOAL', obj.x, obj.y - 20);
-        }
-        
-        // Draw static indicator
+        // Draw static indicator (before restore so it rotates with the object)
         if (!obj.isStatic) {
             this.ctx.strokeStyle = '#4ecdc4';
             this.ctx.lineWidth = 2;
             this.ctx.setLineDash([5, 5]);
-            
+
             if (obj.shape === 'rectangle') {
                 this.ctx.strokeRect(
                     obj.x - obj.width/2,
@@ -1253,8 +1234,25 @@ class LevelEditor {
                 this.ctx.arc(obj.x, obj.y, obj.radius, 0, Math.PI * 2);
                 this.ctx.stroke();
             }
-            
+
             this.ctx.setLineDash([]);
+        }
+
+        this.ctx.restore(); // Restore context state
+
+        // Draw property indicators
+        if (obj.properties.includes('spawnpoint')) {
+            this.ctx.fillStyle = '#00ff00';
+            this.ctx.font = '12px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText('SPAWN', obj.x, obj.y - 20);
+        }
+
+        if (obj.properties.includes('goal')) {
+            this.ctx.fillStyle = '#ffff00';
+            this.ctx.font = '12px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText('GOAL', obj.x, obj.y - 20);
         }
     }
 
