@@ -118,7 +118,7 @@ class LevelEditor {
         // Property inputs
         const propertyInputs = [
             'objectColor', 'objectAlpha', 'objectBackgroundImage', 'objectWidth', 'objectHeight', 'objectRadius',
-            'objectFriction', 'objectRestitution', 'objectRotation', 'objectStatic',
+            'objectFriction', 'objectRestitution', 'objectDensity', 'objectRotation', 'objectStatic',
             'objectSpawnpoint', 'objectGoal', 'objectNextLevel', 'objectSolid', 'objectZIndex'
         ];
 
@@ -803,6 +803,7 @@ class LevelEditor {
             zIndex: parseInt(document.getElementById('objectZIndex').value),
             friction: parseFloat(document.getElementById('objectFriction').value),
             restitution: parseFloat(document.getElementById('objectRestitution').value),
+            density: parseFloat(document.getElementById('objectDensity').value),
             properties: this.getSelectedProperties()
         };
 
@@ -844,6 +845,7 @@ class LevelEditor {
             zIndex: parseInt(document.getElementById('objectZIndex').value),
             friction: parseFloat(document.getElementById('objectFriction').value),
             restitution: parseFloat(document.getElementById('objectRestitution').value),
+            density: parseFloat(document.getElementById('objectDensity').value),
             properties: this.getSelectedProperties()
         };
 
@@ -948,6 +950,7 @@ class LevelEditor {
             document.getElementById('objectZIndex').value = obj.zIndex || 0;
             document.getElementById('objectFriction').value = obj.friction;
             document.getElementById('objectRestitution').value = obj.restitution;
+            document.getElementById('objectDensity').value = obj.density || 0.001;
             document.getElementById('objectRotation').value = Math.round((obj.rotation || 0) * 180 / Math.PI); // Convert to degrees
 
             if (obj.shape === 'rectangle') {
@@ -1011,6 +1014,7 @@ class LevelEditor {
         this.selectedObject.zIndex = parseInt(document.getElementById('objectZIndex').value);
         this.selectedObject.friction = parseFloat(document.getElementById('objectFriction').value);
         this.selectedObject.restitution = parseFloat(document.getElementById('objectRestitution').value);
+        this.selectedObject.density = parseFloat(document.getElementById('objectDensity').value);
         this.selectedObject.rotation = parseFloat(document.getElementById('objectRotation').value) * Math.PI / 180; // Convert to radians
 
         if (this.selectedObject.shape === 'rectangle') {

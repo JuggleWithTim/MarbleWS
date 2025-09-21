@@ -182,6 +182,7 @@ class GameLogic {
           isStatic: obj.isStatic,
           friction: obj.friction || 0.3,
           restitution: obj.restitution || 0.3,
+          density: obj.density || 0.001,
           collisionFilter: collisionFilter,
           render: {
             fillStyle: obj.color || '#888888'
@@ -192,6 +193,7 @@ class GameLogic {
           isStatic: obj.isStatic,
           friction: obj.friction || 0.3,
           restitution: obj.restitution || 0.3,
+          density: obj.density || 0.001,
           collisionFilter: collisionFilter,
           render: {
             fillStyle: obj.color || '#888888'
