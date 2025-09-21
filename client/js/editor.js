@@ -478,8 +478,21 @@ class LevelEditor {
             const obj = this.level.objects[i];
 
             if (obj.shape === 'rectangle') {
-                if (x >= obj.x - obj.width/2 && x <= obj.x + obj.width/2 &&
-                    y >= obj.y - obj.height/2 && y <= obj.y + obj.height/2) {
+                // Apply inverse rotation to click coordinates for rotated rectangles
+                let checkX = x;
+                let checkY = y;
+
+                if (obj.rotation && obj.rotation !== 0) {
+                    const cos = Math.cos(-obj.rotation);
+                    const sin = Math.sin(-obj.rotation);
+                    const dx = x - obj.x;
+                    const dy = y - obj.y;
+                    checkX = dx * cos - dy * sin + obj.x;
+                    checkY = dx * sin + dy * cos + obj.y;
+                }
+
+                if (checkX >= obj.x - obj.width/2 && checkX <= obj.x + obj.width/2 &&
+                    checkY >= obj.y - obj.height/2 && checkY <= obj.y + obj.height/2) {
                     return obj;
                 }
             } else if (obj.shape === 'circle') {
@@ -1501,25 +1514,29 @@ class LevelEditor {
             alert('Please enter a level name');
             return;
         }
-        
+
         // Validate level
         const hasSpawn = this.level.objects.some(obj => obj.properties.includes('spawnpoint'));
         const hasGoal = this.level.objects.some(obj => obj.properties.includes('goal'));
-        
+
         if (!hasSpawn) {
             alert('Level must have at least one spawnpoint!');
             return;
         }
-        
+
         if (!hasGoal) {
             alert('Level must have at least one goal!');
             return;
         }
-        
+
+        // Recalculate connection lengths to account for any rotations
+        this.recalculateConnectionLengths();
+        this.updateJsonDisplay();
+
         this.level.name = levelName;
         this.level.description = document.getElementById('levelDescription').value;
         this.level.backgroundImage = document.getElementById('backgroundImage').value;
-        
+
         try {
             const response = await fetch(`/api/levels/${levelName}`, {
                 method: 'POST',
@@ -1528,7 +1545,7 @@ class LevelEditor {
                 },
                 body: JSON.stringify(this.level),
             });
-            
+
             if (response.ok) {
                 this.updateStatus(`Saved level: ${levelName}`);
             } else {
@@ -1741,5 +1758,53 @@ class LevelEditor {
             this.updateObjectList();
             this.render();
         }
+    }
+
+    // Recalculate connection lengths based on current object positions and rotations
+    recalculateConnectionLengths() {
+        if (!this.level.connections) return;
+
+        this.level.connections.forEach(connection => {
+            // Find the connected objects
+            const objA = this.level.objects.find(obj => obj.id === connection.bodyA);
+            const objB = this.level.objects.find(obj => obj.id === connection.bodyB);
+
+            if (!objA || !objB) return;
+
+            // Calculate the actual attachment points in world coordinates
+            let attachPointA = { x: objA.x, y: objA.y };
+            let attachPointB = { x: objB.x, y: objB.y };
+
+            // Apply pointA offset to object A
+            if (connection.pointA) {
+                if (objA.rotation && objA.rotation !== 0) {
+                    // Apply rotation to the offset point
+                    const cos = Math.cos(objA.rotation);
+                    const sin = Math.sin(objA.rotation);
+                    attachPointA.x += connection.pointA.x * cos - connection.pointA.y * sin;
+                    attachPointA.y += connection.pointA.x * sin + connection.pointA.y * cos;
+                } else {
+                    attachPointA.x += connection.pointA.x;
+                    attachPointA.y += connection.pointA.y;
+                }
+            }
+
+            // Apply pointB offset to object B
+            if (connection.pointB) {
+                if (objB.rotation && objB.rotation !== 0) {
+                    // Apply rotation to the offset point
+                    const cos = Math.cos(objB.rotation);
+                    const sin = Math.sin(objB.rotation);
+                    attachPointB.x += connection.pointB.x * cos - connection.pointB.y * sin;
+                    attachPointB.y += connection.pointB.x * sin + connection.pointB.y * cos;
+                } else {
+                    attachPointB.x += connection.pointB.x;
+                    attachPointB.y += connection.pointB.y;
+                }
+            }
+
+            // Recalculate the distance between attachment points
+            connection.length = Math.sqrt(Math.pow(attachPointB.x - attachPointA.x, 2) + Math.pow(attachPointB.y - attachPointA.y, 2));
+        });
     }
 }
