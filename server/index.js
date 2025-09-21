@@ -168,9 +168,73 @@ app.post('/api/levels/:levelName', (req, res) => {
   }
 });
 
+// Basic Auth middleware for admin routes
+function basicAuth(req, res, next) {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Basic ')) {
+    res.setHeader('WWW-Authenticate', 'Basic realm="Admin Panel"');
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+
+  const base64Credentials = authHeader.split(' ')[1];
+  const credentials = Buffer.from(base64Credentials, 'base64').toString('ascii');
+  const [username, password] = credentials.split(':');
+
+  if (username !== process.env.ADMIN_USERNAME || password !== process.env.ADMIN_PASSWORD) {
+    res.setHeader('WWW-Authenticate', 'Basic realm="Admin Panel"');
+    return res.status(401).json({ error: 'Invalid credentials' });
+  }
+
+  next();
+}
+
+// Admin routes
+app.get('/admin', basicAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/admin.html'));
+});
+
+// Admin API routes
+app.get('/api/admin/levels', basicAuth, (req, res) => {
+  const fs = require('fs');
+  const levelsDir = path.join(__dirname, '../levels');
+
+  if (!fs.existsSync(levelsDir)) {
+    fs.mkdirSync(levelsDir, { recursive: true });
+  }
+
+  const levels = fs.readdirSync(levelsDir)
+    .filter(file => file.endsWith('.json'))
+    .map(file => {
+      const levelName = file.replace('.json', '');
+      const levelPath = path.join(levelsDir, file);
+      const stats = fs.statSync(levelPath);
+      return {
+        name: levelName,
+        modified: stats.mtime,
+        size: stats.size
+      };
+    });
+
+  res.json(levels);
+});
+
+app.delete('/api/admin/levels/:levelName', basicAuth, (req, res) => {
+  const fs = require('fs');
+  const levelPath = path.join(__dirname, '../levels', `${req.params.levelName}.json`);
+
+  if (fs.existsSync(levelPath)) {
+    fs.unlinkSync(levelPath);
+    res.json({ success: true });
+  } else {
+    res.status(404).json({ error: 'Level not found' });
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Game: http://localhost:${PORT}`);
   console.log(`Level Editor: http://localhost:${PORT}/editor`);
+  console.log(`Admin Panel: http://localhost:${PORT}/admin`);
 });

@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - AnotherGame</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .admin-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .admin-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .admin-header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .current-level {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .current-level h2 {
+            color: #4ecdc4;
+            margin-bottom: 10px;
+        }
+
+        .levels-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .level-card {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .level-name {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #4ecdc4;
+        }
+
+        .level-info {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-bottom: 15px;
+        }
+
+        .level-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #4ecdc4;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #44a08d;
+        }
+
+        .btn-danger {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #e55a5a;
+        }
+
+        .status-message {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .status-success {
+            background: rgba(78, 205, 196, 0.1);
+            color: #4ecdc4;
+            border: 1px solid #4ecdc4;
+        }
+
+        .status-error {
+            background: rgba(255, 107, 107, 0.1);
+            color: #ff6b6b;
+            border: 1px solid #ff6b6b;
+        }
+
+        .back-link {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            background: rgba(0, 0, 0, 0.9);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <a href="/" class="back-link">← Back to Game</a>
+
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>Admin Panel</h1>
+            <p>Manage game levels and server settings</p>
+        </div>
+
+        <div id="currentLevel" class="current-level">
+            <h2>Current Level</h2>
+            <p id="currentLevelName">Loading...</p>
+        </div>
+
+        <div class="levels-grid" id="levelsGrid">
+            <!-- Levels will be loaded here -->
+        </div>
+
+        <div id="statusMessage"></div>
+    </div>
+
+    <script>
+        let currentLevelName = 'level1'; // Default
+
+        // Fetch current level from server
+        async function fetchCurrentLevel() {
+            try {
+                const response = await fetch('/api/levels/level1');
+                if (response.ok) {
+                    const levelData = await response.json();
+                    currentLevelName = 'level1';
+                    document.getElementById('currentLevelName').textContent = 'level1';
+                }
+            } catch (error) {
+                console.log('Could not fetch current level:', error);
+            }
+        }
+
+        // Fetch and display levels
+        async function fetchLevels() {
+            try {
+                const response = await fetch('/api/admin/levels');
+                const levels = await response.json();
+
+                const levelsGrid = document.getElementById('levelsGrid');
+                levelsGrid.innerHTML = '';
+
+                if (levels.length === 0) {
+                    levelsGrid.innerHTML = '<p>No levels found. Create some levels in the editor!</p>';
+                    return;
+                }
+
+                levels.forEach(level => {
+                    const levelCard = document.createElement('div');
+                    levelCard.className = 'level-card';
+
+                    const isCurrent = level.name === currentLevelName;
+
+                    levelCard.innerHTML = `
+                        <div class="level-name">${level.name} ${isCurrent ? '(Current)' : ''}</div>
+                        <div class="level-info">
+                            Modified: ${new Date(level.modified).toLocaleString()}<br>
+                            Size: ${Math.round(level.size / 1024)} KB
+                        </div>
+                        <div class="level-actions">
+                            <button class="btn btn-primary" onclick="loadLevel('${level.name}')">
+                                ${isCurrent ? 'Reload' : 'Load'}
+                            </button>
+                            <button class="btn btn-danger" onclick="deleteLevel('${level.name}')">
+                                Delete
+                            </button>
+                        </div>
+                    `;
+
+                    levelsGrid.appendChild(levelCard);
+                });
+            } catch (error) {
+                console.error('Failed to fetch levels:', error);
+                showStatus('Failed to load levels', 'error');
+            }
+        }
+
+        // Load a level
+        async function loadLevel(levelName) {
+            try {
+                // Send level load command via WebSocket
+                const socket = io();
+                socket.emit('loadLevel', levelName);
+
+                currentLevelName = levelName;
+                document.getElementById('currentLevelName').textContent = levelName;
+                showStatus(`Level "${levelName}" loaded successfully`, 'success');
+                fetchLevels(); // Refresh the list
+            } catch (error) {
+                console.error('Failed to load level:', error);
+                showStatus('Failed to load level', 'error');
+            }
+        }
+
+        // Delete a level
+        async function deleteLevel(levelName) {
+            if (!confirm(`Are you sure you want to delete "${levelName}"?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/admin/levels/${levelName}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    showStatus(`Level "${levelName}" deleted successfully`, 'success');
+                    fetchLevels(); // Refresh the list
+                } else {
+                    showStatus('Failed to delete level', 'error');
+                }
+            } catch (error) {
+                console.error('Failed to delete level:', error);
+                showStatus('Failed to delete level', 'error');
+            }
+        }
+
+        // Show status message
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.innerHTML = `<div class="status-message status-${type}">${message}</div>`;
+
+            // Clear message after 5 seconds
+            setTimeout(() => {
+                statusDiv.innerHTML = '';
+            }, 5000);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchCurrentLevel();
+            fetchLevels();
+        });
+    </script>
+
+    <!-- Socket.io -->
+    <script src="/socket.io/socket.io.js"></script>
+</body>
+</html>
