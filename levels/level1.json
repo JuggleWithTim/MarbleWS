@@ -25,7 +25,7 @@
     {
       "id": "rect_2",
       "shape": "rectangle",
-      "x": 930,
+      "x": 1480,
       "y": 380,
       "width": 540,
       "height": 40,
@@ -61,8 +61,8 @@
     {
       "id": "circle_4",
       "shape": "circle",
-      "x": 1340,
-      "y": 180,
+      "x": 1720,
+      "y": 120,
       "radius": 25,
       "rotation": 0,
       "color": "#629bae",
@@ -77,8 +77,8 @@
     {
       "id": "rect_5",
       "shape": "rectangle",
-      "x": 1340,
-      "y": 460,
+      "x": 1640,
+      "y": 220,
       "width": 510,
       "height": 20,
       "rotation": 0,
@@ -89,6 +89,271 @@
       "zIndex": 0,
       "friction": 0.3,
       "restitution": 0.3,
+      "properties": []
+    },
+    {
+      "id": "rect_1",
+      "shape": "rectangle",
+      "x": 360,
+      "y": 380,
+      "width": 540,
+      "height": 40,
+      "rotation": 0,
+      "color": "rgba(136, 136, 136, 1)",
+      "backgroundImage": "",
+      "isStatic": true,
+      "isSolid": true,
+      "zIndex": 0,
+      "friction": 0.3,
+      "restitution": 0.3,
+      "properties": []
+    },
+    {
+      "id": "circle_2",
+      "shape": "circle",
+      "x": 660,
+      "y": 380,
+      "radius": 25,
+      "rotation": 0,
+      "color": "rgba(136, 136, 136, 1)",
+      "backgroundImage": "",
+      "isStatic": false,
+      "isSolid": true,
+      "zIndex": 0,
+      "friction": 0.3,
+      "restitution": 0.3,
+      "properties": []
+    },
+    {
+      "id": "circle_5",
+      "shape": "circle",
+      "x": 720,
+      "y": 380,
+      "radius": 25,
+      "rotation": 0,
+      "color": "rgba(136, 136, 136, 1)",
+      "backgroundImage": "",
+      "isStatic": false,
+      "isSolid": true,
+      "zIndex": 0,
+      "friction": 0.3,
+      "restitution": 0.3,
+      "properties": []
+    },
+    {
+      "id": "circle_6",
+      "shape": "circle",
+      "x": 780,
+      "y": 380,
+      "radius": 25,
+      "rotation": 0,
+      "color": "rgba(136, 136, 136, 1)",
+      "backgroundImage": "",
+      "isStatic": false,
+      "isSolid": true,
+      "zIndex": 0,
+      "friction": 0.3,
+      "restitution": 0.3,
+      "properties": []
+    },
+    {
+      "id": "circle_7",
+      "shape": "circle",
+      "x": 840,
+      "y": 380,
+      "radius": 25,
+      "rotation": 0,
+      "color": "rgba(136, 136, 136, 1)",
+      "backgroundImage": "",
+      "isStatic": false,
+      "isSolid": true,
+      "zIndex": 0,
+      "friction": 0.3,
+      "restitution": 0.3,
+      "properties": []
+    },
+    {
+      "id": "circle_8",
+      "shape": "circle",
+      "x": 900,
+      "y": 380,
+      "radius": 25,
+      "rotation": 0,
+      "color": "rgba(136, 136, 136, 1)",
+      "backgroundImage": "",
+      "isStatic": false,
+      "isSolid": true,
+      "zIndex": 0,
+      "friction": 0.3,
+      "restitution": 0.3,
+      "properties": []
+    },
+    {
+      "id": "circle_9",
+      "shape": "circle",
+      "x": 960,
+      "y": 380,
+      "radius": 25,
+      "rotation": 0,
+      "color": "rgba(136, 136, 136, 1)",
+      "backgroundImage": "",
+      "isStatic": false,
+      "isSolid": true,
+      "zIndex": 0,
+      "friction": 0.3,
+      "restitution": 0.3,
+      "properties": []
+    },
+    {
+      "id": "circle_10",
+      "shape": "circle",
+      "x": 1020,
+      "y": 380,
+      "radius": 25,
+      "rotation": 0,
+      "color": "rgba(136, 136, 136, 1)",
+      "backgroundImage": "",
+      "isStatic": false,
+      "isSolid": true,
+      "zIndex": 0,
+      "friction": 0.3,
+      "restitution": 0.3,
+      "properties": []
+    },
+    {
+      "id": "circle_11",
+      "shape": "circle",
+      "x": 1080,
+      "y": 380,
+      "radius": 25,
+      "rotation": 0,
+      "color": "rgba(136, 136, 136, 1)",
+      "backgroundImage": "",
+      "isStatic": false,
+      "isSolid": true,
+      "zIndex": 0,
+      "friction": 0.3,
+      "restitution": 0.3,
+      "properties": []
+    },
+    {
+      "id": "circle_12",
+      "shape": "circle",
+      "x": 1160,
+      "y": 380,
+      "radius": 25,
+      "rotation": 0,
+      "color": "rgba(136, 136, 136, 1)",
+      "backgroundImage": "",
+      "isStatic": false,
+      "isSolid": true,
+      "zIndex": 0,
+      "friction": 0.3,
+      "restitution": 0.3,
+      "properties": []
+    },
+    {
+      "id": "rect_3",
+      "shape": "rectangle",
+      "x": 780,
+      "y": 1000,
+      "width": 2375,
+      "height": 60,
+      "rotation": 0,
+      "color": "rgba(136, 136, 136, 1)",
+      "backgroundImage": "",
+      "isStatic": true,
+      "isSolid": true,
+      "zIndex": 0,
+      "friction": 0.3,
+      "restitution": 0.3,
+      "properties": []
+    },
+    {
+      "id": "rect_4",
+      "shape": "rectangle",
+      "x": 280,
+      "y": 720,
+      "width": 182,
+      "height": 178,
+      "rotation": 0.1651486774146267,
+      "color": "rgba(86, 186, 184, 1)",
+      "backgroundImage": "",
+      "isStatic": false,
+      "isSolid": true,
+      "zIndex": 0,
+      "friction": 0.3,
+      "restitution": 0.3,
+      "properties": []
+    },
+    {
+      "id": "rect_6",
+      "shape": "rectangle",
+      "x": 520,
+      "y": 520,
+      "width": 91,
+      "height": 89,
+      "rotation": -0.24497866312686423,
+      "color": "rgba(86, 186, 184, 1)",
+      "backgroundImage": "",
+      "isStatic": false,
+      "isSolid": true,
+      "zIndex": 0,
+      "friction": 0.3,
+      "restitution": 0.3,
+      "properties": []
+    },
+    {
+      "id": "rect_7",
+      "shape": "rectangle",
+      "x": 800,
+      "y": 620,
+      "width": 51,
+      "height": 49,
+      "rotation": 0.7853981633974483,
+      "color": "rgba(86, 186, 184, 1)",
+      "backgroundImage": "",
+      "isStatic": false,
+      "isSolid": true,
+      "zIndex": 0,
+      "friction": 0.3,
+      "restitution": 0.3,
+      "properties": []
+    },
+    {
+      "id": "rect_8",
+      "shape": "rectangle",
+      "x": 1340,
+      "y": 660,
+      "width": 386,
+      "height": 325,
+      "rotation": -0.41887902047863906,
+      "color": "rgba(86, 186, 184, 1)",
+      "backgroundImage": "",
+      "isStatic": false,
+      "isSolid": true,
+      "zIndex": 0,
+      "friction": 0.3,
+      "restitution": 0.3,
+      "properties": [],
+      "density": 0.000005
+    },
+    {
+      "id": "rect_9",
+      "shape": "rectangle",
+      "x": 205,
+      "y": 505,
+      "width": 110,
+      "height": 110,
+      "rotation": 0,
+      "color": "rgba(136, 136, 136, 1)",
+      "backgroundImage": "",
+      "isStatic": false,
+      "isSolid": true,
+      "zIndex": 0,
+      "friction": 0.3,
+      "restitution": 0.3,
+      "density": 0.0001,
       "properties": []
     }
   ],
@@ -106,8 +371,178 @@
         "x": 0,
         "y": 0
       },
-      "length": 280,
+      "length": 128.06248474865697,
       "stiffness": 0.1,
+      "damping": 0.05
+    },
+    {
+      "id": "connection_2",
+      "type": "rope",
+      "bodyA": "rect_1",
+      "bodyB": "circle_2",
+      "pointA": {
+        "x": 260,
+        "y": 0
+      },
+      "pointB": {
+        "x": -20,
+        "y": 0
+      },
+      "length": 20,
+      "stiffness": 0,
+      "damping": 0.05
+    },
+    {
+      "id": "connection_3",
+      "type": "rope",
+      "bodyA": "circle_2",
+      "bodyB": "circle_5",
+      "pointA": {
+        "x": 20,
+        "y": 0
+      },
+      "pointB": {
+        "x": -20,
+        "y": 0
+      },
+      "length": 20,
+      "stiffness": 0,
+      "damping": 0.05
+    },
+    {
+      "id": "connection_4",
+      "type": "rope",
+      "bodyA": "circle_5",
+      "bodyB": "circle_6",
+      "pointA": {
+        "x": 20,
+        "y": 0
+      },
+      "pointB": {
+        "x": -20,
+        "y": 0
+      },
+      "length": 20,
+      "stiffness": 0,
+      "damping": 0.05
+    },
+    {
+      "id": "connection_5",
+      "type": "rope",
+      "bodyA": "circle_6",
+      "bodyB": "circle_7",
+      "pointA": {
+        "x": 20,
+        "y": 0
+      },
+      "pointB": {
+        "x": -20,
+        "y": 0
+      },
+      "length": 20,
+      "stiffness": 0,
+      "damping": 0.05
+    },
+    {
+      "id": "connection_6",
+      "type": "rope",
+      "bodyA": "circle_7",
+      "bodyB": "circle_8",
+      "pointA": {
+        "x": 20,
+        "y": 0
+      },
+      "pointB": {
+        "x": -20,
+        "y": 0
+      },
+      "length": 20,
+      "stiffness": 0,
+      "damping": 0.05
+    },
+    {
+      "id": "connection_7",
+      "type": "rope",
+      "bodyA": "circle_8",
+      "bodyB": "circle_9",
+      "pointA": {
+        "x": 20,
+        "y": 0
+      },
+      "pointB": {
+        "x": -20,
+        "y": 0
+      },
+      "length": 20,
+      "stiffness": 0,
+      "damping": 0.05
+    },
+    {
+      "id": "connection_8",
+      "type": "rope",
+      "bodyA": "circle_9",
+      "bodyB": "circle_10",
+      "pointA": {
+        "x": 20,
+        "y": 0
+      },
+      "pointB": {
+        "x": -20,
+        "y": 0
+      },
+      "length": 20,
+      "stiffness": 0,
+      "damping": 0.05
+    },
+    {
+      "id": "connection_9",
+      "type": "rope",
+      "bodyA": "circle_10",
+      "bodyB": "circle_11",
+      "pointA": {
+        "x": 20,
+        "y": 0
+      },
+      "pointB": {
+        "x": -20,
+        "y": 0
+      },
+      "length": 20,
+      "stiffness": 0,
+      "damping": 0.05
+    },
+    {
+      "id": "connection_10",
+      "type": "rope",
+      "bodyA": "circle_11",
+      "bodyB": "circle_12",
+      "pointA": {
+        "x": 20,
+        "y": 0
+      },
+      "pointB": {
+        "x": -20,
+        "y": 0
+      },
+      "length": 40,
+      "stiffness": 0,
+      "damping": 0.05
+    },
+    {
+      "id": "connection_12",
+      "type": "rope",
+      "bodyA": "circle_12",
+      "bodyB": "rect_2",
+      "pointA": {
+        "x": 20,
+        "y": 0
+      },
+      "pointB": {
+        "x": -260,
+        "y": 0
+      },
+      "length": 40,
+      "stiffness": 0,
       "damping": 0.05
     }
   ]
