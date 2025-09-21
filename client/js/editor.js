@@ -36,6 +36,11 @@ class LevelEditor {
         this.originalSize = null;
         this.resizeHandleSize = 10;
 
+        // Rotation state
+        this.isRotating = false;
+        this.initialRotation = 0;
+        this.initialMouseAngle = 0;
+
         // Connection state
         this.isConnecting = false;
         this.connectionStart = null;
@@ -227,6 +232,12 @@ class LevelEditor {
                 return;
             }
 
+            // Handle rotation
+            if (this.isRotating) {
+                this.performRotation(this.mousePos.x, this.mousePos.y);
+                return;
+            }
+
             // Handle dragging
             if (this.isDragging && this.selectedObject) {
                 this.selectedObject.x = this.mousePos.x;
@@ -250,9 +261,9 @@ class LevelEditor {
         let cursor = 'default';
 
         if (this.currentTool === 'select' && this.selectedObject) {
-            const resizeHandle = this.getResizeHandleAt(this.mousePos.x, this.mousePos.y);
-            if (resizeHandle) {
-                switch (resizeHandle) {
+            const handle = this.getHandleAt(this.mousePos.x, this.mousePos.y);
+            if (handle) {
+                switch (handle) {
                     case 'nw':
                         cursor = 'nw-resize';
                         break;
@@ -267,6 +278,9 @@ class LevelEditor {
                         break;
                     case 'radius':
                         cursor = 'ew-resize';
+                        break;
+                    case 'rotation':
+                        cursor = 'alias'; // Use alias cursor for rotation
                         break;
                 }
             } else {
@@ -306,14 +320,21 @@ class LevelEditor {
         this.isResizing = false;
         this.resizeCorner = null;
         this.originalSize = null;
+        this.isRotating = false;
+        this.initialRotation = 0;
+        this.initialMouseAngle = 0;
         this.updateStatus('Ready');
     }
 
     handleSelect(x, y) {
-        // First check if clicking on a resize handle
-        const resizeHandle = this.getResizeHandleAt(x, y);
-        if (resizeHandle) {
-            this.startResizing(resizeHandle);
+        // First check if clicking on any handle
+        const handle = this.getHandleAt(x, y);
+        if (handle) {
+            if (handle === 'rotation') {
+                this.startRotating(x, y);
+            } else {
+                this.startResizing(handle);
+            }
             return;
         }
 
@@ -493,17 +514,42 @@ class LevelEditor {
         return { x: relativeX, y: relativeY };
     }
 
-    getResizeHandleAt(x, y) {
+    getHandleAt(x, y) {
         if (!this.selectedObject) return null;
 
         const obj = this.selectedObject;
         const handleSize = this.resizeHandleSize;
 
+        // Check rotation handle first - need to account for object rotation
+        let rotationHandleX = obj.x;
+        let rotationHandleY = obj.y - Math.max(obj.width || obj.radius * 2, obj.height || obj.radius * 2) / 2 - 30;
+
         // If object has rotation, we need to transform the mouse coordinates
-        // by the inverse rotation to check against the unrotated handle positions
+        // by the inverse rotation to check against the handle position
         let checkX = x;
         let checkY = y;
 
+        if (obj.rotation && obj.rotation !== 0) {
+            // Apply inverse rotation to mouse coordinates
+            const cos = Math.cos(-obj.rotation);
+            const sin = Math.sin(-obj.rotation);
+
+            // Translate to object center
+            const dx = x - obj.x;
+            const dy = y - obj.y;
+
+            // Apply inverse rotation
+            checkX = dx * cos - dy * sin + obj.x;
+            checkY = dx * sin + dy * cos + obj.y;
+        }
+
+        if (checkX >= rotationHandleX - handleSize && checkX <= rotationHandleX + handleSize &&
+            checkY >= rotationHandleY - handleSize && checkY <= rotationHandleY + handleSize) {
+            return 'rotation';
+        }
+
+        // If object has rotation, we need to transform the mouse coordinates
+        // by the inverse rotation to check against the unrotated handle positions
         if (obj.rotation && obj.rotation !== 0) {
             // Apply inverse rotation to mouse coordinates
             const cos = Math.cos(-obj.rotation);
@@ -656,6 +702,47 @@ class LevelEditor {
         this.resizeCorner = null;
         this.originalSize = null;
         this.resetCursor();
+    }
+
+    startRotating(x, y) {
+        if (!this.selectedObject) return;
+
+        this.isRotating = true;
+        this.initialRotation = this.selectedObject.rotation || 0;
+
+        // Calculate initial mouse angle relative to object center
+        const dx = x - this.selectedObject.x;
+        const dy = y - this.selectedObject.y;
+        this.initialMouseAngle = Math.atan2(dy, dx);
+
+        this.updateStatus(`Rotating ${this.selectedObject.id}`);
+    }
+
+    performRotation(x, y) {
+        if (!this.isRotating || !this.selectedObject) return;
+
+        try {
+            // Calculate current mouse angle relative to object center
+            const dx = x - this.selectedObject.x;
+            const dy = y - this.selectedObject.y;
+            const currentMouseAngle = Math.atan2(dy, dx);
+
+            // Calculate angle difference
+            const angleDiff = currentMouseAngle - this.initialMouseAngle;
+
+            // Apply rotation
+            this.selectedObject.rotation = this.initialRotation + angleDiff;
+
+            // Update rotation input field
+            const rotationInput = document.getElementById('objectRotation');
+            if (rotationInput) {
+                rotationInput.value = Math.round(this.selectedObject.rotation * 180 / Math.PI);
+            }
+
+            this.render();
+        } catch (error) {
+            console.error('Error in performRotation:', error);
+        }
     }
 
     validateCanvasState() {
@@ -1116,6 +1203,8 @@ class LevelEditor {
             }
         }
         
+
+
         this.ctx.restore(); // Restore context state
         
         // Draw property indicators
@@ -1214,6 +1303,29 @@ class LevelEditor {
                 handleSize
             );
         }
+
+        // Draw rotation handle
+        this.ctx.fillStyle = '#ff6b6b';
+        const handleSize = this.resizeHandleSize;
+        const rotationHandleX = obj.x;
+        const rotationHandleY = obj.y - Math.max(obj.width || obj.radius * 2, obj.height || obj.radius * 2) / 2 - 30;
+
+        this.ctx.fillRect(
+            rotationHandleX - handleSize/2,
+            rotationHandleY - handleSize/2,
+            handleSize,
+            handleSize
+        );
+
+        // Draw line from object center to rotation handle
+        this.ctx.strokeStyle = '#ff6b6b';
+        this.ctx.lineWidth = 1;
+        this.ctx.setLineDash([3, 3]);
+        this.ctx.beginPath();
+        this.ctx.moveTo(obj.x, obj.y);
+        this.ctx.lineTo(rotationHandleX, rotationHandleY);
+        this.ctx.stroke();
+        this.ctx.setLineDash([]);
 
         this.ctx.restore(); // Restore context state
     }
