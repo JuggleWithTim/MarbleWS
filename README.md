@@ -79,6 +79,7 @@ A real-time multiplayer 2D physics game built with Node.js, Socket.io, and Matte
 4. **Access the Game**
    - Game: http://localhost:3000
    - Level Editor: http://localhost:3000/editor
+   - Admin panel: http://localhost:3000/admin
 
 ## Project Structure
 
