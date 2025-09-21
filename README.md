@@ -1,4 +1,4 @@
-# AnotherGame - Multiplayer Physics Marble Game
+# MarbleWS - Multiplayer Physics Marble Game
 
 A real-time multiplayer 2D physics game built with Node.js, Socket.io, and Matter.js. Players control UFOs to help marbles navigate through physics-based levels while Twitch chat emotes spawn as interactive objects.
 
@@ -39,7 +39,7 @@ A real-time multiplayer 2D physics game built with Node.js, Socket.io, and Matte
 1. **Clone and Install**
    ```bash
    git clone <repository-url>
-   cd AnotherGame
+   cd MarbleWS
    npm install
    ```
 
@@ -84,7 +84,7 @@ A real-time multiplayer 2D physics game built with Node.js, Socket.io, and Matte
 ## Project Structure
 
 ```
-AnotherGame/
+MarbleWS/
 ├── server/
 │   ├── index.js          # Main server file
 │   ├── gameLogic.js      # Game state and physics management
@@ -231,7 +231,7 @@ AnotherGame/
 
 ## License
 
-This project is open source. Feel free to modify and distribute according to your needs.
+This project is open source and published under the MIT License.
 
 ## Credits
 
@@ -242,4 +242,4 @@ This project is open source. Feel free to modify and distribute according to you
 
 ---
 
-**Have fun building and playing AnotherGame!** 🎮✨
+**Have fun building and playing MarbleWS!** 🎮✨
