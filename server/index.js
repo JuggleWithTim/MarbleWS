@@ -142,12 +142,20 @@ app.get('/api/levels', (req, res) => {
 app.get('/api/levels/:levelName', (req, res) => {
   const fs = require('fs');
   const levelPath = path.join(__dirname, '../levels', `${req.params.levelName}.json`);
-  
+
   if (fs.existsSync(levelPath)) {
     const levelData = JSON.parse(fs.readFileSync(levelPath, 'utf8'));
     res.json(levelData);
   } else {
     res.status(404).json({ error: 'Level not found' });
+  }
+});
+
+app.get('/api/current-level', (req, res) => {
+  if (gameLogic.currentLevel && gameLogic.currentLevel.name) {
+    res.json({ levelName: gameLogic.currentLevel.name });
+  } else {
+    res.status(404).json({ error: 'No level currently loaded' });
   }
 });
 
