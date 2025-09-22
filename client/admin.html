@@ -214,14 +214,21 @@
         // Fetch current level from server
         async function fetchCurrentLevel() {
             try {
-                const response = await fetch('/api/levels/level1');
+                const response = await fetch('/api/current-level');
                 if (response.ok) {
-                    const levelData = await response.json();
+                    const data = await response.json();
+                    currentLevelName = data.levelName;
+                    document.getElementById('currentLevelName').textContent = data.levelName;
+                } else {
+                    // Fallback to level1 if no current level is set
                     currentLevelName = 'level1';
                     document.getElementById('currentLevelName').textContent = 'level1';
                 }
             } catch (error) {
                 console.log('Could not fetch current level:', error);
+                // Fallback to level1 on error
+                currentLevelName = 'level1';
+                document.getElementById('currentLevelName').textContent = 'level1';
             }
         }
 
