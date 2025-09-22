@@ -327,8 +327,9 @@ class GameLogic {
 
   spawnMarble(x, y) {
     const marble = Matter.Bodies.circle(x, y, 30, {
-      friction: 0.01,
+      friction: 0.000005,
       restitution: 0.7,
+      density: 0.004,
       render: {
         fillStyle: '#ff6b6b'
       }
