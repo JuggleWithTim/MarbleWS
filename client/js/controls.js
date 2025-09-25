@@ -137,12 +137,12 @@ class Controls {
     }
 
     // Utility methods for UI interactions
-    setupUIControls(game) {
+    setupUIControls(game, basePath = '') {
         // Twitch login button
         const twitchLoginBtn = document.getElementById('twitchLoginBtn');
         if (twitchLoginBtn) {
             twitchLoginBtn.addEventListener('click', () => {
-                window.location.href = '/auth/twitch';
+                window.location.href = `${basePath}/auth/twitch`;
             });
         }
 
@@ -158,7 +158,7 @@ class Controls {
         const editorBtn = document.getElementById('editorBtn');
         if (editorBtn) {
             editorBtn.addEventListener('click', () => {
-                window.open('/editor', '_blank');
+                window.open(`${basePath}/editor`, '_blank');
             });
         }
 

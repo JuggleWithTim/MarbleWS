@@ -104,7 +104,7 @@ class Game {
             this.controls.setupCanvasControls(this.canvas, this);
         }
         
-        this.controls.setupUIControls(this);
+        this.controls.setupUIControls(this, this.networking.BASE_PATH);
         
         // Setup beam controls
         this.controls.on('beamActivate', () => {
