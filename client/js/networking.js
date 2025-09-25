@@ -15,9 +15,9 @@ class Networking {
     }
 
     async loadConfig() {
-        // Always fetch from /api/client-config - nginx will proxy it correctly
+        // Fetch from relative path - nginx will proxy it based on current location
         try {
-            const response = await fetch('/api/client-config');
+            const response = await fetch('api/client-config');
             if (response.ok) {
                 const config = await response.json();
                 this.BASE_PATH = config.basePath || '';
