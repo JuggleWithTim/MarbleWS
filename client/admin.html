@@ -208,23 +208,34 @@
         <div id="statusMessage"></div>
     </div>
 
-    <script src="../js/networking.js"></script>
-
     <script>
         let currentLevelName = 'level1'; // Default
-        let networking = null;
+        let basePath = '';
 
-        // Load client configuration using Networking class
+        // Load client configuration
         async function loadConfig() {
-            networking = new Networking();
-            await networking.loadConfig();
-            console.log('Admin config loaded via Networking class');
+            // Fetch from absolute path - works from any route
+            try {
+                const response = await fetch('/marblews/nova/api/client-config');
+                if (response.ok) {
+                    const config = await response.json();
+                    basePath = config.basePath || '';
+                    console.log('Admin config loaded:', config);
+                    return;
+                }
+            } catch (error) {
+                console.error('Failed to load admin config:', error);
+            }
+
+            // If config fetch fails, use empty base path as fallback
+            basePath = '';
+            console.log('Using default admin config (empty base path)');
         }
 
         // Fetch current level from server
         async function fetchCurrentLevel() {
             try {
-                const response = await fetch(`${networking.BASE_PATH}/api/current-level`);
+                const response = await fetch(`${basePath}/api/current-level`);
                 if (response.ok) {
                     const data = await response.json();
                     currentLevelName = data.levelName;
@@ -245,7 +256,7 @@
         // Fetch and display levels
         async function fetchLevels() {
             try {
-                const response = await fetch(`${networking.BASE_PATH}/api/admin/levels`);
+                const response = await fetch(`${basePath}/api/admin/levels`);
                 const levels = await response.json();
 
                 const levelsGrid = document.getElementById('levelsGrid');
@@ -294,7 +305,7 @@
                     return;
                 }
                 const script = document.createElement('script');
-                script.src = `${networking.BASE_PATH}/socket.io/socket.io.js`;
+                script.src = `${basePath}/socket.io/socket.io.js`;
                 script.onload = resolve;
                 script.onerror = reject;
                 document.head.appendChild(script);
@@ -308,7 +319,7 @@
                 await loadSocketIOScript();
 
                 // Send level load command via WebSocket with correct path
-                const socket = io({ path: `${networking.BASE_PATH}/socket.io` });
+                const socket = io({ path: `${basePath}/socket.io` });
                 socket.emit('loadLevel', levelName);
 
                 currentLevelName = levelName;
@@ -328,7 +339,7 @@
             }
 
             try {
-                const response = await fetch(`${networking.BASE_PATH}/api/admin/levels/${levelName}`, {
+                const response = await fetch(`${basePath}/api/admin/levels/${levelName}`, {
                     method: 'DELETE'
                 });
 
