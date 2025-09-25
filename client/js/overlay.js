@@ -189,16 +189,22 @@ class TransparentRenderer extends Renderer {
         }
     }
 
-    networking.connect();
+    // Initialize overlay
+    async function init() {
+        await networking.loadConfig();
+        await networking.connect();
 
-    networking.on('gameState', (gameState) => {
-        updateInterpolationFromGameState(gameState);
-        renderGameState(gameState);
-    });
-    networking.on('gameStateUpdate', (gameState) => {
-        updateInterpolationFromGameState(gameState);
-        renderGameState(gameState);
-    });
+        networking.on('gameState', (gameState) => {
+            updateInterpolationFromGameState(gameState);
+            renderGameState(gameState);
+        });
+        networking.on('gameStateUpdate', (gameState) => {
+            updateInterpolationFromGameState(gameState);
+            renderGameState(gameState);
+        });
+    }
+
+    init();
 
     // Animation loop to keep canvas updated (in case of async image loads)
     function animationLoop() {

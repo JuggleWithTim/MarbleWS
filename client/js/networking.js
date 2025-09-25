@@ -15,14 +15,29 @@ class Networking {
     }
 
     async loadConfig() {
+        // Try server path first (/marblews/api/client-config)
+        try {
+            const response = await fetch('/marblews/api/client-config');
+            if (response.ok) {
+                const config = await response.json();
+                this.BASE_PATH = config.basePath || '/marblews';
+                this.configLoaded = true;
+                console.log('Client config loaded from server path:', config);
+                return;
+            }
+        } catch (error) {
+            console.log('Server path failed, trying local path...');
+        }
+
+        // Fall back to local path (/api/client-config)
         try {
             const response = await fetch('/api/client-config');
             const config = await response.json();
             this.BASE_PATH = config.basePath || '';
             this.configLoaded = true;
-            console.log('Client config loaded:', config);
+            console.log('Client config loaded from local path:', config);
         } catch (error) {
-            console.error('Failed to load client config, using defaults:', error);
+            console.error('Failed to load client config from both paths, using defaults:', error);
             this.BASE_PATH = '';
             this.configLoaded = true;
         }
