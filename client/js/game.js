@@ -159,26 +159,37 @@ class Game {
             const config = await response.json();
 
             if (config.devMode) {
-                // Show dev login option
-                const devLogin = document.getElementById('devLogin');
-                if (devLogin) {
-                    devLogin.style.display = 'block';
-                    
-                    // Setup dev login button
-                    const devLoginBtn = document.getElementById('devLoginBtn');
-                    const devUsername = document.getElementById('devUsername');
-                    
-                    if (devLoginBtn && devUsername) {
-                        devLoginBtn.addEventListener('click', () => {
-                            this.handleDevLogin();
-                        });
-                        
-                        devUsername.addEventListener('keypress', (e) => {
-                            if (e.key === 'Enter') {
+                // Wait for Socket.IO connection before showing dev login
+                const setupDevLogin = () => {
+                    // Show dev login option
+                    const devLogin = document.getElementById('devLogin');
+                    if (devLogin) {
+                        devLogin.style.display = 'block';
+
+                        // Setup dev login button
+                        const devLoginBtn = document.getElementById('devLoginBtn');
+                        const devUsername = document.getElementById('devUsername');
+
+                        if (devLoginBtn && devUsername) {
+                            devLoginBtn.addEventListener('click', () => {
                                 this.handleDevLogin();
-                            }
-                        });
+                            });
+
+                            devUsername.addEventListener('keypress', (e) => {
+                                if (e.key === 'Enter') {
+                                    this.handleDevLogin();
+                                }
+                            });
+                        }
                     }
+                };
+
+                // If already connected, show login immediately
+                if (this.networking.isConnected()) {
+                    setupDevLogin();
+                } else {
+                    // Wait for connection before showing login
+                    this.networking.on('connected', setupDevLogin);
                 }
 
                 // Show dev-only UI elements
