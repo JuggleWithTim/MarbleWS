@@ -59,7 +59,8 @@ class Networking {
             await this.loadSocketIOScript();
         }
 
-        this.socket = io();
+        // Connect to Socket.IO with correct path
+        this.socket = io({ path: `${this.BASE_PATH}/socket.io` });
 
         this.socket.on('connect', () => {
             console.log('Connected to server');

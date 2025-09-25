@@ -325,8 +325,8 @@
                 // Ensure Socket.IO is loaded
                 await loadSocketIOScript();
 
-                // Send level load command via WebSocket
-                const socket = io();
+                // Send level load command via WebSocket with correct path
+                const socket = io({ path: `${basePath}/socket.io` });
                 socket.emit('loadLevel', levelName);
 
                 currentLevelName = levelName;
