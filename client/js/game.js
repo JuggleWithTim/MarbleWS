@@ -255,20 +255,25 @@ class Game {
         const username = urlParams.get('username');
         const userId = urlParams.get('userId');
         const error = urlParams.get('error');
-        
+
         if (error) {
             this.showError('Login failed. Please try again.');
             return;
         }
-        
+
         if (username && userId) {
             // Auto-login with Twitch credentials
-            this.networking.on('connected', () => {
+            const performLogin = () => {
                 this.networking.login(username, userId);
-            });
-            
-            // Clean up URL
-            window.history.replaceState({}, document.title, window.location.pathname);
+                // Clean up URL after login
+                window.history.replaceState({}, document.title, window.location.pathname);
+            };
+
+            if (this.networking.isConnected()) {
+                performLogin();
+            } else {
+                this.networking.on('connected', performLogin);
+            }
         }
     }
 
