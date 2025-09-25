@@ -61,6 +61,7 @@ A real-time multiplayer 2D physics game built with Node.js, Socket.io, and Matte
    # Server Configuration
    PORT=3000
    DEV_MODE=true
+   BASE_PATH=
 
    # Admin Panel Configuration
    ADMIN_USERNAME=admin
