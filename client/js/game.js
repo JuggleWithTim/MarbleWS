@@ -159,37 +159,26 @@ class Game {
             const config = await response.json();
 
             if (config.devMode) {
-                // Wait for Socket.IO connection before showing dev login
-                const setupDevLogin = () => {
-                    // Show dev login option
-                    const devLogin = document.getElementById('devLogin');
-                    if (devLogin) {
-                        devLogin.style.display = 'block';
+                // Show dev login option
+                const devLogin = document.getElementById('devLogin');
+                if (devLogin) {
+                    devLogin.style.display = 'block';
 
-                        // Setup dev login button
-                        const devLoginBtn = document.getElementById('devLoginBtn');
-                        const devUsername = document.getElementById('devUsername');
+                    // Setup dev login button
+                    const devLoginBtn = document.getElementById('devLoginBtn');
+                    const devUsername = document.getElementById('devUsername');
 
-                        if (devLoginBtn && devUsername) {
-                            devLoginBtn.addEventListener('click', () => {
+                    if (devLoginBtn && devUsername) {
+                        devLoginBtn.addEventListener('click', () => {
+                            this.handleDevLogin();
+                        });
+
+                        devUsername.addEventListener('keypress', (e) => {
+                            if (e.key === 'Enter') {
                                 this.handleDevLogin();
-                            });
-
-                            devUsername.addEventListener('keypress', (e) => {
-                                if (e.key === 'Enter') {
-                                    this.handleDevLogin();
-                                }
-                            });
-                        }
+                            }
+                        });
                     }
-                };
-
-                // If already connected, show login immediately
-                if (this.networking.isConnected()) {
-                    setupDevLogin();
-                } else {
-                    // Wait for connection before showing login
-                    this.networking.on('connected', setupDevLogin);
                 }
 
                 // Show dev-only UI elements
@@ -226,12 +215,12 @@ class Game {
     async handleDevLogin() {
         const devUsername = document.getElementById('devUsername');
         const username = devUsername.value.trim();
-        
+
         if (!username) {
             this.showError('Please enter a username');
             return;
         }
-        
+
         try {
             const response = await fetch(`${this.networking.BASE_PATH}/api/dev-login`, {
                 method: 'POST',
@@ -240,19 +229,17 @@ class Game {
                 },
                 body: JSON.stringify({ username }),
             });
-            
+
             if (response.ok) {
                 const userData = await response.json();
-                
-                // Login with dev credentials
-                this.networking.on('connected', () => {
-                    this.networking.login(userData.username, userData.userId);
-                });
-                
-                // If already connected, login immediately
-                if (this.networking.isConnected()) {
-                    this.networking.login(userData.username, userData.userId);
+
+                // Ensure Socket.IO connection is ready before login
+                if (!this.networking.isConnected()) {
+                    await this.networking.connect();
                 }
+
+                // Now login with dev credentials
+                this.networking.login(userData.username, userData.userId);
             } else {
                 const error = await response.json();
                 this.showError(error.error || 'Dev login failed');
