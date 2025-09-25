@@ -30,6 +30,9 @@ class LevelEditor {
         this.objectIdCounter = 1;
         this.connectionIdCounter = 1;
 
+        // Base path for API calls (loaded from config)
+        this.basePath = '';
+
         // Resize state
         this.isResizing = false;
         this.resizeCorner = null;
@@ -51,13 +54,35 @@ class LevelEditor {
         this.jsonPanelVisible = false;
     }
 
-    init() {
+    async init() {
+        // Load client configuration first
+        await this.loadConfig();
+
         this.canvas = document.getElementById('editorCanvas');
         this.ctx = this.canvas.getContext('2d');
 
         this.setupEventListeners();
         this.updateObjectList();
         this.render();
+    }
+
+    async loadConfig() {
+        // Fetch from relative path - nginx will proxy it based on current location
+        try {
+            const response = await fetch('api/client-config');
+            if (response.ok) {
+                const config = await response.json();
+                this.basePath = config.basePath || '';
+                console.log('Editor config loaded:', config);
+                return;
+            }
+        } catch (error) {
+            console.error('Failed to load editor config:', error);
+        }
+
+        // If config fetch fails, use empty base path as fallback
+        this.basePath = '';
+        console.log('Using default editor config (empty base path)');
     }
 
     setupEventListeners() {
@@ -1549,7 +1574,7 @@ class LevelEditor {
         if (!levelName) return;
 
         try {
-            const response = await fetch(`/api/levels/${levelName}`);
+            const response = await fetch(`${this.basePath}/api/levels/${levelName}`);
             if (response.ok) {
                 const levelData = await response.json();
                 this.level = levelData;
@@ -1621,7 +1646,7 @@ class LevelEditor {
         this.level.backgroundImage = document.getElementById('backgroundImage').value;
 
         try {
-            const response = await fetch(`/api/levels/${levelName}`, {
+            const response = await fetch(`${this.basePath}/api/levels/${levelName}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1645,9 +1670,9 @@ class LevelEditor {
             alert('Please save the level first');
             return;
         }
-        
-        // Open game in new tab with level parameter
-        window.open(`/?level=${levelName}`, '_blank');
+
+        // Open game in new tab with level parameter, using base path
+        window.open(`${this.basePath}/?level=${levelName}`, '_blank');
     }
 
     updateStatus(message) {
