@@ -214,29 +214,22 @@
 
         // Load client configuration
         async function loadConfig() {
-            // Try server path first (/marblews/api/client-config)
+            // Always fetch from /api/client-config - nginx will proxy it correctly
             try {
-                const response = await fetch('/marblews/api/client-config');
+                const response = await fetch('/api/client-config');
                 if (response.ok) {
                     const config = await response.json();
-                    basePath = config.basePath || '/marblews';
-                    console.log('Admin config loaded from server path:', config);
+                    basePath = config.basePath || '';
+                    console.log('Admin config loaded:', config);
                     return;
                 }
             } catch (error) {
-                console.log('Server path failed, trying local path...');
+                console.error('Failed to load admin config:', error);
             }
 
-            // Fall back to local path (/api/client-config)
-            try {
-                const response = await fetch('/api/client-config');
-                const config = await response.json();
-                basePath = config.basePath || '';
-                console.log('Admin config loaded from local path:', config);
-            } catch (error) {
-                console.error('Failed to load admin config from both paths, using defaults:', error);
-                basePath = '';
-            }
+            // If config fetch fails, use empty base path as fallback
+            basePath = '';
+            console.log('Using default admin config (empty base path)');
         }
 
         // Fetch current level from server

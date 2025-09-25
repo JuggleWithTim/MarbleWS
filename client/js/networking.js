@@ -15,53 +15,24 @@ class Networking {
     }
 
     async loadConfig() {
-        // Try current page path first (e.g., /marblews/nova/api/client-config)
-        const currentPath = window.location.pathname.replace(/\/$/, ''); // Remove trailing slash
-        if (currentPath && currentPath !== '/') {
-            try {
-                const configUrl = `${currentPath}/api/client-config`;
-                const response = await fetch(configUrl);
-                if (response.ok) {
-                    const config = await response.json();
-                    this.BASE_PATH = config.basePath || currentPath;
-                    this.configLoaded = true;
-                    console.log('Client config loaded from current path:', config);
-                    return;
-                }
-            } catch (error) {
-                console.log('Current path failed, trying known paths...');
-            }
-        }
-
-        // Try known server paths as fallbacks
-        const knownPaths = ['/marblews', '/marblews/nova'];
-        for (const path of knownPaths) {
-            try {
-                const response = await fetch(`${path}/api/client-config`);
-                if (response.ok) {
-                    const config = await response.json();
-                    this.BASE_PATH = config.basePath || path;
-                    this.configLoaded = true;
-                    console.log('Client config loaded from known path:', config);
-                    return;
-                }
-            } catch (error) {
-                continue;
-            }
-        }
-
-        // Fall back to local path (/api/client-config)
+        // Always fetch from /api/client-config - nginx will proxy it correctly
         try {
             const response = await fetch('/api/client-config');
-            const config = await response.json();
-            this.BASE_PATH = config.basePath || '';
-            this.configLoaded = true;
-            console.log('Client config loaded from local path:', config);
+            if (response.ok) {
+                const config = await response.json();
+                this.BASE_PATH = config.basePath || '';
+                this.configLoaded = true;
+                console.log('Client config loaded:', config);
+                return;
+            }
         } catch (error) {
-            console.error('Failed to load client config from all paths, using defaults:', error);
-            this.BASE_PATH = '';
-            this.configLoaded = true;
+            console.error('Failed to load client config:', error);
         }
+
+        // If config fetch fails, use empty base path as fallback
+        this.BASE_PATH = '';
+        this.configLoaded = true;
+        console.log('Using default config (empty base path)');
     }
 
     async loadSocketIOScript() {
