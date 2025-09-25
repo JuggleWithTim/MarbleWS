@@ -248,6 +248,51 @@ app.delete('/api/admin/levels/:levelName', basicAuth, (req, res) => {
   }
 });
 
+// Admin Twitch configuration endpoints
+app.get('/api/admin/config/twitch-channel', basicAuth, (req, res) => {
+  res.json({ channel: process.env.TWITCH_CHANNEL || '' });
+});
+
+app.put('/api/admin/config/twitch-channel', basicAuth, (req, res) => {
+  const fs = require('fs');
+  const { channel } = req.body;
+
+  if (!channel || typeof channel !== 'string') {
+    return res.status(400).json({ error: 'Channel name is required' });
+  }
+
+  const newChannel = channel.toLowerCase().trim();
+  if (!newChannel) {
+    return res.status(400).json({ error: 'Channel name cannot be empty' });
+  }
+
+  try {
+    const envPath = path.join(__dirname, '../.env');
+    let envContent = fs.readFileSync(envPath, 'utf8');
+
+    // Replace or add TWITCH_CHANNEL line
+    const channelRegex = /^TWITCH_CHANNEL=.*/m;
+    const newChannelLine = `TWITCH_CHANNEL=${newChannel}`;
+
+    if (channelRegex.test(envContent)) {
+      envContent = envContent.replace(channelRegex, newChannelLine);
+    } else {
+      envContent += `\n${newChannelLine}`;
+    }
+
+    fs.writeFileSync(envPath, envContent);
+
+    // Update runtime environment and reconnect
+    process.env.TWITCH_CHANNEL = newChannel;
+    twitchChat.reconnect(newChannel);
+
+    res.json({ success: true, channel: newChannel });
+  } catch (error) {
+    console.error('Failed to update Twitch channel:', error);
+    res.status(500).json({ error: 'Failed to update channel configuration' });
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

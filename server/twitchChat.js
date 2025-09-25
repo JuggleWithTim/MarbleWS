@@ -135,6 +135,23 @@ class TwitchChat {
       this.client.disconnect();
     }
   }
+
+  // Reconnect with a new channel
+  reconnect(newChannel) {
+    console.log(`Reconnecting Twitch chat to channel: ${newChannel}`);
+
+    // Disconnect existing connection
+    if (this.client) {
+      this.client.disconnect();
+      this.client = null;
+    }
+
+    // Update environment variable for future reference
+    process.env.TWITCH_CHANNEL = newChannel;
+
+    // Reinitialize with new channel
+    this.initializeChat();
+  }
 }
 
 module.exports = TwitchChat;

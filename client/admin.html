@@ -41,11 +41,17 @@
             opacity: 0.8;
         }
 
+        .top-section {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
         .current-level {
+            flex: 1;
             background: rgba(0, 0, 0, 0.8);
             padding: 20px;
             border-radius: 8px;
-            margin-bottom: 30px;
             text-align: center;
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
@@ -59,6 +65,55 @@
         .current-level p {
             font-size: 1.1em;
             color: #ffffff;
+        }
+
+        .twitch-config {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .twitch-config h2 {
+            color: #4ecdc4;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .twitch-config .current-channel {
+            margin-bottom: 15px;
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .twitch-config .channel-input {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .twitch-config input[type="text"] {
+            padding: 8px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 0.9em;
+            min-width: 200px;
+        }
+
+        .twitch-config input[type="text"]::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .twitch-config input[type="text"]:focus {
+            outline: none;
+            border-color: #4ecdc4;
+            box-shadow: 0 0 5px rgba(78, 205, 196, 0.3);
         }
 
         .levels-container {
@@ -202,9 +257,20 @@
             <p>Manage game levels and server settings</p>
         </div>
 
-        <div id="currentLevel" class="current-level">
-            <h2>Current Level</h2>
-            <p id="currentLevelName">Loading...</p>
+        <div class="top-section">
+            <div id="currentLevel" class="current-level">
+                <h2>Current Level</h2>
+                <p id="currentLevelName">Loading...</p>
+            </div>
+
+            <div class="twitch-config">
+                <h2>Twitch Configuration</h2>
+                <div class="current-channel">Current Channel: <span id="currentTwitchChannel">Loading...</span></div>
+                <div class="channel-input">
+                    <input type="text" id="twitchChannelInput" placeholder="Enter new channel name" />
+                    <button class="btn btn-primary" onclick="updateTwitchChannel()">Save & Reconnect</button>
+                </div>
+            </div>
         </div>
 
         <div class="levels-container">
@@ -258,6 +324,60 @@
                 // Fallback to level1 on error
                 currentLevelName = 'level1';
                 document.getElementById('currentLevelName').textContent = 'level1';
+            }
+        }
+
+        // Fetch current Twitch channel
+        async function fetchTwitchChannel() {
+            try {
+                const response = await fetch(`${basePath}/api/admin/config/twitch-channel`);
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('currentTwitchChannel').textContent = data.channel || 'Not set';
+                } else {
+                    document.getElementById('currentTwitchChannel').textContent = 'Error loading';
+                }
+            } catch (error) {
+                console.log('Could not fetch Twitch channel:', error);
+                document.getElementById('currentTwitchChannel').textContent = 'Error loading';
+            }
+        }
+
+        // Update Twitch channel
+        async function updateTwitchChannel() {
+            const input = document.getElementById('twitchChannelInput');
+            const newChannel = input.value.trim();
+
+            if (!newChannel) {
+                showStatus('Please enter a channel name', 'error');
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to change the Twitch channel to "${newChannel.toLowerCase()}"? The bot will disconnect and reconnect.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${basePath}/api/admin/config/twitch-channel`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ channel: newChannel })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('currentTwitchChannel').textContent = data.channel;
+                    input.value = '';
+                    showStatus(`Twitch channel updated to "${data.channel}" and bot reconnected`, 'success');
+                } else {
+                    const error = await response.json();
+                    showStatus(error.error || 'Failed to update channel', 'error');
+                }
+            } catch (error) {
+                console.error('Failed to update Twitch channel:', error);
+                showStatus('Failed to update channel', 'error');
             }
         }
 
@@ -378,6 +498,7 @@
         document.addEventListener('DOMContentLoaded', async () => {
             await loadConfig();
             fetchCurrentLevel();
+            fetchTwitchChannel();
             fetchLevels();
         });
     </script>
