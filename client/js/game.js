@@ -80,12 +80,15 @@ class Game {
         };
     }
 
-    init() {
+    async init() {
+        // Load client configuration first
+        await this.networking.loadConfig();
+
         this.setupUI();
-        this.setupNetworking();
-        this.checkDevMode();
+        await this.setupNetworking();
+        await this.checkDevMode();
         this.checkAutoLogin();
-        
+
         // Start game loop
         this.gameLoop();
     }
@@ -113,9 +116,9 @@ class Game {
         });
     }
 
-    setupNetworking() {
-        this.networking.connect();
-        
+    async setupNetworking() {
+        await this.networking.connect();
+
         this.networking.on('connected', () => {
             console.log('Connected to game server');
         });
@@ -152,9 +155,9 @@ class Game {
 
     async checkDevMode() {
         try {
-            const response = await fetch('/api/config');
+            const response = await fetch(`${this.networking.BASE_PATH}/api/client-config`);
             const config = await response.json();
-            
+
             if (config.devMode) {
                 // Show dev login option
                 const devLogin = document.getElementById('devLogin');
@@ -219,7 +222,7 @@ class Game {
         }
         
         try {
-            const response = await fetch('/api/dev-login', {
+            const response = await fetch(`${this.networking.BASE_PATH}/api/dev-login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

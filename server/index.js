@@ -54,7 +54,15 @@ app.get('/editor', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/editor.html'));
 });
 
-// Dev mode config endpoint
+// Client config endpoint (safe, no secrets)
+app.get('/api/client-config', (req, res) => {
+  res.json({
+    devMode: process.env.DEV_MODE === 'true',
+    basePath: process.env.BASE_PATH || ''
+  });
+});
+
+// Legacy config endpoint (keeping for backward compatibility)
 app.get('/api/config', (req, res) => {
   res.json({
     devMode: process.env.DEV_MODE === 'true'

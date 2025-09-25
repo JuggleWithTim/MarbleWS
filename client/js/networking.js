@@ -1,5 +1,6 @@
 class Networking {
     constructor() {
+        this.BASE_PATH = ''; // Will be set dynamically
         this.socket = null;
         this.connected = false;
         this.currentPlayer = null;
@@ -10,11 +11,41 @@ class Networking {
             levelObjects: []
         };
         this.callbacks = {};
+        this.configLoaded = false;
     }
 
-    connect() {
+    async loadConfig() {
+        try {
+            const response = await fetch('/api/client-config');
+            const config = await response.json();
+            this.BASE_PATH = config.basePath || '';
+            this.configLoaded = true;
+            console.log('Client config loaded:', config);
+        } catch (error) {
+            console.error('Failed to load client config, using defaults:', error);
+            this.BASE_PATH = '';
+            this.configLoaded = true;
+        }
+    }
+
+    async loadSocketIOScript() {
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = `${this.BASE_PATH}/socket.io/socket.io.js`;
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+    }
+
+    async connect() {
+        // Dynamically load Socket.IO script based on base path
+        if (!window.io) {
+            await this.loadSocketIOScript();
+        }
+
         this.socket = io();
-        
+
         this.socket.on('connect', () => {
             console.log('Connected to server');
             this.connected = true;
@@ -141,7 +172,7 @@ class Networking {
     // API calls for levels
     async fetchLevels() {
         try {
-            const response = await fetch('/api/levels');
+            const response = await fetch(`${this.BASE_PATH}/api/levels`);
             return await response.json();
         } catch (error) {
             console.error('Failed to fetch levels:', error);
@@ -151,7 +182,7 @@ class Networking {
 
     async fetchLevel(levelName) {
         try {
-            const response = await fetch(`/api/levels/${levelName}`);
+            const response = await fetch(`${this.BASE_PATH}/api/levels/${levelName}`);
             if (response.ok) {
                 return await response.json();
             }
@@ -164,7 +195,7 @@ class Networking {
 
     async saveLevel(levelName, levelData) {
         try {
-            const response = await fetch(`/api/levels/${levelName}`, {
+            const response = await fetch(`${this.BASE_PATH}/api/levels/${levelName}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

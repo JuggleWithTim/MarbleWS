@@ -210,11 +210,25 @@
 
     <script>
         let currentLevelName = 'level1'; // Default
+        let basePath = '';
+
+        // Load client configuration
+        async function loadConfig() {
+            try {
+                const response = await fetch('/api/client-config');
+                const config = await response.json();
+                basePath = config.basePath || '';
+                console.log('Admin config loaded:', config);
+            } catch (error) {
+                console.error('Failed to load admin config, using defaults:', error);
+                basePath = '';
+            }
+        }
 
         // Fetch current level from server
         async function fetchCurrentLevel() {
             try {
-                const response = await fetch('/api/current-level');
+                const response = await fetch(`${basePath}/api/current-level`);
                 if (response.ok) {
                     const data = await response.json();
                     currentLevelName = data.levelName;
@@ -235,7 +249,7 @@
         // Fetch and display levels
         async function fetchLevels() {
             try {
-                const response = await fetch('/api/admin/levels');
+                const response = await fetch(`${basePath}/api/admin/levels`);
                 const levels = await response.json();
 
                 const levelsGrid = document.getElementById('levelsGrid');
@@ -276,9 +290,27 @@
             }
         }
 
+        // Load Socket.IO script dynamically
+        async function loadSocketIOScript() {
+            return new Promise((resolve, reject) => {
+                if (window.io) {
+                    resolve();
+                    return;
+                }
+                const script = document.createElement('script');
+                script.src = `${basePath}/socket.io/socket.io.js`;
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+
         // Load a level
         async function loadLevel(levelName) {
             try {
+                // Ensure Socket.IO is loaded
+                await loadSocketIOScript();
+
                 // Send level load command via WebSocket
                 const socket = io();
                 socket.emit('loadLevel', levelName);
@@ -300,7 +332,7 @@
             }
 
             try {
-                const response = await fetch(`/api/admin/levels/${levelName}`, {
+                const response = await fetch(`${basePath}/api/admin/levels/${levelName}`, {
                     method: 'DELETE'
                 });
 
@@ -328,13 +360,11 @@
         }
 
         // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadConfig();
             fetchCurrentLevel();
             fetchLevels();
         });
     </script>
-
-    <!-- Socket.io -->
-    <script src="/socket.io/socket.io.js"></script>
 </body>
 </html>

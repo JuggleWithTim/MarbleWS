@@ -73,20 +73,17 @@
         </div>
     </div>
 
-    <!-- Socket.io -->
-    <script src="/socket.io/socket.io.js"></script>
-    
     <!-- Game Scripts -->
     <script src="js/networking.js"></script>
     <script src="js/renderer.js"></script>
     <script src="js/controls.js"></script>
     <script src="js/game.js"></script>
-    
+
     <script>
         // Initialize the game when page loads
-        window.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('DOMContentLoaded', async () => {
             const game = new Game();
-            game.init();
+            await game.init();
         });
     </script>
 </body>
