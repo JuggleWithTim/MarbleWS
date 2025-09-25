@@ -101,7 +101,8 @@ app.get('/auth/twitch', (req, res) => {
 
 app.get('/auth/twitch/callback', async (req, res) => {
   const { code } = req.query;
-  
+  const basePath = process.env.BASE_PATH || '';
+
   try {
     const tokenResponse = await axios.post('https://id.twitch.tv/oauth2/token', {
       client_id: process.env.TWITCH_CLIENT_ID,
@@ -122,12 +123,12 @@ app.get('/auth/twitch/callback', async (req, res) => {
     });
 
     const user = userResponse.data.data[0];
-    
-    // Redirect back to game with user info
-    res.redirect(`/?username=${user.display_name}&userId=${user.id}`);
+
+    // Redirect back to game with user info (using base path)
+    res.redirect(`${basePath}/?username=${user.display_name}&userId=${user.id}`);
   } catch (error) {
     console.error('Twitch OAuth error:', error);
-    res.redirect('/?error=auth_failed');
+    res.redirect(`${basePath}/?error=auth_failed`);
   }
 });
 
