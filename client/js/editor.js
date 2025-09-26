@@ -144,7 +144,7 @@ class LevelEditor {
         const propertyInputs = [
             'objectColor', 'objectAlpha', 'objectBackgroundImage', 'objectWidth', 'objectHeight', 'objectRadius',
             'objectFriction', 'objectRestitution', 'objectDensity', 'objectRotation', 'objectStatic',
-            'objectSpawnpoint', 'objectGoal', 'objectNextLevel', 'objectSolid', 'objectZIndex'
+            'objectSpawnpoint', 'objectPlayerspawn', 'objectEmotespawn', 'objectGoal', 'objectNextLevel', 'objectSolid', 'objectZIndex'
         ];
 
         propertyInputs.forEach(id => {
@@ -893,6 +893,12 @@ class LevelEditor {
         if (document.getElementById('objectSpawnpoint').checked) {
             properties.push('spawnpoint');
         }
+        if (document.getElementById('objectPlayerspawn').checked) {
+            properties.push('playerspawn');
+        }
+        if (document.getElementById('objectEmotespawn').checked) {
+            properties.push('emotespawn');
+        }
         if (document.getElementById('objectGoal').checked) {
             properties.push('goal');
         }
@@ -987,6 +993,8 @@ class LevelEditor {
 
             // Update property checkboxes
             document.getElementById('objectSpawnpoint').checked = obj.properties.includes('spawnpoint');
+            document.getElementById('objectPlayerspawn').checked = obj.properties.includes('playerspawn');
+            document.getElementById('objectEmotespawn').checked = obj.properties.includes('emotespawn');
             document.getElementById('objectGoal').checked = obj.properties.includes('goal');
 
             // Show/hide nextLevel field based on goal property
@@ -1358,11 +1366,25 @@ class LevelEditor {
             this.ctx.fillText('SPAWN', obj.x, obj.y - 20);
         }
 
+        if (obj.properties.includes('playerspawn')) {
+            this.ctx.fillStyle = '#4ecdc4';
+            this.ctx.font = '12px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText('PLAYER', obj.x, obj.y - 20);
+        }
+
         if (obj.properties.includes('goal')) {
             this.ctx.fillStyle = '#ffff00';
             this.ctx.font = '12px Arial';
             this.ctx.textAlign = 'center';
             this.ctx.fillText('GOAL', obj.x, obj.y - 20);
+        }
+
+        if (obj.properties.includes('emotespawn')) {
+            this.ctx.fillStyle = '#ff00ff';
+            this.ctx.font = '12px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText('EMOTE', obj.x, obj.y - 20);
         }
     }
 

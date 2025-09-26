@@ -41,8 +41,30 @@ class GameLogic {
   }
 
   addPlayer(socketId, username, userId) {
+    // Find spawn position - prioritize playerspawn, then fall back to spawnpoint
+    let spawnX = 960;
+    let spawnY = 540;
+    if (this.levelObjects) {
+      // First try playerspawn
+      let spawnLocation = this.levelObjects.find(obj =>
+        obj.properties && obj.properties.includes('playerspawn')
+      );
+
+      // Fall back to spawnpoint if no playerspawn found
+      if (!spawnLocation) {
+        spawnLocation = this.levelObjects.find(obj =>
+          obj.properties && obj.properties.includes('spawnpoint')
+        );
+      }
+
+      if (spawnLocation) {
+        spawnX = spawnLocation.x;
+        spawnY = spawnLocation.y;
+      }
+    }
+
     // Create UFO physics body
-    const ufoBody = Matter.Bodies.circle(960, 540, 25, {
+    const ufoBody = Matter.Bodies.circle(spawnX, spawnY, 25, {
       isStatic: false,
       friction: 0.2,        // Increased from 0.1
       frictionAir: 0.05,    // Increased from 0.05 for better stopping
@@ -61,25 +83,25 @@ class GameLogic {
       username,
       userId,
       body: ufoBody,
-      x: 960,
-      y: 540,
+      x: spawnX,
+      y: spawnY,
       beamActive: false,
       beamTarget: null,
       xp: 0,
       level: 1,
-      targetX: 960,
-      targetY: 540
+      targetX: spawnX,
+      targetY: spawnY
     };
-    
+
     this.players.set(socketId, player);
-    
+
     // Return clean player data without physics body
     return {
       id: socketId,
       username,
       userId,
-      x: 960,
-      y: 540,
+      x: spawnX,
+      y: spawnY,
       beamActive: false,
       beamTarget: null,
       xp: 0,
@@ -344,15 +366,22 @@ class GameLogic {
   }
 
   spawnEmote(emoteUrl, emoteName) {
-    // Find spawnpoint
-    const spawnpoint = this.levelObjects.find(obj => 
-      obj.properties && obj.properties.includes('spawnpoint')
+    // Find emotespawn first, then fall back to spawnpoint
+    let spawnLocation = this.levelObjects.find(obj =>
+      obj.properties && obj.properties.includes('emotespawn')
     );
 
-    if (spawnpoint) {
+    if (!spawnLocation) {
+      // Fall back to spawnpoint
+      spawnLocation = this.levelObjects.find(obj =>
+        obj.properties && obj.properties.includes('spawnpoint')
+      );
+    }
+
+    if (spawnLocation) {
       const emote = Matter.Bodies.circle(
-        spawnpoint.x + Math.random() * 100 - 50,
-        spawnpoint.y - 50,
+        spawnLocation.x + Math.random() * 100 - 50,
+        spawnLocation.y - 50,
         20,
         {
           friction: 0.3,
@@ -607,11 +636,32 @@ class GameLogic {
     // Remove players that fell off the world and respawn them
     this.players.forEach(player => {
       if (player.body.position.y > worldBounds.minY) {
-        // Respawn UFO at a safe location
-        Matter.Body.setPosition(player.body, { x: 400, y: 200 });
+        // Find respawn location - prioritize playerspawn, then fall back to spawnpoint
+        let respawnX = 400;
+        let respawnY = 200;
+
+        // First try playerspawn
+        let respawnLocation = this.levelObjects.find(obj =>
+          obj.properties && obj.properties.includes('playerspawn')
+        );
+
+        // Fall back to spawnpoint if no playerspawn found
+        if (!respawnLocation) {
+          respawnLocation = this.levelObjects.find(obj =>
+            obj.properties && obj.properties.includes('spawnpoint')
+          );
+        }
+
+        if (respawnLocation) {
+          respawnX = respawnLocation.x;
+          respawnY = respawnLocation.y;
+        }
+
+        // Respawn UFO at spawn location or safe location
+        Matter.Body.setPosition(player.body, { x: respawnX, y: respawnY });
         Matter.Body.setVelocity(player.body, { x: 0, y: 0 });
-        player.x = 400;
-        player.y = 200;
+        player.x = respawnX;
+        player.y = respawnY;
       }
     });
   }getGameState() {
