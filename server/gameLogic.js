@@ -11,6 +11,7 @@ class GameLogic {
     this.levelObjects = [];
     this.constraints = [];
     this.eventListeners = new Map();
+    this.teleportCooldowns = new Map(); // Track teleport cooldowns per object
 
     // Configure physics
     this.engine.world.gravity.y = 0.8;
@@ -577,7 +578,7 @@ class GameLogic {
           player.xp = 0;
         }
       });
-      
+
       // If there's a next level to load, load it
       if (winResult.nextLevel) {
         // Use the socketHandlers to load the next level
@@ -585,6 +586,9 @@ class GameLogic {
         this.emit('loadNextLevel', winResult.nextLevel);
       }
     }
+
+    // Handle teleporter collisions
+    this.handleTeleporters();
 
     // Remove objects that fell off the world (updated for 1920x1080 canvas)
     const worldBounds = { minY: 1200 };// Check marbles that fell off the world and respawn them
@@ -664,7 +668,83 @@ class GameLogic {
         player.y = respawnY;
       }
     });
-  }getGameState() {
+  }
+
+  handleTeleporters() {
+    // Get all teleporter objects
+    const teleporters = this.levelObjects.filter(obj =>
+      obj.properties && obj.properties.includes('teleporter') && obj.teleporterTarget
+    );
+
+    if (teleporters.length === 0) return;
+
+    // Get current timestamp for cooldown checks
+    const now = Date.now();
+
+    // Collect all movable objects that can be teleported
+    const otherPlayers = Array.from(this.players.values());
+    const movableObjects = [
+      ...this.marbles,
+      ...this.emotes,
+      ...this.levelObjects.filter(obj => !obj.isStatic && obj.body),
+      ...otherPlayers
+    ];
+
+    // Check each teleporter for collisions
+    teleporters.forEach(teleporter => {
+      const teleporterBounds = teleporter.body.bounds;
+
+      movableObjects.forEach(obj => {
+        // Skip if object is the teleporter itself
+        if (obj.id === teleporter.id) return;
+
+        // Check if object is on cooldown (global per object)
+        const cooldownKey = `${obj.id}`;
+        const lastTeleport = this.teleportCooldowns.get(cooldownKey);
+        if (lastTeleport && (now - lastTeleport) < 5000) { // 5 second cooldown
+          return;
+        }
+
+        // Check for collision using bounds overlap
+        const objBounds = obj.body.bounds;
+        const collision = !(
+          objBounds.max.x < teleporterBounds.min.x ||
+          objBounds.min.x > teleporterBounds.max.x ||
+          objBounds.max.y < teleporterBounds.min.y ||
+          objBounds.min.y > teleporterBounds.max.y
+        );
+
+        if (collision) {
+          // Find the target teleporter
+          const targetTeleporter = this.levelObjects.find(target =>
+            target.id === teleporter.teleporterTarget &&
+            target.properties && target.properties.includes('teleporter')
+          );
+
+          if (targetTeleporter && targetTeleporter.body) {
+            // Teleport the object to the target position
+            const targetX = targetTeleporter.body.position.x;
+            const targetY = targetTeleporter.body.position.y - 50; // Offset slightly above the target
+
+            Matter.Body.setPosition(obj.body, { x: targetX, y: targetY });
+            Matter.Body.setVelocity(obj.body, { x: 0, y: 0 }); // Stop movement
+
+            // Set cooldown to prevent infinite teleportation loops
+            this.teleportCooldowns.set(cooldownKey, now);
+
+            // Clean up old cooldowns (keep only recent ones)
+            for (const [key, timestamp] of this.teleportCooldowns.entries()) {
+              if (now - timestamp > 2000) { // Remove cooldowns older than 2 seconds
+                this.teleportCooldowns.delete(key);
+              }
+            }
+          }
+        }
+      });
+    });
+  }
+
+  getGameState() {
     return {
       backgroundImage: (this.currentLevel && this.currentLevel.backgroundImage) ? this.currentLevel.backgroundImage : '',
       players: Array.from(this.players.values()).map(player => ({

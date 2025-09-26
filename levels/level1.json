@@ -7,11 +7,11 @@
     {
       "id": "circle_1",
       "shape": "circle",
-      "x": 940,
-      "y": 140,
+      "x": 1040,
+      "y": 120,
       "radius": 25,
       "rotation": 0,
-      "color": "#37fc14",
+      "color": "rgba(55, 252, 20, 1)",
       "backgroundImage": "",
       "isStatic": true,
       "isSolid": false,
@@ -20,7 +20,8 @@
       "restitution": 0.3,
       "properties": [
         "spawnpoint"
-      ]
+      ],
+      "density": 0.001
     },
     {
       "id": "rect_2",
@@ -65,14 +66,15 @@
       "y": 120,
       "radius": 25,
       "rotation": 0,
-      "color": "#629bae",
+      "color": "rgba(98, 155, 174, 0.4392156862745098)",
       "backgroundImage": "",
       "isStatic": true,
-      "isSolid": true,
+      "isSolid": false,
       "zIndex": 0,
       "friction": 0.3,
       "restitution": 0.3,
-      "properties": []
+      "properties": [],
+      "density": 0.001
     },
     {
       "id": "rect_5",
@@ -355,6 +357,84 @@
       "restitution": 0.3,
       "density": 0.0001,
       "properties": []
+    },
+    {
+      "id": "circle_13",
+      "shape": "circle",
+      "x": 360,
+      "y": 320,
+      "radius": 25,
+      "rotation": 0,
+      "color": "rgba(55, 192, 217, 0.5411764705882353)",
+      "backgroundImage": "",
+      "isStatic": true,
+      "isSolid": false,
+      "zIndex": 0,
+      "friction": 0.3,
+      "restitution": 0.3,
+      "density": 0.001,
+      "properties": [
+        "teleporter"
+      ],
+      "teleporterTarget": "circle_14"
+    },
+    {
+      "id": "circle_14",
+      "shape": "circle",
+      "x": 680,
+      "y": 940,
+      "radius": 25,
+      "rotation": 0,
+      "color": "rgba(91, 150, 181, 0.5764705882352941)",
+      "backgroundImage": "",
+      "isStatic": true,
+      "isSolid": false,
+      "zIndex": 0,
+      "friction": 0.3,
+      "restitution": 0.3,
+      "density": 0.001,
+      "properties": [
+        "teleporter"
+      ],
+      "teleporterTarget": "circle_13"
+    },
+    {
+      "id": "circle_15",
+      "shape": "circle",
+      "x": 1200,
+      "y": 140,
+      "radius": 25,
+      "rotation": 0,
+      "color": "rgba(68, 167, 204, 1)",
+      "backgroundImage": "",
+      "isStatic": true,
+      "isSolid": false,
+      "zIndex": 0,
+      "friction": 0.3,
+      "restitution": 0.3,
+      "density": 0.001,
+      "properties": [
+        "playerspawn"
+      ]
+    },
+    {
+      "id": "circle_16",
+      "shape": "circle",
+      "x": 880,
+      "y": 120,
+      "radius": 25,
+      "rotation": 0,
+      "color": "rgba(169, 81, 191, 1)",
+      "backgroundImage": "",
+      "isStatic": true,
+      "isSolid": false,
+      "zIndex": 0,
+      "friction": 0.3,
+      "restitution": 0.3,
+      "density": 0.001,
+      "properties": [
+        "emotespawn"
+      ]
     }
   ],
   "connections": [
