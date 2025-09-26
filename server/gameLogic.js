@@ -11,6 +11,7 @@ class GameLogic {
     this.levelObjects = [];
     this.constraints = [];
     this.eventListeners = new Map();
+    this.teleportCooldowns = new Map(); // Track teleport cooldowns per object
 
     // Configure physics
     this.engine.world.gravity.y = 0.8;
@@ -41,8 +42,30 @@ class GameLogic {
   }
 
   addPlayer(socketId, username, userId) {
+    // Find spawn position - prioritize playerspawn, then fall back to spawnpoint
+    let spawnX = 960;
+    let spawnY = 540;
+    if (this.levelObjects) {
+      // First try playerspawn
+      let spawnLocation = this.levelObjects.find(obj =>
+        obj.properties && obj.properties.includes('playerspawn')
+      );
+
+      // Fall back to spawnpoint if no playerspawn found
+      if (!spawnLocation) {
+        spawnLocation = this.levelObjects.find(obj =>
+          obj.properties && obj.properties.includes('spawnpoint')
+        );
+      }
+
+      if (spawnLocation) {
+        spawnX = spawnLocation.x;
+        spawnY = spawnLocation.y;
+      }
+    }
+
     // Create UFO physics body
-    const ufoBody = Matter.Bodies.circle(960, 540, 25, {
+    const ufoBody = Matter.Bodies.circle(spawnX, spawnY, 25, {
       isStatic: false,
       friction: 0.2,        // Increased from 0.1
       frictionAir: 0.05,    // Increased from 0.05 for better stopping
@@ -61,25 +84,25 @@ class GameLogic {
       username,
       userId,
       body: ufoBody,
-      x: 960,
-      y: 540,
+      x: spawnX,
+      y: spawnY,
       beamActive: false,
       beamTarget: null,
       xp: 0,
       level: 1,
-      targetX: 960,
-      targetY: 540
+      targetX: spawnX,
+      targetY: spawnY
     };
-    
+
     this.players.set(socketId, player);
-    
+
     // Return clean player data without physics body
     return {
       id: socketId,
       username,
       userId,
-      x: 960,
-      y: 540,
+      x: spawnX,
+      y: spawnY,
       beamActive: false,
       beamTarget: null,
       xp: 0,
@@ -344,15 +367,22 @@ class GameLogic {
   }
 
   spawnEmote(emoteUrl, emoteName) {
-    // Find spawnpoint
-    const spawnpoint = this.levelObjects.find(obj => 
-      obj.properties && obj.properties.includes('spawnpoint')
+    // Find emotespawn first, then fall back to spawnpoint
+    let spawnLocation = this.levelObjects.find(obj =>
+      obj.properties && obj.properties.includes('emotespawn')
     );
 
-    if (spawnpoint) {
+    if (!spawnLocation) {
+      // Fall back to spawnpoint
+      spawnLocation = this.levelObjects.find(obj =>
+        obj.properties && obj.properties.includes('spawnpoint')
+      );
+    }
+
+    if (spawnLocation) {
       const emote = Matter.Bodies.circle(
-        spawnpoint.x + Math.random() * 100 - 50,
-        spawnpoint.y - 50,
+        spawnLocation.x + Math.random() * 100 - 50,
+        spawnLocation.y - 50,
         20,
         {
           friction: 0.3,
@@ -548,7 +578,7 @@ class GameLogic {
           player.xp = 0;
         }
       });
-      
+
       // If there's a next level to load, load it
       if (winResult.nextLevel) {
         // Use the socketHandlers to load the next level
@@ -556,6 +586,9 @@ class GameLogic {
         this.emit('loadNextLevel', winResult.nextLevel);
       }
     }
+
+    // Handle teleporter collisions
+    this.handleTeleporters();
 
     // Remove objects that fell off the world (updated for 1920x1080 canvas)
     const worldBounds = { minY: 1200 };// Check marbles that fell off the world and respawn them
@@ -607,14 +640,111 @@ class GameLogic {
     // Remove players that fell off the world and respawn them
     this.players.forEach(player => {
       if (player.body.position.y > worldBounds.minY) {
-        // Respawn UFO at a safe location
-        Matter.Body.setPosition(player.body, { x: 400, y: 200 });
+        // Find respawn location - prioritize playerspawn, then fall back to spawnpoint
+        let respawnX = 400;
+        let respawnY = 200;
+
+        // First try playerspawn
+        let respawnLocation = this.levelObjects.find(obj =>
+          obj.properties && obj.properties.includes('playerspawn')
+        );
+
+        // Fall back to spawnpoint if no playerspawn found
+        if (!respawnLocation) {
+          respawnLocation = this.levelObjects.find(obj =>
+            obj.properties && obj.properties.includes('spawnpoint')
+          );
+        }
+
+        if (respawnLocation) {
+          respawnX = respawnLocation.x;
+          respawnY = respawnLocation.y;
+        }
+
+        // Respawn UFO at spawn location or safe location
+        Matter.Body.setPosition(player.body, { x: respawnX, y: respawnY });
         Matter.Body.setVelocity(player.body, { x: 0, y: 0 });
-        player.x = 400;
-        player.y = 200;
+        player.x = respawnX;
+        player.y = respawnY;
       }
     });
-  }getGameState() {
+  }
+
+  handleTeleporters() {
+    // Get all teleporter objects
+    const teleporters = this.levelObjects.filter(obj =>
+      obj.properties && obj.properties.includes('teleporter') && obj.teleporterTarget
+    );
+
+    if (teleporters.length === 0) return;
+
+    // Get current timestamp for cooldown checks
+    const now = Date.now();
+
+    // Collect all movable objects that can be teleported
+    const otherPlayers = Array.from(this.players.values());
+    const movableObjects = [
+      ...this.marbles,
+      ...this.emotes,
+      ...this.levelObjects.filter(obj => !obj.isStatic && obj.body),
+      ...otherPlayers
+    ];
+
+    // Check each teleporter for collisions
+    teleporters.forEach(teleporter => {
+      const teleporterBounds = teleporter.body.bounds;
+
+      movableObjects.forEach(obj => {
+        // Skip if object is the teleporter itself
+        if (obj.id === teleporter.id) return;
+
+        // Check if object is on cooldown (global per object)
+        const cooldownKey = `${obj.id}`;
+        const lastTeleport = this.teleportCooldowns.get(cooldownKey);
+        if (lastTeleport && (now - lastTeleport) < 5000) { // 5 second cooldown
+          return;
+        }
+
+        // Check for collision using bounds overlap
+        const objBounds = obj.body.bounds;
+        const collision = !(
+          objBounds.max.x < teleporterBounds.min.x ||
+          objBounds.min.x > teleporterBounds.max.x ||
+          objBounds.max.y < teleporterBounds.min.y ||
+          objBounds.min.y > teleporterBounds.max.y
+        );
+
+        if (collision) {
+          // Find the target teleporter
+          const targetTeleporter = this.levelObjects.find(target =>
+            target.id === teleporter.teleporterTarget &&
+            target.properties && target.properties.includes('teleporter')
+          );
+
+          if (targetTeleporter && targetTeleporter.body) {
+            // Teleport the object to the target position
+            const targetX = targetTeleporter.body.position.x;
+            const targetY = targetTeleporter.body.position.y - 50; // Offset slightly above the target
+
+            Matter.Body.setPosition(obj.body, { x: targetX, y: targetY });
+            Matter.Body.setVelocity(obj.body, { x: 0, y: 0 }); // Stop movement
+
+            // Set cooldown to prevent infinite teleportation loops
+            this.teleportCooldowns.set(cooldownKey, now);
+
+            // Clean up old cooldowns (keep only recent ones)
+            for (const [key, timestamp] of this.teleportCooldowns.entries()) {
+              if (now - timestamp > 2000) { // Remove cooldowns older than 2 seconds
+                this.teleportCooldowns.delete(key);
+              }
+            }
+          }
+        }
+      });
+    });
+  }
+
+  getGameState() {
     return {
       backgroundImage: (this.currentLevel && this.currentLevel.backgroundImage) ? this.currentLevel.backgroundImage : '',
       players: Array.from(this.players.values()).map(player => ({

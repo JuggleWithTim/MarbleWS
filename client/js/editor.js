@@ -136,7 +136,13 @@ class LevelEditor {
         
         // Show/hide nextLevel field when goal checkbox is toggled
         document.getElementById('objectGoal').addEventListener('change', (e) => {
-            document.getElementById('nextLevelContainer').style.display = 
+            document.getElementById('nextLevelContainer').style.display =
+                e.target.checked ? 'block' : 'none';
+        });
+
+        // Show/hide teleporterTarget field when teleporter checkbox is toggled
+        document.getElementById('objectTeleporter').addEventListener('change', (e) => {
+            document.getElementById('teleporterTargetContainer').style.display =
                 e.target.checked ? 'block' : 'none';
         });
         
@@ -144,7 +150,7 @@ class LevelEditor {
         const propertyInputs = [
             'objectColor', 'objectAlpha', 'objectBackgroundImage', 'objectWidth', 'objectHeight', 'objectRadius',
             'objectFriction', 'objectRestitution', 'objectDensity', 'objectRotation', 'objectStatic',
-            'objectSpawnpoint', 'objectGoal', 'objectNextLevel', 'objectSolid', 'objectZIndex'
+            'objectSpawnpoint', 'objectPlayerspawn', 'objectEmotespawn', 'objectGoal', 'objectNextLevel', 'objectTeleporter', 'objectTeleporterTarget', 'objectSolid', 'objectZIndex'
         ];
 
         propertyInputs.forEach(id => {
@@ -838,6 +844,12 @@ class LevelEditor {
             obj.nextLevel = nextLevel;
         }
 
+        // Add teleporterTarget property for teleporter objects
+        const teleporterTarget = this.getTeleporterTarget();
+        if (teleporterTarget) {
+            obj.teleporterTarget = teleporterTarget;
+        }
+
         this.level.objects.push(obj);
         this.selectObject(obj);
         this.updateObjectList();
@@ -893,8 +905,17 @@ class LevelEditor {
         if (document.getElementById('objectSpawnpoint').checked) {
             properties.push('spawnpoint');
         }
+        if (document.getElementById('objectPlayerspawn').checked) {
+            properties.push('playerspawn');
+        }
+        if (document.getElementById('objectEmotespawn').checked) {
+            properties.push('emotespawn');
+        }
         if (document.getElementById('objectGoal').checked) {
             properties.push('goal');
+        }
+        if (document.getElementById('objectTeleporter').checked) {
+            properties.push('teleporter');
         }
         return properties;
     }
@@ -902,6 +923,13 @@ class LevelEditor {
     getNextLevel() {
         if (document.getElementById('objectGoal').checked) {
             return document.getElementById('objectNextLevel').value.trim();
+        }
+        return '';
+    }
+
+    getTeleporterTarget() {
+        if (document.getElementById('objectTeleporter').checked) {
+            return document.getElementById('objectTeleporterTarget').value.trim();
         }
         return '';
     }
@@ -987,14 +1015,24 @@ class LevelEditor {
 
             // Update property checkboxes
             document.getElementById('objectSpawnpoint').checked = obj.properties.includes('spawnpoint');
+            document.getElementById('objectPlayerspawn').checked = obj.properties.includes('playerspawn');
+            document.getElementById('objectEmotespawn').checked = obj.properties.includes('emotespawn');
             document.getElementById('objectGoal').checked = obj.properties.includes('goal');
+            document.getElementById('objectTeleporter').checked = obj.properties.includes('teleporter');
 
             // Show/hide nextLevel field based on goal property
             document.getElementById('nextLevelContainer').style.display =
                 obj.properties.includes('goal') ? 'block' : 'none';
 
+            // Show/hide teleporterTarget field based on teleporter property
+            document.getElementById('teleporterTargetContainer').style.display =
+                obj.properties.includes('teleporter') ? 'block' : 'none';
+
             // Set nextLevel value if it exists
             document.getElementById('objectNextLevel').value = obj.nextLevel || '';
+
+            // Set teleporterTarget value if it exists
+            document.getElementById('objectTeleporterTarget').value = obj.teleporterTarget || '';
 
             this.updateStatus(`Selected: ${obj.id}`);
         } else {
@@ -1058,6 +1096,14 @@ class LevelEditor {
             this.selectedObject.nextLevel = nextLevel;
         } else if (this.selectedObject.nextLevel) {
             delete this.selectedObject.nextLevel;
+        }
+
+        // Update teleporterTarget property for teleporter objects
+        const teleporterTarget = this.getTeleporterTarget();
+        if (teleporterTarget) {
+            this.selectedObject.teleporterTarget = teleporterTarget;
+        } else if (this.selectedObject.teleporterTarget) {
+            delete this.selectedObject.teleporterTarget;
         }
 
         this.updateObjectList();
@@ -1358,11 +1404,32 @@ class LevelEditor {
             this.ctx.fillText('SPAWN', obj.x, obj.y - 20);
         }
 
+        if (obj.properties.includes('playerspawn')) {
+            this.ctx.fillStyle = '#4ecdc4';
+            this.ctx.font = '12px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText('PLAYER', obj.x, obj.y - 20);
+        }
+
         if (obj.properties.includes('goal')) {
             this.ctx.fillStyle = '#ffff00';
             this.ctx.font = '12px Arial';
             this.ctx.textAlign = 'center';
             this.ctx.fillText('GOAL', obj.x, obj.y - 20);
+        }
+
+        if (obj.properties.includes('emotespawn')) {
+            this.ctx.fillStyle = '#ff00ff';
+            this.ctx.font = '12px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText('EMOTE', obj.x, obj.y - 20);
+        }
+
+        if (obj.properties.includes('teleporter')) {
+            this.ctx.fillStyle = '#00ffff';
+            this.ctx.font = '12px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText('TELEPORTER', obj.x, obj.y - 20);
         }
     }
 
