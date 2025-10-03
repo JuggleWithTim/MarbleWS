@@ -12,6 +12,7 @@ class GameLogic {
     this.constraints = [];
     this.eventListeners = new Map();
     this.teleportCooldowns = new Map(); // Track teleport cooldowns per object
+    this.activeObjects = new Map(); // Track active object movement state
 
     // Configure physics
     this.engine.world.gravity.y = 0.8;
@@ -182,6 +183,9 @@ class GameLogic {
       Matter.World.remove(this.world, emote.body);
     });
     this.emotes = [];
+
+    // Clear active object states
+    this.activeObjects = new Map();
 
     this.currentLevel = levelData;
 
@@ -587,6 +591,9 @@ class GameLogic {
       }
     }
 
+    // Update active object movements
+    this.updateActiveObjects();
+
     // Handle teleporter collisions
     this.handleTeleporters();
 
@@ -741,6 +748,177 @@ class GameLogic {
           }
         }
       });
+    });
+  }
+
+  updateActiveObjects() {
+    // Get all active objects
+    const activeObjects = this.levelObjects.filter(obj => obj.active && obj.body);
+
+    activeObjects.forEach(obj => {
+      // Initialize movement state if not exists
+      if (!this.activeObjects.has(obj.id)) {
+        this.activeObjects.set(obj.id, {
+          phase: 'toA', // 'toA', 'atA', 'toB', 'atB', 'fromB'
+          startTime: Date.now(),
+          currentPos: { x: obj.body.position.x, y: obj.body.position.y }
+        });
+      }
+
+      const state = this.activeObjects.get(obj.id);
+      const now = Date.now();
+      const elapsed = (now - state.startTime) / 1000; // Convert to seconds
+
+      // Calculate world positions for points A and B (relative to object center)
+      let pointAWorld = { x: obj.x, y: obj.y };
+      let pointBWorld = { x: obj.x, y: obj.y };
+
+      if (obj.pointA) {
+        if (obj.rotation && obj.rotation !== 0) {
+          const cos = Math.cos(obj.rotation);
+          const sin = Math.sin(obj.rotation);
+          pointAWorld.x += obj.pointA.x * cos - obj.pointA.y * sin;
+          pointAWorld.y += obj.pointA.x * sin + obj.pointA.y * cos;
+        } else {
+          pointAWorld.x += obj.pointA.x;
+          pointAWorld.y += obj.pointA.y;
+        }
+      }
+
+      if (obj.pointB) {
+        if (obj.rotation && obj.rotation !== 0) {
+          const cos = Math.cos(obj.rotation);
+          const sin = Math.sin(obj.rotation);
+          pointBWorld.x += obj.pointB.x * cos - obj.pointB.y * sin;
+          pointBWorld.y += obj.pointB.x * sin + obj.pointB.y * cos;
+        } else {
+          pointBWorld.x += obj.pointB.x;
+          pointBWorld.y += obj.pointB.y;
+        }
+      }
+
+      switch (state.phase) {
+        case 'toA':
+          // Move from current position to point A
+          if (obj.timeToA && obj.timeToA > 0) {
+            const progress = Math.min(elapsed / obj.timeToA, 1);
+            const newX = state.currentPos.x + (pointAWorld.x - state.currentPos.x) * progress;
+            const newY = state.currentPos.y + (pointAWorld.y - state.currentPos.y) * progress;
+
+            Matter.Body.setPosition(obj.body, { x: newX, y: newY });
+
+            if (progress >= 1) {
+              // Reached point A, start waiting
+              state.phase = 'atA';
+              state.startTime = now;
+            }
+          } else {
+            // No time specified, move instantly
+            Matter.Body.setPosition(obj.body, pointAWorld);
+            state.phase = 'atA';
+            state.startTime = now;
+          }
+          break;
+
+        case 'atA':
+          // Wait at point A for timeFromA seconds
+          if (obj.timeFromA && obj.timeFromA > 0) {
+            if (elapsed >= obj.timeFromA) {
+              state.phase = 'toB';
+              state.startTime = now;
+              state.currentPos = { x: obj.body.position.x, y: obj.body.position.y };
+            }
+          } else {
+            // No wait time, move to B immediately
+            state.phase = 'toB';
+            state.startTime = now;
+            state.currentPos = { x: obj.body.position.x, y: obj.body.position.y };
+          }
+          break;
+
+        case 'toB':
+          // Move from point A to point B
+          if (obj.speedToB && obj.speedToB > 0) {
+            // Use speed-based movement for toB
+            const dx = pointBWorld.x - obj.body.position.x;
+            const dy = pointBWorld.y - obj.body.position.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance > 1) { // Close enough
+              const speed = obj.speedToB * 60; // Convert to pixels per second (assuming 60 FPS)
+              const moveDistance = speed * (1/60); // Distance to move this frame
+
+              if (moveDistance >= distance) {
+                // Reached point B
+                Matter.Body.setPosition(obj.body, pointBWorld);
+                state.phase = 'atB';
+                state.startTime = now;
+              } else {
+                // Move towards point B
+                const ratio = moveDistance / distance;
+                const newX = obj.body.position.x + dx * ratio;
+                const newY = obj.body.position.y + dy * ratio;
+                Matter.Body.setPosition(obj.body, { x: newX, y: newY });
+              }
+            } else {
+              state.phase = 'atB';
+              state.startTime = now;
+            }
+          } else {
+            // No speed specified, move instantly
+            Matter.Body.setPosition(obj.body, pointBWorld);
+            state.phase = 'atB';
+            state.startTime = now;
+          }
+          break;
+
+        case 'atB':
+          // Wait at point B (brief moment)
+          state.phase = 'fromB';
+          state.startTime = now;
+          state.currentPos = { x: obj.body.position.x, y: obj.body.position.y };
+          break;
+
+        case 'fromB':
+          // Move from point B back to point A
+          if (obj.speedFromB && obj.speedFromB > 0) {
+            // Use speed-based movement for fromB
+            const dx = pointAWorld.x - obj.body.position.x;
+            const dy = pointAWorld.y - obj.body.position.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance > 1) { // Close enough
+              const speed = obj.speedFromB * 60; // Convert to pixels per second
+              const moveDistance = speed * (1/60); // Distance to move this frame
+
+              if (moveDistance >= distance) {
+                // Reached point A, restart cycle
+                Matter.Body.setPosition(obj.body, pointAWorld);
+                state.phase = 'toA';
+                state.startTime = now;
+                state.currentPos = { x: obj.body.position.x, y: obj.body.position.y };
+              } else {
+                // Move towards point A
+                const ratio = moveDistance / distance;
+                const newX = obj.body.position.x + dx * ratio;
+                const newY = obj.body.position.y + dy * ratio;
+                Matter.Body.setPosition(obj.body, { x: newX, y: newY });
+              }
+            } else {
+              // Restart cycle
+              state.phase = 'toA';
+              state.startTime = now;
+              state.currentPos = { x: obj.body.position.x, y: obj.body.position.y };
+            }
+          } else {
+            // No speed specified, move instantly and restart
+            Matter.Body.setPosition(obj.body, pointAWorld);
+            state.phase = 'toA';
+            state.startTime = now;
+            state.currentPos = { x: obj.body.position.x, y: obj.body.position.y };
+          }
+          break;
+      }
     });
   }
 

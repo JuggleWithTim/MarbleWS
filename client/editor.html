@@ -364,6 +364,44 @@
                     <label>Teleporter Target:</label>
                     <input type="text" id="objectTeleporterTarget" placeholder="Object name of teleporter destination">
                 </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="objectActive">
+                    <label for="objectActive">Active (Movable)</label>
+                </div>
+                <div id="activeOptionsContainer" style="display: none; margin-left: 20px; border-left: 2px solid rgba(78, 205, 196, 0.3); padding-left: 10px;">
+                    <div class="property-group">
+                        <label>Point A:</label>
+                        <div style="display: flex; gap: 5px; align-items: center;">
+                            <input type="number" id="objectPointAX" value="0" step="1" style="flex: 1;">
+                            <input type="number" id="objectPointAY" value="0" step="1" style="flex: 1;">
+                            <button class="tool-button" id="pickPointA" style="padding: 4px 8px; font-size: 0.8em;">Pick</button>
+                        </div>
+                    </div>
+                    <div class="property-group">
+                        <label>Point B:</label>
+                        <div style="display: flex; gap: 5px; align-items: center;">
+                            <input type="number" id="objectPointBX" value="0" step="1" style="flex: 1;">
+                            <input type="number" id="objectPointBY" value="0" step="1" style="flex: 1;">
+                            <button class="tool-button" id="pickPointB" style="padding: 4px 8px; font-size: 0.8em;">Pick</button>
+                        </div>
+                    </div>
+                    <div class="property-group">
+                        <label>Time to A (seconds):</label>
+                        <input type="number" id="objectTimeToA" value="2" min="0.1" max="60" step="0.1">
+                    </div>
+                    <div class="property-group">
+                        <label>Time from A (seconds):</label>
+                        <input type="number" id="objectTimeFromA" value="2" min="0.1" max="60" step="0.1">
+                    </div>
+                    <div class="property-group">
+                        <label>Speed to B:</label>
+                        <input type="number" id="objectSpeedToB" value="1" min="0.1" max="10" step="0.1">
+                    </div>
+                    <div class="property-group">
+                        <label>Speed from B:</label>
+                        <input type="number" id="objectSpeedFromB" value="1" min="0.1" max="10" step="0.1">
+                    </div>
+                </div>
                 <div class="property-group">
                     <label>Color:</label>
                     <input type="color" id="objectColor" value="#888888">

@@ -52,6 +52,9 @@ class LevelEditor {
 
         // JSON panel state
         this.jsonPanelVisible = false;
+
+        // Point selection state
+        this.pointSelectionMode = null; // 'pointA' or 'pointB' or null
     }
 
     async init() {
@@ -145,12 +148,19 @@ class LevelEditor {
             document.getElementById('teleporterTargetContainer').style.display =
                 e.target.checked ? 'block' : 'none';
         });
+
+        // Show/hide active options when active checkbox is toggled
+        document.getElementById('objectActive').addEventListener('change', (e) => {
+            document.getElementById('activeOptionsContainer').style.display =
+                e.target.checked ? 'block' : 'none';
+        });
         
         // Property inputs
         const propertyInputs = [
             'objectColor', 'objectAlpha', 'objectBackgroundImage', 'objectWidth', 'objectHeight', 'objectRadius',
             'objectFriction', 'objectRestitution', 'objectDensity', 'objectRotation', 'objectStatic',
-            'objectSpawnpoint', 'objectPlayerspawn', 'objectEmotespawn', 'objectGoal', 'objectNextLevel', 'objectTeleporter', 'objectTeleporterTarget', 'objectSolid', 'objectZIndex'
+            'objectSpawnpoint', 'objectPlayerspawn', 'objectEmotespawn', 'objectGoal', 'objectNextLevel', 'objectTeleporter', 'objectTeleporterTarget', 'objectSolid', 'objectZIndex',
+            'objectActive', 'objectPointAX', 'objectPointAY', 'objectPointBX', 'objectPointBY', 'objectTimeToA', 'objectTimeFromA', 'objectSpeedToB', 'objectSpeedFromB'
         ];
 
         propertyInputs.forEach(id => {
@@ -174,6 +184,10 @@ class LevelEditor {
                 this.deleteObject(this.selectedObject);
             }
         });
+
+        // Point selection event listeners
+        document.getElementById('pickPointA').addEventListener('click', () => this.startPointSelection('pointA'));
+        document.getElementById('pickPointB').addEventListener('click', () => this.startPointSelection('pointB'));
 
         // JSON panel event listeners
         document.getElementById('toggleJsonPanel').addEventListener('click', () => this.toggleJsonPanel());
@@ -217,15 +231,21 @@ class LevelEditor {
         // Convert display coordinates to logical coordinates
         const x = (e.clientX - rect.left) * this.scaleX;
         const y = (e.clientY - rect.top) * this.scaleY;
-        
+
         this.mousePos = { x, y };
         this.dragStart = { x, y };
-        
+
         if (this.snapToGrid) {
             this.mousePos.x = Math.round(x / this.gridSize) * this.gridSize;
             this.mousePos.y = Math.round(y / this.gridSize) * this.gridSize;
         }
-        
+
+        // Handle point selection mode first
+        if (this.pointSelectionMode) {
+            this.setPoint(this.mousePos.x, this.mousePos.y);
+            return;
+        }
+
         switch (this.currentTool) {
             case 'select':
                 this.handleSelect(this.mousePos.x, this.mousePos.y);
@@ -299,7 +319,10 @@ class LevelEditor {
         // Reset cursor to default first
         let cursor = 'default';
 
-        if (this.currentTool === 'select' && this.selectedObject) {
+        // Point selection mode takes priority
+        if (this.pointSelectionMode) {
+            cursor = 'crosshair';
+        } else if (this.currentTool === 'select' && this.selectedObject) {
             const handle = this.getHandleAt(this.mousePos.x, this.mousePos.y);
             if (handle) {
                 switch (handle) {
@@ -1034,6 +1057,21 @@ class LevelEditor {
             // Set teleporterTarget value if it exists
             document.getElementById('objectTeleporterTarget').value = obj.teleporterTarget || '';
 
+            // Set active properties
+            document.getElementById('objectActive').checked = obj.active || false;
+            document.getElementById('activeOptionsContainer').style.display = (obj.active) ? 'block' : 'none';
+
+            if (obj.active) {
+                document.getElementById('objectPointAX').value = obj.pointA ? obj.pointA.x : 0;
+                document.getElementById('objectPointAY').value = obj.pointA ? obj.pointA.y : 0;
+                document.getElementById('objectPointBX').value = obj.pointB ? obj.pointB.x : 0;
+                document.getElementById('objectPointBY').value = obj.pointB ? obj.pointB.y : 0;
+                document.getElementById('objectTimeToA').value = obj.timeToA || 2;
+                document.getElementById('objectTimeFromA').value = obj.timeFromA || 2;
+                document.getElementById('objectSpeedToB').value = obj.speedToB || 1;
+                document.getElementById('objectSpeedFromB').value = obj.speedFromB || 1;
+            }
+
             this.updateStatus(`Selected: ${obj.id}`);
         } else {
             this.updateStatus('No object selected');
@@ -1104,6 +1142,33 @@ class LevelEditor {
             this.selectedObject.teleporterTarget = teleporterTarget;
         } else if (this.selectedObject.teleporterTarget) {
             delete this.selectedObject.teleporterTarget;
+        }
+
+        // Update active properties
+        const isActive = document.getElementById('objectActive').checked;
+        if (isActive) {
+            this.selectedObject.active = true;
+            this.selectedObject.pointA = {
+                x: parseFloat(document.getElementById('objectPointAX').value) || 0,
+                y: parseFloat(document.getElementById('objectPointAY').value) || 0
+            };
+            this.selectedObject.pointB = {
+                x: parseFloat(document.getElementById('objectPointBX').value) || 0,
+                y: parseFloat(document.getElementById('objectPointBY').value) || 0
+            };
+            this.selectedObject.timeToA = parseFloat(document.getElementById('objectTimeToA').value) || 2;
+            this.selectedObject.timeFromA = parseFloat(document.getElementById('objectTimeFromA').value) || 2;
+            this.selectedObject.speedToB = parseFloat(document.getElementById('objectSpeedToB').value) || 1;
+            this.selectedObject.speedFromB = parseFloat(document.getElementById('objectSpeedFromB').value) || 1;
+        } else {
+            this.selectedObject.active = false;
+            // Remove active properties if not active
+            if (this.selectedObject.pointA) delete this.selectedObject.pointA;
+            if (this.selectedObject.pointB) delete this.selectedObject.pointB;
+            if (this.selectedObject.timeToA) delete this.selectedObject.timeToA;
+            if (this.selectedObject.timeFromA) delete this.selectedObject.timeFromA;
+            if (this.selectedObject.speedToB) delete this.selectedObject.speedToB;
+            if (this.selectedObject.speedFromB) delete this.selectedObject.speedFromB;
         }
 
         this.updateObjectList();
@@ -1514,6 +1579,71 @@ class LevelEditor {
         this.ctx.lineTo(rotationHandleX, rotationHandleY);
         this.ctx.stroke();
         this.ctx.setLineDash([]);
+
+        // Draw active points if object is active
+        if (obj.active) {
+            // Draw point A
+            if (obj.pointA) {
+                let pointAX = obj.x + obj.pointA.x;
+                let pointAY = obj.y + obj.pointA.y;
+
+                // Apply rotation to point A
+                if (obj.rotation && obj.rotation !== 0) {
+                    const cos = Math.cos(obj.rotation);
+                    const sin = Math.sin(obj.rotation);
+                    const rotatedX = obj.pointA.x * cos - obj.pointA.y * sin;
+                    const rotatedY = obj.pointA.x * sin + obj.pointA.y * cos;
+                    pointAX = obj.x + rotatedX;
+                    pointAY = obj.y + rotatedY;
+                }
+
+                this.ctx.fillStyle = '#00ff00'; // Green for point A
+                this.ctx.beginPath();
+                this.ctx.arc(pointAX, pointAY, 6, 0, Math.PI * 2);
+                this.ctx.fill();
+
+                this.ctx.strokeStyle = '#00ff00';
+                this.ctx.lineWidth = 2;
+                this.ctx.stroke();
+
+                // Label point A
+                this.ctx.fillStyle = '#ffffff';
+                this.ctx.font = '10px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText('A', pointAX, pointAY - 10);
+            }
+
+            // Draw point B
+            if (obj.pointB) {
+                let pointBX = obj.x + obj.pointB.x;
+                let pointBY = obj.y + obj.pointB.y;
+
+                // Apply rotation to point B
+                if (obj.rotation && obj.rotation !== 0) {
+                    const cos = Math.cos(obj.rotation);
+                    const sin = Math.sin(obj.rotation);
+                    const rotatedX = obj.pointB.x * cos - obj.pointB.y * sin;
+                    const rotatedY = obj.pointB.x * sin + obj.pointB.y * cos;
+                    pointBX = obj.x + rotatedX;
+                    pointBY = obj.y + rotatedY;
+                }
+
+                this.ctx.fillStyle = '#ff0000'; // Red for point B
+                this.ctx.beginPath();
+                this.ctx.arc(pointBX, pointBY, 6, 0, Math.PI * 2);
+                this.ctx.fill();
+
+                this.ctx.strokeStyle = '#ff0000';
+                this.ctx.lineWidth = 2;
+                this.ctx.stroke();
+
+                // Label point B
+                this.ctx.fillStyle = '#ffffff';
+                this.ctx.font = '10px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText('B', pointBX, pointBY - 10);
+            }
+        }
 
         this.ctx.restore(); // Restore context state
     }
@@ -1981,5 +2111,46 @@ class LevelEditor {
             // Recalculate the distance between attachment points
             connection.length = Math.sqrt(Math.pow(attachPointB.x - attachPointA.x, 2) + Math.pow(attachPointB.y - attachPointA.y, 2));
         });
+    }
+
+    // Start point selection mode
+    startPointSelection(pointType) {
+        if (!this.selectedObject) {
+            this.updateStatus('No object selected');
+            return;
+        }
+
+        this.pointSelectionMode = pointType;
+        this.updateStatus(`Click on canvas to set Point ${pointType === 'pointA' ? 'A' : 'B'}`);
+        this.render();
+    }
+
+    // Set point coordinates from canvas click
+    setPoint(x, y) {
+        if (!this.selectedObject || !this.pointSelectionMode) return;
+
+        // Calculate relative coordinates from object center
+        const relativeX = x - this.selectedObject.x;
+        const relativeY = y - this.selectedObject.y;
+
+        if (this.pointSelectionMode === 'pointA') {
+            this.selectedObject.pointA = { x: relativeX, y: relativeY };
+            document.getElementById('objectPointAX').value = Math.round(relativeX);
+            document.getElementById('objectPointAY').value = Math.round(relativeY);
+        } else if (this.pointSelectionMode === 'pointB') {
+            this.selectedObject.pointB = { x: relativeX, y: relativeY };
+            document.getElementById('objectPointBX').value = Math.round(relativeX);
+            document.getElementById('objectPointBY').value = Math.round(relativeY);
+        }
+
+        // Ensure active is set
+        this.selectedObject.active = true;
+        document.getElementById('objectActive').checked = true;
+        document.getElementById('activeOptionsContainer').style.display = 'block';
+
+        const pointLabel = this.pointSelectionMode === 'pointA' ? 'A' : 'B';
+        this.pointSelectionMode = null;
+        this.updateStatus(`Point ${pointLabel} set`);
+        this.render();
     }
 }
