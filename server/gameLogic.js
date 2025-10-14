@@ -119,6 +119,45 @@ class GameLogic {
     this.players.delete(socketId);
   }
 
+  repositionPlayersToSpawn(levelData) {
+    // Find spawn position - prioritize playerspawn, then fall back to spawnpoint
+    let spawnX = 960;
+    let spawnY = 540;
+
+    if (levelData && levelData.objects) {
+      // First try playerspawn
+      let spawnLocation = levelData.objects.find(obj =>
+        obj.properties && obj.properties.includes('playerspawn')
+      );
+
+      // Fall back to spawnpoint if no playerspawn found
+      if (!spawnLocation) {
+        spawnLocation = levelData.objects.find(obj =>
+          obj.properties && obj.properties.includes('spawnpoint')
+        );
+      }
+
+      if (spawnLocation) {
+        spawnX = spawnLocation.x;
+        spawnY = spawnLocation.y;
+      }
+    }
+
+    // Reposition all existing players to the spawnpoint
+    this.players.forEach(player => {
+      if (player.body) {
+        Matter.Body.setPosition(player.body, { x: spawnX, y: spawnY });
+        Matter.Body.setVelocity(player.body, { x: 0, y: 0 });
+        player.x = spawnX;
+        player.y = spawnY;
+
+        // Reset beam state to ensure clean start
+        player.beamActive = false;
+        player.beamTarget = null;
+      }
+    });
+  }
+
   updatePlayerInput(socketId, input) {
     const player = this.players.get(socketId);
     if (player) {
@@ -188,6 +227,9 @@ class GameLogic {
     this.activeObjects = new Map();
 
     this.currentLevel = levelData;
+
+    // Reposition all players to the new level's spawnpoint
+    this.repositionPlayersToSpawn(levelData);
 
     // Create physics bodies for level objects
     levelData.objects.forEach(obj => {
