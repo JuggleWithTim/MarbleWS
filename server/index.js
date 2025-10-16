@@ -18,7 +18,27 @@ const io = socketIo(server, {
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../client')));
+
+// Basic Auth middleware for admin routes
+function basicAuth(req, res, next) {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Basic ')) {
+    res.setHeader('WWW-Authenticate', 'Basic realm="Admin Panel"');
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+
+  const base64Credentials = authHeader.split(' ')[1];
+  const credentials = Buffer.from(base64Credentials, 'base64').toString('ascii');
+  const [username, password] = credentials.split(':');
+
+  if (username !== process.env.ADMIN_USERNAME || password !== process.env.ADMIN_PASSWORD) {
+    res.setHeader('WWW-Authenticate', 'Basic realm="Admin Panel"');
+    return res.status(401).json({ error: 'Invalid credentials' });
+  }
+
+  next();
+}
 
 // Import game modules
 const GameLogic = require('./gameLogic');
@@ -45,14 +65,32 @@ const twitchChat = new TwitchChat(gameLogic);
 // Setup Socket.io handlers
 setupSocketHandlers(io, gameLogic);
 
-// Routes
+// Authenticated routes - must come BEFORE static middleware
+// Editor routes with authentication
+app.get('/editor', basicAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/editor.html'));
+});
+
+app.get('/editor.html', basicAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/editor.html'));
+});
+
+// Admin routes
+app.get('/admin', basicAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/admin.html'));
+});
+
+app.get('/admin.html', basicAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/admin.html'));
+});
+
+// Public routes
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/index.html'));
 });
 
-app.get('/editor', (req, res) => {
-  res.sendFile(path.join(__dirname, '../client/editor.html'));
-});
+// Static middleware - comes AFTER authenticated routes
+app.use(express.static(path.join(__dirname, '../client')));
 
 // Client config endpoint (safe, no secrets)
 app.get('/api/client-config', (req, res) => {
