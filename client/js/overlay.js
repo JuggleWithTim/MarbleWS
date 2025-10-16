@@ -105,14 +105,12 @@ class TransparentRenderer extends Renderer {
             });
         }
 
-        // Movable level objects
+        // All level objects (including active ones)
         if (gameState.levelObjects) {
             gameState.levelObjects.forEach(obj => {
-                if (obj.isStatic === false) {
-                    const id = `levelobj_${obj.id}`;
-                    updateInterpolationData(id, obj.x, obj.y, obj.angle || 0);
-                    existingIds.add(id);
-                }
+                const id = `levelobj_${obj.id}`;
+                updateInterpolationData(id, obj.x, obj.y, obj.angle || 0);
+                existingIds.add(id);
             });
         }
 
@@ -129,19 +127,17 @@ class TransparentRenderer extends Renderer {
         renderer.drawBackground(gameState.backgroundImage);
         renderer.setCamera(960, 540, 1);
 
-        // Draw level objects (interpolated for movable, static as before)
+        // Draw level objects with smooth interpolation (including active objects)
         if (gameState.levelObjects) {
             const sortedObjects = [...gameState.levelObjects].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
             sortedObjects.forEach(obj => {
-                if (obj.isStatic === false) {
-                    const interpolated = getInterpolatedPosition(`levelobj_${obj.id}`);
-                    if (interpolated) {
-                        const objCopy = { ...obj, x: interpolated.x, y: interpolated.y, angle: interpolated.angle };
-                        renderer.drawLevelObject(objCopy);
-                    } else {
-                        renderer.drawLevelObject(obj);
-                    }
+                const interpolated = getInterpolatedPosition(`levelobj_${obj.id}`);
+                if (interpolated) {
+                    // Use interpolated position/angle for smooth movement
+                    const objCopy = { ...obj, x: interpolated.x, y: interpolated.y, angle: interpolated.angle };
+                    renderer.drawLevelObject(objCopy);
                 } else {
+                    // Fallback to server position if no interpolation data
                     renderer.drawLevelObject(obj);
                 }
             });
