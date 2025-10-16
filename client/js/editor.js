@@ -20,6 +20,13 @@ class LevelEditor {
             description: '',
             version: '1.0',
             backgroundImage: '',
+            marble: {
+                color: '#ff6b6b',
+                radius: 30,
+                friction: 0.000005,
+                restitution: 0.7,
+                density: 0.004
+            },
             objects: [],
             connections: []
         };
@@ -122,19 +129,40 @@ class LevelEditor {
             this.render();
         });
         
-        // Level info
+        // Level info and marble properties
         document.getElementById('levelName').addEventListener('input', (e) => {
             this.level.name = e.target.value;
         });
-        
+
         document.getElementById('levelDescription').addEventListener('input', (e) => {
             this.level.description = e.target.value;
         });
-        
+
         document.getElementById('backgroundImage').addEventListener('input', (e) => {
             this.level.backgroundImage = e.target.value;
             this.loadBackgroundImage();
             this.render();
+        });
+
+        // Marble property inputs
+        document.getElementById('marbleColor').addEventListener('input', (e) => {
+            this.level.marble.color = e.target.value;
+        });
+
+        document.getElementById('marbleRadius').addEventListener('input', (e) => {
+            this.level.marble.radius = parseInt(e.target.value);
+        });
+
+        document.getElementById('marbleFriction').addEventListener('input', (e) => {
+            this.level.marble.friction = parseFloat(e.target.value);
+        });
+
+        document.getElementById('marbleRestitution').addEventListener('input', (e) => {
+            this.level.marble.restitution = parseFloat(e.target.value);
+        });
+
+        document.getElementById('marbleDensity').addEventListener('input', (e) => {
+            this.level.marble.density = parseFloat(e.target.value);
         });
         
         // Show/hide nextLevel field when goal checkbox is toggled
@@ -1774,18 +1802,36 @@ class LevelEditor {
             const response = await fetch(`${this.basePath}/api/levels/${levelName}`);
             if (response.ok) {
                 const levelData = await response.json();
-                this.level = levelData;
+                    this.level = levelData;
 
-                document.getElementById('levelName').value = this.level.name;
-                document.getElementById('levelDescription').value = this.level.description || '';
+                    // Ensure marble properties exist with defaults
+                    if (!this.level.marble) {
+                        this.level.marble = {
+                            color: '#ff6b6b',
+                            radius: 30,
+                            friction: 0.000005,
+                            restitution: 0.7,
+                            density: 0.004
+                        };
+                    }
 
-                // Ensure backgroundImage property exists
-                if (!this.level.hasOwnProperty('backgroundImage')) {
-                    this.level.backgroundImage = '';
-                }
+                    // Update marble property inputs
+                    document.getElementById('marbleColor').value = this.level.marble.color || '#ff6b6b';
+                    document.getElementById('marbleRadius').value = this.level.marble.radius || 30;
+                    document.getElementById('marbleFriction').value = this.level.marble.friction || 0.000005;
+                    document.getElementById('marbleRestitution').value = this.level.marble.restitution || 0.7;
+                    document.getElementById('marbleDensity').value = this.level.marble.density || 0.004;
 
-                document.getElementById('backgroundImage').value = this.level.backgroundImage || '';
-                this.loadBackgroundImage();
+                    document.getElementById('levelName').value = this.level.name;
+                    document.getElementById('levelDescription').value = this.level.description || '';
+
+                    // Ensure backgroundImage property exists
+                    if (!this.level.hasOwnProperty('backgroundImage')) {
+                        this.level.backgroundImage = '';
+                    }
+
+                    document.getElementById('backgroundImage').value = this.level.backgroundImage || '';
+                    this.loadBackgroundImage();
 
                 // Load background images for objects
                 this.level.objects.forEach(obj => {

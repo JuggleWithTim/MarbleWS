@@ -182,29 +182,49 @@ class Renderer {
         this.ctx.restore();
     }
 
-    drawMarble(x, y, angle = 0) {
+    drawMarble(x, y, angle = 0, color = '#ff6b6b', radiusOverride = 30) {
         const screenPos = this.worldToScreen(x, y);
-        const radius = 30 * this.camera.zoom;
-        
+        const radius = radiusOverride * this.camera.zoom;
+
         this.ctx.save();
         this.ctx.translate(screenPos.x, screenPos.y);
-        
-        // Marble gradient
-        const gradient = this.ctx.createRadialGradient(-radius * 0.3, -radius * 0.3, 0, 0, 0, radius);
-        gradient.addColorStop(0, '#ff9999');
-        gradient.addColorStop(1, '#ff6b6b');
-        
-        this.ctx.fillStyle = gradient;
+
+        // Parse the color to create a gradient based on the level's marble color
+        const rgbMatch = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+        if (rgbMatch) {
+            const r = parseInt(rgbMatch[1]);
+            const g = parseInt(rgbMatch[2]);
+            const b = parseInt(rgbMatch[3]);
+
+            // Create a radial gradient based on the provided color - lighter at reflection point
+            const gradient = this.ctx.createRadialGradient(-radius * 0.3, -radius * 0.3, 0, 0, 0, radius);
+            const lighterColor = `rgba(${Math.min(255, r + 80)}, ${Math.min(255, g + 80)}, ${Math.min(255, b + 80)}, 1)`;
+            const darkerColor = color;
+
+            gradient.addColorStop(0, lighterColor);
+            gradient.addColorStop(0.7, color);
+            gradient.addColorStop(1, darkerColor);
+
+            this.ctx.fillStyle = gradient;
+        } else {
+            // Fallback gradient if color parsing fails - create simple gradient
+            const gradient = this.ctx.createRadialGradient(-radius * 0.3, -radius * 0.3, 0, 0, 0, radius);
+            gradient.addColorStop(0, `rgba(255, 255, 255, 0.8)`);
+            gradient.addColorStop(0.7, color);
+            gradient.addColorStop(1, color);
+            this.ctx.fillStyle = gradient;
+        }
+
         this.ctx.beginPath();
         this.ctx.arc(0, 0, radius, 0, Math.PI * 2);
         this.ctx.fill();
-        
-        // Marble highlight
-        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+
+        // Marble highlight - always pure white for best contrast regardless of marble color
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
         this.ctx.beginPath();
-        this.ctx.arc(-radius * 0.3, -radius * 0.3, radius * 0.3, 0, Math.PI * 2);
+        this.ctx.arc(-radius * 0.3, -radius * 0.3, radius * 0.25, 0, Math.PI * 2);
         this.ctx.fill();
-        
+
         this.ctx.restore();
     }
 

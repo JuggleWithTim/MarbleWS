@@ -149,9 +149,17 @@ class TransparentRenderer extends Renderer {
                 const id = `marble_${marble.id || marble.username || marble.playerId || marble.x + '_' + marble.y}`;
                 const interpolated = getInterpolatedPosition(id);
                 if (interpolated) {
-                    renderer.drawMarble(interpolated.x, interpolated.y, interpolated.angle);
+                    const marbleColor = (gameState.marbleProperties && gameState.marbleProperties.color) ?
+                        gameState.marbleProperties.color : '#ff6b6b';
+                    const marbleRadius = (gameState.marbleProperties && gameState.marbleProperties.radius) ?
+                        gameState.marbleProperties.radius : 30;
+                    renderer.drawMarble(interpolated.x, interpolated.y, interpolated.angle, marbleColor, marbleRadius);
                 } else {
-                    renderer.drawMarble(marble.x, marble.y, marble.angle);
+                    const marbleColor = (gameState.marbleProperties && gameState.marbleProperties.color) ?
+                        gameState.marbleProperties.color : '#ff6b6b';
+                    const marbleRadius = (gameState.marbleProperties && gameState.marbleProperties.radius) ?
+                        gameState.marbleProperties.radius : 30;
+                    renderer.drawMarble(marble.x, marble.y, marble.angle, marbleColor, marbleRadius);
                 }
             });
         }

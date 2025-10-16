@@ -226,7 +226,15 @@ class GameLogic {
     // Clear active object states
     this.activeObjects = new Map();
 
+    // Store level data and marble properties
     this.currentLevel = levelData;
+    this.marbleProperties = levelData.marble || {
+      color: '#ff6b6b',
+      radius: 30,
+      friction: 0.000005,
+      restitution: 0.7,
+      density: 0.004
+    };
 
     // Reposition all players to the new level's spawnpoint
     this.repositionPlayersToSpawn(levelData);
@@ -408,12 +416,21 @@ class GameLogic {
   }
 
   spawnMarble(x, y) {
-    const marble = Matter.Bodies.circle(x, y, 30, {
+    // Use marble properties from level data, with defaults
+    const properties = this.marbleProperties || {
+      color: '#ff6b6b',
+      radius: 30,
       friction: 0.000005,
       restitution: 0.7,
-      density: 0.004,
+      density: 0.004
+    };
+
+    const marble = Matter.Bodies.circle(x, y, properties.radius, {
+      friction: properties.friction,
+      restitution: properties.restitution,
+      density: properties.density,
       render: {
-        fillStyle: '#ff6b6b'
+        fillStyle: properties.color
       }
     });
 
@@ -980,6 +997,7 @@ class GameLogic {
   getGameState() {
     return {
       backgroundImage: (this.currentLevel && this.currentLevel.backgroundImage) ? this.currentLevel.backgroundImage : '',
+      marbleProperties: this.marbleProperties, // Add marble properties to gameState
       players: Array.from(this.players.values()).map(player => ({
         id: player.id,
         username: player.username,
