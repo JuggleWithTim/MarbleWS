@@ -422,15 +422,19 @@ class Game {
         this.gameState.marbles.forEach(marble => {
             const interpolated = this.getInterpolatedPosition(`marble_${marble.id}`);
             if (interpolated) {
-                // Get current level marble color from marbleProperties
+                // Get current level marble properties
                 const marbleColor = (this.gameState.marbleProperties && this.gameState.marbleProperties.color) ?
                     this.gameState.marbleProperties.color : '#ff6b6b';
-                this.renderer.drawMarble(interpolated.x, interpolated.y, interpolated.angle, marbleColor);
+                const marbleRadius = (this.gameState.marbleProperties && this.gameState.marbleProperties.radius) ?
+                    this.gameState.marbleProperties.radius : 30;
+                this.renderer.drawMarble(interpolated.x, interpolated.y, interpolated.angle, marbleColor, marbleRadius);
             } else {
-                // Fallback to server position if no interpolation data - same color logic
+                // Fallback to server position if no interpolation data - same properties logic
                 const marbleColor = (this.gameState.marbleProperties && this.gameState.marbleProperties.color) ?
                     this.gameState.marbleProperties.color : '#ff6b6b';
-                this.renderer.drawMarble(marble.x, marble.y, marble.angle, marbleColor);
+                const marbleRadius = (this.gameState.marbleProperties && this.gameState.marbleProperties.radius) ?
+                    this.gameState.marbleProperties.radius : 30;
+                this.renderer.drawMarble(marble.x, marble.y, marble.angle, marbleColor, marbleRadius);
             }
         });
         

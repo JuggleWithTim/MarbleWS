@@ -182,9 +182,9 @@ class Renderer {
         this.ctx.restore();
     }
 
-    drawMarble(x, y, angle = 0, color = '#ff6b6b') {
+    drawMarble(x, y, angle = 0, color = '#ff6b6b', radiusOverride = 30) {
         const screenPos = this.worldToScreen(x, y);
-        const radius = 30 * this.camera.zoom;
+        const radius = radiusOverride * this.camera.zoom;
 
         this.ctx.save();
         this.ctx.translate(screenPos.x, screenPos.y);
