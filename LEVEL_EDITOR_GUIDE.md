@@ -123,6 +123,15 @@ The editor consists of several main areas:
 - **Restitution**: How bouncy (0.0 - 2.0, higher = more bouncy)
 - **Density**: Mass per area (0.0001 - 1.0, higher = heavier)
 
+### Marble Properties
+Marbles are the main object players interact with in each level. Customize them to match your level's theme and difficulty:
+
+- **Color**: Marble color using color picker
+- **Radius**: Marble size
+- **Friction**: How slippery marbles are (0.0 = very slippery, 2.0 = sticky)
+- **Restitution**: How bouncy marbles are (0.0 = no bounce, 2.0 = very bouncy)
+- **Density**: Mass per area (0.0001 = light, 0.1 = heavy) - affects how marbles respond to forces
+
 ## Special Object Types
 
 ### Core Types (Required)
@@ -187,15 +196,6 @@ The editor consists of several main areas:
 - **Rope**: Objects connected by massless rope (swing physics)
 - **Spring**: Objects connected by spring (bouncy connections)
 - **Distance**: Objects maintain fixed distance (rigid connections)
-
-### Marble Properties
-Marbles are the main object players interact with in each level. Customize them to match your level's theme and difficulty:
-
-- **Color**: Marble color using color picker
-- **Radius**: Marble size
-- **Friction**: How slippery marbles are (0.0 = very slippery, 2.0 = sticky)
-- **Restitution**: How bouncy marbles are (0.0 = no bounce, 2.0 = very bouncy)
-- **Density**: Mass per area (0.0001 = light, 0.1 = heavy) - affects how marbles respond to forces
 
 ## Advanced Features
 
