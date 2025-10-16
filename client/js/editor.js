@@ -20,6 +20,9 @@ class LevelEditor {
             description: '',
             version: '1.0',
             backgroundImage: '',
+            world: {
+                gravity: 0.8
+            },
             marble: {
                 color: '#ff6b6b',
                 radius: 30,
@@ -130,19 +133,25 @@ class LevelEditor {
         });
         
         // Level info and marble properties
-        document.getElementById('levelName').addEventListener('input', (e) => {
-            this.level.name = e.target.value;
-        });
+            document.getElementById('levelName').addEventListener('input', (e) => {
+                this.level.name = e.target.value;
+            });
 
-        document.getElementById('levelDescription').addEventListener('input', (e) => {
-            this.level.description = e.target.value;
-        });
+            document.getElementById('levelDescription').addEventListener('input', (e) => {
+                this.level.description = e.target.value;
+            });
 
-        document.getElementById('backgroundImage').addEventListener('input', (e) => {
-            this.level.backgroundImage = e.target.value;
-            this.loadBackgroundImage();
-            this.render();
-        });
+            document.getElementById('backgroundImage').addEventListener('input', (e) => {
+                this.level.backgroundImage = e.target.value;
+                this.loadBackgroundImage();
+                this.render();
+            });
+
+            // World physics properties
+            document.getElementById('worldGravity').addEventListener('input', (e) => {
+                this.level.world.gravity = parseFloat(e.target.value);
+                this.updateJsonDisplay(); // Update JSON panel when gravity changes
+            });
 
         // Marble property inputs
         document.getElementById('marbleColor').addEventListener('input', (e) => {
@@ -1832,6 +1841,16 @@ class LevelEditor {
 
                     document.getElementById('backgroundImage').value = this.level.backgroundImage || '';
                     this.loadBackgroundImage();
+
+                    // Ensure world properties exist with defaults
+                    if (!this.level.world) {
+                        this.level.world = { gravity: 0.8 };
+                    } else if (!this.level.world.gravity) {
+                        this.level.world.gravity = 0.8;
+                    }
+
+                    // Update world physics inputs
+                    document.getElementById('worldGravity').value = this.level.world.gravity;
 
                 // Load background images for objects
                 this.level.objects.forEach(obj => {

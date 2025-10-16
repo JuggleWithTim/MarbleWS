@@ -15,7 +15,7 @@ class GameLogic {
     this.activeObjects = new Map(); // Track active object movement state
 
     // Configure physics
-    this.engine.world.gravity.y = 0.8;
+    this.engine.world.gravity.y = 0.8; // Default gravity, will be updated when level loads
 
     // Start physics loop
     this.startPhysicsLoop();
@@ -235,6 +235,14 @@ class GameLogic {
       restitution: 0.7,
       density: 0.004
     };
+
+    // Update world gravity from level data
+    if (levelData.world && levelData.world.gravity !== undefined) {
+      this.engine.world.gravity.y = levelData.world.gravity;
+    } else {
+      // Default gravity if not specified in level
+      this.engine.world.gravity.y = 0.8;
+    }
 
     // Reposition all players to the new level's spawnpoint
     this.repositionPlayersToSpawn(levelData);
