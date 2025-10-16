@@ -307,6 +307,19 @@ class GameLogic {
       return;
     }
 
+    // Rotate constraint points to account for body rotations
+    const rotatePoint = (point, angle) => {
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
+      return {
+        x: point.x * cos - point.y * sin,
+        y: point.x * sin + point.y * cos
+      };
+    };
+
+    const pointA = connection.pointA ? rotatePoint(connection.pointA, bodyA.angle) : { x: 0, y: 0 };
+    const pointB = connection.pointB ? rotatePoint(connection.pointB, bodyB.angle) : { x: 0, y: 0 };
+
     let constraint;
 
     switch (connection.type) {
@@ -315,8 +328,8 @@ class GameLogic {
         constraint = Matter.Constraint.create({
           bodyA: bodyA,
           bodyB: bodyB,
-          pointA: connection.pointA || { x: 0, y: 0 },
-          pointB: connection.pointB || { x: 0, y: 0 },
+          pointA: pointA,
+          pointB: pointB,
           length: connection.length || 0,
           stiffness: connection.stiffness || 1,
           damping: connection.damping || 0.1,
@@ -333,8 +346,8 @@ class GameLogic {
         constraint = Matter.Constraint.create({
           bodyA: bodyA,
           bodyB: bodyB,
-          pointA: connection.pointA || { x: 0, y: 0 },
-          pointB: connection.pointB || { x: 0, y: 0 },
+          pointA: pointA,
+          pointB: pointB,
           length: connection.length || 100,
           stiffness: 0, // Rope should be slack
           render: {
@@ -350,8 +363,8 @@ class GameLogic {
         constraint = Matter.Constraint.create({
           bodyA: bodyA,
           bodyB: bodyB,
-          pointA: connection.pointA || { x: 0, y: 0 },
-          pointB: connection.pointB || { x: 0, y: 0 },
+          pointA: pointA,
+          pointB: pointB,
           length: connection.length || 100,
           stiffness: connection.stiffness || 0.1,
           damping: connection.damping || 0.05,
@@ -368,8 +381,8 @@ class GameLogic {
         constraint = Matter.Constraint.create({
           bodyA: bodyA,
           bodyB: bodyB,
-          pointA: connection.pointA || { x: 0, y: 0 },
-          pointB: connection.pointB || { x: 0, y: 0 },
+          pointA: pointA,
+          pointB: pointB,
           length: connection.length || 100,
           stiffness: 1, // Fixed length
           render: {
