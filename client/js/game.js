@@ -405,18 +405,15 @@ class Game {
             return (a.zIndex || 0) - (b.zIndex || 0);
         });
         
-        // Render level objects (interpolated for movable, static as before)
+        // Render level objects with smooth interpolation (including active objects)
         sortedObjects.forEach(obj => {
-            if (obj.isStatic === false) {
-                const interpolated = this.getInterpolatedPosition(`levelobj_${obj.id}`);
-                if (interpolated) {
-                    // Use interpolated position/angle
-                    const objCopy = { ...obj, x: interpolated.x, y: interpolated.y, angle: interpolated.angle };
-                    this.renderer.drawLevelObject(objCopy);
-                } else {
-                    this.renderer.drawLevelObject(obj);
-                }
+            const interpolated = this.getInterpolatedPosition(`levelobj_${obj.id}`);
+            if (interpolated) {
+                // Use interpolated position/angle for smooth movement
+                const objCopy = { ...obj, x: interpolated.x, y: interpolated.y, angle: interpolated.angle };
+                this.renderer.drawLevelObject(objCopy);
             } else {
+                // Fallback to server position if no interpolation data
                 this.renderer.drawLevelObject(obj);
             }
         });
@@ -554,12 +551,10 @@ class Game {
             });
         }
 
-        // Update interpolation data for movable level objects
+        // Update interpolation data for all level objects (including active ones)
         if (gameState.levelObjects) {
             gameState.levelObjects.forEach(obj => {
-                if (obj.isStatic === false) {
-                    this.updateInterpolationData(`levelobj_${obj.id}`, obj.x, obj.y, obj.angle || 0);
-                }
+                this.updateInterpolationData(`levelobj_${obj.id}`, obj.x, obj.y, obj.angle || 0);
             });
         }
         
@@ -583,9 +578,7 @@ class Game {
         }
         if (gameState.levelObjects) {
             gameState.levelObjects.forEach(obj => {
-                if (obj.isStatic === false) {
-                    existingIds.add(`levelobj_${obj.id}`);
-                }
+                existingIds.add(`levelobj_${obj.id}`);
             });
         }
         
