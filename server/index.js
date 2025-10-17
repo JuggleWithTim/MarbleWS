@@ -25,7 +25,8 @@ const io = socketIo(server, {
     origin: allowedOrigins,
     methods: ["GET", "POST"],
     credentials: true
-  }
+  },
+  trustProxy: true
 });
 
 // Middleware
