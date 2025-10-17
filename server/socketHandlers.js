@@ -3,6 +3,29 @@ const connectedSockets = new Map(); // Track connections per IP
 const MAX_CONNECTIONS_PER_IP = 10;
 
 function setupSocketHandlers(io, gameLogic) {
+  // Function to extract real IP from proxy headers
+  function getClientIP(socket) {
+    // First try Socket.IO's built-in proxy detection
+    if (socket.handshake.address && socket.handshake.address !== '::1' && socket.handshake.address !== '::ffff:127.0.0.1') {
+      return socket.handshake.address;
+    }
+
+    // Fall back to manual extraction from proxy headers
+    const forwardedFor = socket.handshake.headers['x-forwarded-for'];
+    if (forwardedFor) {
+      // X-Forwarded-For can contain multiple IPs, take the first (original client)
+      return forwardedFor.split(',')[0].trim();
+    }
+
+    const realIP = socket.handshake.headers['x-real-ip'];
+    if (realIP) {
+      return realIP;
+    }
+
+    // Last resort - return whatever Socket.IO thinks it is
+    return socket.handshake.address || 'unknown';
+  }
+
   // Listen for loadNextLevel events from gameLogic
   gameLogic.on('loadNextLevel', (nextLevelName) => {
     // Load the next level
@@ -25,8 +48,8 @@ function setupSocketHandlers(io, gameLogic) {
   });
 
   io.on('connection', (socket) => {
-    // Get client IP address
-    const clientIP = socket.handshake.address;
+    // Get real client IP address from proxy headers
+    const clientIP = getClientIP(socket);
 
     // Track connections per IP
     if (!connectedSockets.has(clientIP)) {
