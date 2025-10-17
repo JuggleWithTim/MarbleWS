@@ -98,6 +98,48 @@ class LevelEditor {
         console.log('Using default editor config (empty base path)');
     }
 
+    // Ensure level has all required properties with defaults
+    ensureLevelDefaults(level) {
+        // Ensure marble properties exist
+        if (!level.marble) {
+            level.marble = {
+                color: '#ff6b6b',
+                radius: 30,
+                friction: 0.000005,
+                restitution: 0.7,
+                density: 0.004
+            };
+        } else {
+            // Ensure all marble properties exist with defaults
+            level.marble.color = level.marble.color || '#ff6b6b';
+            level.marble.radius = level.marble.radius || 30;
+            level.marble.friction = level.marble.friction || 0.000005;
+            level.marble.restitution = level.marble.restitution || 0.7;
+            level.marble.density = level.marble.density || 0.004;
+        }
+
+        // Ensure world properties exist
+        if (!level.world) {
+            level.world = {
+                gravity: 0.8
+            };
+        } else {
+            level.world.gravity = level.world.gravity || 0.8;
+        }
+
+        // Ensure arrays exist
+        level.objects = level.objects || [];
+        level.connections = level.connections || [];
+
+        // Ensure other properties exist
+        level.name = level.name || 'new-level';
+        level.description = level.description || '';
+        level.version = level.version || '1.0';
+        level.backgroundImage = level.backgroundImage || '';
+
+        return level;
+    }
+
     setupEventListeners() {
         // Canvas events
         this.canvas.addEventListener('mousedown', (e) => this.onMouseDown(e));
@@ -1788,6 +1830,9 @@ class LevelEditor {
                 connections: []
             };
 
+            // Ensure all default level properties are present
+            this.level = this.ensureLevelDefaults(this.level);
+
             document.getElementById('levelName').value = this.level.name;
             document.getElementById('levelDescription').value = this.level.description;
             document.getElementById('backgroundImage').value = '';
@@ -1813,44 +1858,24 @@ class LevelEditor {
                 const levelData = await response.json();
                     this.level = levelData;
 
-                    // Ensure marble properties exist with defaults
-                    if (!this.level.marble) {
-                        this.level.marble = {
-                            color: '#ff6b6b',
-                            radius: 30,
-                            friction: 0.000005,
-                            restitution: 0.7,
-                            density: 0.004
-                        };
-                    }
+                // Ensure all level properties have defaults
+                this.level = this.ensureLevelDefaults(this.level);
 
-                    // Update marble property inputs
-                    document.getElementById('marbleColor').value = this.level.marble.color || '#ff6b6b';
-                    document.getElementById('marbleRadius').value = this.level.marble.radius || 30;
-                    document.getElementById('marbleFriction').value = this.level.marble.friction || 0.000005;
-                    document.getElementById('marbleRestitution').value = this.level.marble.restitution || 0.7;
-                    document.getElementById('marbleDensity').value = this.level.marble.density || 0.004;
+                // Update marble property inputs
+                document.getElementById('marbleColor').value = this.level.marble.color;
+                document.getElementById('marbleRadius').value = this.level.marble.radius;
+                document.getElementById('marbleFriction').value = this.level.marble.friction;
+                document.getElementById('marbleRestitution').value = this.level.marble.restitution;
+                document.getElementById('marbleDensity').value = this.level.marble.density;
 
-                    document.getElementById('levelName').value = this.level.name;
-                    document.getElementById('levelDescription').value = this.level.description || '';
+                document.getElementById('levelName').value = this.level.name;
+                document.getElementById('levelDescription').value = this.level.description;
 
-                    // Ensure backgroundImage property exists
-                    if (!this.level.hasOwnProperty('backgroundImage')) {
-                        this.level.backgroundImage = '';
-                    }
+                document.getElementById('backgroundImage').value = this.level.backgroundImage;
+                this.loadBackgroundImage();
 
-                    document.getElementById('backgroundImage').value = this.level.backgroundImage || '';
-                    this.loadBackgroundImage();
-
-                    // Ensure world properties exist with defaults
-                    if (!this.level.world) {
-                        this.level.world = { gravity: 0.8 };
-                    } else if (!this.level.world.gravity) {
-                        this.level.world.gravity = 0.8;
-                    }
-
-                    // Update world physics inputs
-                    document.getElementById('worldGravity').value = this.level.world.gravity;
+                // Update world physics inputs
+                document.getElementById('worldGravity').value = this.level.world.gravity;
 
                 // Load background images for objects
                 this.level.objects.forEach(obj => {
@@ -1995,8 +2020,8 @@ class LevelEditor {
                 throw new Error('Invalid level data: objects array required');
             }
 
-            // Update the level data
-            this.level = newLevelData;
+            // Update the level data and ensure defaults
+            this.level = this.ensureLevelDefaults(newLevelData);
 
             // Update UI elements
             document.getElementById('levelName').value = this.level.name || '';
