@@ -202,8 +202,8 @@ function setupSocketHandlers(io, gameLogic) {
       console.log('Player disconnected:', socket.id);
       gameLogic.removePlayer(socket.id);
 
-      // Clean up connection tracking
-      const clientIP = socket.handshake.address;
+      // Clean up connection tracking - using same IP extraction as connect
+      const clientIP = getClientIP(socket);
       if (connectedSockets.has(clientIP)) {
         connectedSockets.get(clientIP).delete(socket.id);
         if (connectedSockets.get(clientIP).size === 0) {
