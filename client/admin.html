@@ -446,9 +446,20 @@
                 // Ensure Socket.IO is loaded
                 await loadSocketIOScript();
 
-                // Send level load command via WebSocket with correct path
-                const socket = io({ path: `${basePath}/socket.io` });
+                // Create temporary socket connection for level loading
+                const socket = io({
+                    path: `${basePath}/socket.io`,
+                    timeout: 5000, // Fail after 5 seconds
+                    reconnection: false // Don't reconnect on disconnect
+                });
+
+                // Send level load command via WebSocket
                 socket.emit('loadLevel', levelName);
+
+                // Clean up immediately after loading
+                setTimeout(() => {
+                    socket.disconnect();
+                }, 100); // Wait 100ms for the emit to complete, then disconnect
 
                 currentLevelName = levelName;
                 document.getElementById('currentLevelName').textContent = levelName;
