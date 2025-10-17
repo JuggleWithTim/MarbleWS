@@ -611,21 +611,56 @@ class GameLogic {
   }
 
   checkWinCondition() {
-    const goals = this.levelObjects.filter(obj => 
+    const goals = this.levelObjects.filter(obj =>
       obj.properties && obj.properties.includes('goal')
     );
 
     if (goals.length === 0) return false;
 
+    // Get marble radius from properties
+    const marbleRadius = this.marbleProperties ? this.marbleProperties.radius : 30;
+
     // Check if any marble reached any goal
     for (const goal of goals) {
       for (const marble of this.marbles) {
-        const distance = Math.sqrt(
-          Math.pow(marble.body.position.x - goal.x, 2) + 
-          Math.pow(marble.body.position.y - goal.y, 2)
-        );
-        
-        if (distance < 50) {
+        const marbleX = marble.body.position.x;
+        const marbleY = marble.body.position.y;
+        let collision = false;
+
+        if (goal.shape === 'circle') {
+          // Circle-circle collision
+          const goalRadius = goal.radius || 50; // Default radius if not specified
+          const distance = Math.sqrt(
+            Math.pow(marbleX - goal.x, 2) +
+            Math.pow(marbleY - goal.y, 2)
+          );
+          collision = distance <= (marbleRadius + goalRadius);
+        } else if (goal.shape === 'rectangle') {
+          // Circle-rectangle collision
+          const halfWidth = (goal.width || 100) / 2;
+          const halfHeight = (goal.height || 100) / 2;
+
+          // Find the closest point on the rectangle to the marble center
+          const closestX = Math.max(goal.x - halfWidth, Math.min(marbleX, goal.x + halfWidth));
+          const closestY = Math.max(goal.y - halfHeight, Math.min(marbleY, goal.y + halfHeight));
+
+          // Calculate distance from marble center to closest point
+          const distance = Math.sqrt(
+            Math.pow(marbleX - closestX, 2) +
+            Math.pow(marbleY - closestY, 2)
+          );
+
+          collision = distance <= marbleRadius;
+        } else {
+          // Fallback to distance-based check for unknown shapes
+          const distance = Math.sqrt(
+            Math.pow(marbleX - goal.x, 2) +
+            Math.pow(marbleY - goal.y, 2)
+          );
+          collision = distance < 50; // Keep old behavior as fallback
+        }
+
+        if (collision) {
           // If this goal has a nextLevel property, return it
           if (goal.nextLevel) {
             return { win: true, nextLevel: goal.nextLevel };
@@ -634,7 +669,7 @@ class GameLogic {
         }
       }
     }
-    
+
     return { win: false };
   }
 
