@@ -305,18 +305,6 @@ class Renderer {
                 this.ctx.font = '12px Arial';
                 this.ctx.textAlign = 'center';
                 this.ctx.fillText('GOAL', screenPos.x, screenPos.y - 20);
-                
-                // Goal glow effect
-                this.ctx.save();
-                this.ctx.globalAlpha = 0.3;
-                this.ctx.shadowColor = '#ffff00';
-                this.ctx.shadowBlur = 20;
-                if (obj.shape === 'rectangle') {
-                    this.drawRectangle(obj.x, obj.y, obj.width + 10, obj.height + 10, '#ffff00', obj.angle);
-                } else if (obj.shape === 'circle') {
-                    this.drawCircle(obj.x, obj.y, obj.radius + 5, '#ffff00', obj.angle);
-                }
-                this.ctx.restore();
             }
         }
     }
