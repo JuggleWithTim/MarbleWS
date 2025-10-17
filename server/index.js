@@ -11,6 +11,9 @@ require('dotenv').config();
 const app = express();
 const server = http.createServer(app);
 
+// Trust proxy for correct IP detection behind nginx
+app.set('trust proxy', true);
+
 // Parse allowed origins from environment
 const PORT = process.env.PORT || 3000;
 const allowedOrigins = process.env.ALLOWED_ORIGINS
