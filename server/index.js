@@ -4,20 +4,46 @@ const socketIo = require('socket.io');
 const path = require('path');
 const cors = require('cors');
 const axios = require('axios');
+const rateLimit = require('express-rate-limit');
+const { RateLimiterMemory } = require('rate-limiter-flexible');
 require('dotenv').config();
 
 const app = express();
 const server = http.createServer(app);
+
+// Trust proxy for correct IP detection behind nginx
+app.set('trust proxy', 1);
+
+// Parse allowed origins from environment
+const PORT = process.env.PORT || 3000;
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
+  : [`http://localhost:${PORT}`, `http://127.0.0.1:${PORT}`];
+
 const io = socketIo(server, {
   cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
+    origin: allowedOrigins,
+    methods: ["GET", "POST"],
+    credentials: true
+  },
+  trustProxy: true
 });
 
 // Middleware
-app.use(cors());
+app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
+
+// Connection rate limiting (for HTTP requests)
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 300, // Limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Apply rate limiting to API routes only
+app.use('/api/', limiter);
 
 // Basic Auth middleware for admin routes
 function basicAuth(req, res, next) {
@@ -331,7 +357,6 @@ app.put('/api/admin/config/twitch-channel', basicAuth, (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Game: http://localhost:${PORT}`);
