@@ -677,10 +677,19 @@ class GameLogic {
     // Handle teleporter collisions
     this.handleTeleporters();
 
-    // Remove objects that fell off the world (updated for 1920x1080 canvas)
-    const worldBounds = { minY: 1200 };// Check marbles that fell off the world and respawn them
+    // Remove/respawn objects that fell off the world
+    const worldBounds = {
+      minX: -200,   // Left bound with margin
+      maxX: 2120,   // Right bound (1920 + margin)
+      minY: -200,   // Top bound with margin (for inverted gravity)
+      maxY: 1280    // Bottom bound (1080 + margin)
+    };
+
+    // Check marbles that went out of bounds in any direction and respawn them
     this.marbles.forEach(marble => {
-      if (marble.body.position.y > worldBounds.minY) {
+      const pos = marble.body.position;
+      if (pos.x < worldBounds.minX || pos.x > worldBounds.maxX ||
+          pos.y < worldBounds.minY || pos.y > worldBounds.maxY) {
         // Find spawnpoint
         const spawnpoint = this.levelObjects.find(obj =>
           obj.properties && obj.properties.includes('spawnpoint')
@@ -697,36 +706,45 @@ class GameLogic {
       }
     });
 
-    // Check movable level objects that fell off the world and respawn them
+    // Check movable level objects that went out of bounds and respawn them
     this.levelObjects.forEach(obj => {
-      if (!obj.isStatic && obj.body && obj.body.position.y > worldBounds.minY) {
-        // Find spawnpoint
-        const spawnpoint = this.levelObjects.find(sp =>
-          sp.properties && sp.properties.includes('spawnpoint')
-        );
+      if (!obj.isStatic && obj.body) {
+        const pos = obj.body.position;
+        if (pos.x < worldBounds.minX || pos.x > worldBounds.maxX ||
+            pos.y < worldBounds.minY || pos.y > worldBounds.maxY) {
+          // Find spawnpoint
+          const spawnpoint = this.levelObjects.find(sp =>
+            sp.properties && sp.properties.includes('spawnpoint')
+          );
 
-        if (spawnpoint) {
-          // Respawn object at spawnpoint
-          Matter.Body.setPosition(obj.body, {
-            x: spawnpoint.x,
-            y: spawnpoint.y - 50
-          });
-          Matter.Body.setVelocity(obj.body, { x: 0, y: 0 });
+          if (spawnpoint) {
+            // Respawn object at spawnpoint
+            Matter.Body.setPosition(obj.body, {
+              x: spawnpoint.x,
+              y: spawnpoint.y - 50
+            });
+            Matter.Body.setVelocity(obj.body, { x: 0, y: 0 });
+          }
         }
       }
     });
 
+    // Remove emotes that went out of bounds
     this.emotes = this.emotes.filter(emote => {
-      if (emote.body.position.y > worldBounds.minY) {
+      const pos = emote.body.position;
+      if (pos.x < worldBounds.minX || pos.x > worldBounds.maxX ||
+          pos.y < worldBounds.minY || pos.y > worldBounds.maxY) {
         Matter.World.remove(this.world, emote.body);
         return false;
       }
       return true;
     });
     
-    // Remove players that fell off the world and respawn them
+    // Remove players that went out of bounds and respawn them
     this.players.forEach(player => {
-      if (player.body.position.y > worldBounds.minY) {
+      const pos = player.body.position;
+      if (pos.x < worldBounds.minX || pos.x > worldBounds.maxX ||
+          pos.y < worldBounds.minY || pos.y > worldBounds.maxY) {
         // Find respawn location - prioritize playerspawn, then fall back to spawnpoint
         let respawnX = 400;
         let respawnY = 200;
