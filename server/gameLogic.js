@@ -60,8 +60,9 @@ class GameLogic {
       }
 
       if (spawnLocation) {
-        spawnX = spawnLocation.x;
-        spawnY = spawnLocation.y;
+        // Use current position if spawnpoint is moving
+        spawnX = spawnLocation.body ? spawnLocation.body.position.x : spawnLocation.x;
+        spawnY = spawnLocation.body ? spawnLocation.body.position.y : spawnLocation.y;
       }
     }
 
@@ -464,9 +465,12 @@ class GameLogic {
     }
 
     if (spawnLocation) {
+      // Use current position if spawnpoint is moving
+      const spawnX = spawnLocation.body ? spawnLocation.body.position.x : spawnLocation.x;
+      const spawnY = spawnLocation.body ? spawnLocation.body.position.y : spawnLocation.y;
       const emote = Matter.Bodies.circle(
-        spawnLocation.x + Math.random() * 100 - 50,
-        spawnLocation.y - 50,
+        spawnX + Math.random() * 100 - 50,
+        spawnY - 50,
         20,
         {
           friction: 0.3,
@@ -731,10 +735,12 @@ class GameLogic {
         );
 
         if (spawnpoint) {
-          // Respawn marble at spawnpoint
+          // Respawn marble at spawnpoint (use current position if spawnpoint is moving)
+          const spawnX = spawnpoint.body ? spawnpoint.body.position.x : spawnpoint.x;
+          const spawnY = spawnpoint.body ? spawnpoint.body.position.y : spawnpoint.y;
           Matter.Body.setPosition(marble.body, {
-            x: spawnpoint.x,
-            y: spawnpoint.y - 50
+            x: spawnX,
+            y: spawnY - 50
           });
           Matter.Body.setVelocity(marble.body, { x: 0, y: 0 });
         }
@@ -753,10 +759,12 @@ class GameLogic {
           );
 
           if (spawnpoint) {
-            // Respawn object at spawnpoint
+            // Respawn object at spawnpoint (use current position if spawnpoint is moving)
+            const spawnX = spawnpoint.body ? spawnpoint.body.position.x : spawnpoint.x;
+            const spawnY = spawnpoint.body ? spawnpoint.body.position.y : spawnpoint.y;
             Matter.Body.setPosition(obj.body, {
-              x: spawnpoint.x,
-              y: spawnpoint.y - 50
+              x: spawnX,
+              y: spawnY - 50
             });
             Matter.Body.setVelocity(obj.body, { x: 0, y: 0 });
           }
@@ -797,8 +805,9 @@ class GameLogic {
         }
 
         if (respawnLocation) {
-          respawnX = respawnLocation.x;
-          respawnY = respawnLocation.y;
+          // Use current position if spawnpoint is moving
+          respawnX = respawnLocation.body ? respawnLocation.body.position.x : respawnLocation.x;
+          respawnY = respawnLocation.body ? respawnLocation.body.position.y : respawnLocation.y;
         }
 
         // Respawn UFO at spawn location or safe location
