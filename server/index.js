@@ -103,11 +103,19 @@ app.get('/editor.html', basicAuth, (req, res) => {
 
 // Admin routes
 app.get('/admin', basicAuth, (req, res) => {
-  res.sendFile(path.join(__dirname, '../client/admin.html'));
+  const fs = require('fs');
+  const filePath = path.join(__dirname, '../client/admin.html');
+  let html = fs.readFileSync(filePath, 'utf8');
+  html = html.replace(/__BASE_PATH__/g, JSON.stringify(process.env.BASE_PATH || ''));
+  res.send(html);
 });
 
 app.get('/admin.html', basicAuth, (req, res) => {
-  res.sendFile(path.join(__dirname, '../client/admin.html'));
+  const fs = require('fs');
+  const filePath = path.join(__dirname, '../client/admin.html');
+  let html = fs.readFileSync(filePath, 'utf8');
+  html = html.replace(/__BASE_PATH__/g, JSON.stringify(process.env.BASE_PATH || ''));
+  res.send(html);
 });
 
 // Public routes
@@ -249,31 +257,7 @@ app.post('/api/levels/:levelName', (req, res) => {
   }
 });
 
-// Basic Auth middleware for admin routes
-function basicAuth(req, res, next) {
-  const authHeader = req.headers.authorization;
 
-  if (!authHeader || !authHeader.startsWith('Basic ')) {
-    res.setHeader('WWW-Authenticate', 'Basic realm="Admin Panel"');
-    return res.status(401).json({ error: 'Authentication required' });
-  }
-
-  const base64Credentials = authHeader.split(' ')[1];
-  const credentials = Buffer.from(base64Credentials, 'base64').toString('ascii');
-  const [username, password] = credentials.split(':');
-
-  if (username !== process.env.ADMIN_USERNAME || password !== process.env.ADMIN_PASSWORD) {
-    res.setHeader('WWW-Authenticate', 'Basic realm="Admin Panel"');
-    return res.status(401).json({ error: 'Invalid credentials' });
-  }
-
-  next();
-}
-
-// Admin routes
-app.get('/admin', basicAuth, (req, res) => {
-  res.sendFile(path.join(__dirname, '../client/admin.html'));
-});
 
 // Admin API routes
 app.get('/api/admin/levels', basicAuth, (req, res) => {
