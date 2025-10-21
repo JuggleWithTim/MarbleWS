@@ -721,10 +721,10 @@ class GameLogic {
 
     // Remove/respawn objects that fell off the world
     const worldBounds = {
-      minX: -200,   // Left bound with margin
-      maxX: 2120,   // Right bound (1920 + margin)
-      minY: -200,   // Top bound with margin (for inverted gravity)
-      maxY: 1280    // Bottom bound (1080 + margin)
+      minX: -700,   // Left bound with margin
+      maxX: 2620,   // Right bound (1920 + margin)
+      minY: -700,   // Top bound with margin (for inverted gravity)
+      maxY: 1780    // Bottom bound (1080 + margin)
     };
 
     // Check marbles that went out of bounds in any direction and respawn them

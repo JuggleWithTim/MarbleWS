@@ -284,13 +284,13 @@
 
     <script>
         let currentLevelName = 'level1'; // Default
-        let basePath = '';
+        let basePath = "__BASE_PATH__";
 
         // Load client configuration
         async function loadConfig() {
             // Fetch from absolute path - works from any route
             try {
-                const response = await fetch('/marblews/nova/api/client-config');
+                const response = await fetch(`${basePath}/api/client-config`);
                 if (response.ok) {
                     const config = await response.json();
                     basePath = config.basePath || '';
