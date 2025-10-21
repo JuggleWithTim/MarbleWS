@@ -206,6 +206,13 @@ class TransparentRenderer extends Renderer {
             updateInterpolationFromGameState(gameState);
             renderGameState(gameState);
         });
+
+        // Send keepalive every 10 minutes to prevent idle timeout
+        setInterval(() => {
+            if (networking.isConnected()) {
+                networking.socket.emit('keepalive');
+            }
+        }, 10 * 60 * 1000); // 10 minutes
     }
 
     init();
