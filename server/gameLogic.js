@@ -629,14 +629,17 @@ class GameLogic {
       for (const marble of this.marbles) {
         const marbleX = marble.body.position.x;
         const marbleY = marble.body.position.y;
+        // Use current goal position if goal is moving
+        const goalX = goal.body ? goal.body.position.x : goal.x;
+        const goalY = goal.body ? goal.body.position.y : goal.y;
         let collision = false;
 
         if (goal.shape === 'circle') {
           // Circle-circle collision
           const goalRadius = goal.radius || 50; // Default radius if not specified
           const distance = Math.sqrt(
-            Math.pow(marbleX - goal.x, 2) +
-            Math.pow(marbleY - goal.y, 2)
+            Math.pow(marbleX - goalX, 2) +
+            Math.pow(marbleY - goalY, 2)
           );
           collision = distance <= (marbleRadius + goalRadius);
         } else if (goal.shape === 'rectangle') {
@@ -645,8 +648,8 @@ class GameLogic {
           const halfHeight = (goal.height || 100) / 2;
 
           // Find the closest point on the rectangle to the marble center
-          const closestX = Math.max(goal.x - halfWidth, Math.min(marbleX, goal.x + halfWidth));
-          const closestY = Math.max(goal.y - halfHeight, Math.min(marbleY, goal.y + halfHeight));
+          const closestX = Math.max(goalX - halfWidth, Math.min(marbleX, goalX + halfWidth));
+          const closestY = Math.max(goalY - halfHeight, Math.min(marbleY, goalY + halfHeight));
 
           // Calculate distance from marble center to closest point
           const distance = Math.sqrt(
@@ -658,8 +661,8 @@ class GameLogic {
         } else {
           // Fallback to distance-based check for unknown shapes
           const distance = Math.sqrt(
-            Math.pow(marbleX - goal.x, 2) +
-            Math.pow(marbleY - goal.y, 2)
+            Math.pow(marbleX - goalX, 2) +
+            Math.pow(marbleY - goalY, 2)
           );
           collision = distance < 50; // Keep old behavior as fallback
         }
