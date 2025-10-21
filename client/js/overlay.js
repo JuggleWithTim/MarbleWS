@@ -181,13 +181,14 @@ class TransparentRenderer extends Renderer {
         if (gameState.players) {
             gameState.players.forEach(player => {
                 const id = `player_${player.id || player.username}`;
+                const color = player.color || '#4ecdc4'; // Fallback to teal if no color provided
                 const interpolated = getInterpolatedPosition(id);
                 if (interpolated) {
-                    renderer.drawUFO(interpolated.x, interpolated.y, '#ff6b6b', player.beamActive);
-                    renderer.drawPlayerName(interpolated.x, interpolated.y, player.username, '#ff6b6b');
+                    renderer.drawUFO(interpolated.x, interpolated.y, color, player.beamActive);
+                    renderer.drawPlayerName(interpolated.x, interpolated.y, player.username, color);
                 } else {
-                    renderer.drawUFO(player.x, player.y, '#ff6b6b', player.beamActive);
-                    renderer.drawPlayerName(player.x, player.y, player.username, '#ff6b6b');
+                    renderer.drawUFO(player.x, player.y, color, player.beamActive);
+                    renderer.drawPlayerName(player.x, player.y, player.username, color);
                 }
             });
         }
