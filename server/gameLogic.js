@@ -60,8 +60,9 @@ class GameLogic {
       }
 
       if (spawnLocation) {
-        spawnX = spawnLocation.x;
-        spawnY = spawnLocation.y;
+        // Use current position if spawnpoint is moving
+        spawnX = spawnLocation.body ? spawnLocation.body.position.x : spawnLocation.x;
+        spawnY = spawnLocation.body ? spawnLocation.body.position.y : spawnLocation.y;
       }
     }
 
@@ -464,9 +465,12 @@ class GameLogic {
     }
 
     if (spawnLocation) {
+      // Use current position if spawnpoint is moving
+      const spawnX = spawnLocation.body ? spawnLocation.body.position.x : spawnLocation.x;
+      const spawnY = spawnLocation.body ? spawnLocation.body.position.y : spawnLocation.y;
       const emote = Matter.Bodies.circle(
-        spawnLocation.x + Math.random() * 100 - 50,
-        spawnLocation.y - 50,
+        spawnX + Math.random() * 100 - 50,
+        spawnY - 50,
         20,
         {
           friction: 0.3,
@@ -625,14 +629,17 @@ class GameLogic {
       for (const marble of this.marbles) {
         const marbleX = marble.body.position.x;
         const marbleY = marble.body.position.y;
+        // Use current goal position if goal is moving
+        const goalX = goal.body ? goal.body.position.x : goal.x;
+        const goalY = goal.body ? goal.body.position.y : goal.y;
         let collision = false;
 
         if (goal.shape === 'circle') {
           // Circle-circle collision
           const goalRadius = goal.radius || 50; // Default radius if not specified
           const distance = Math.sqrt(
-            Math.pow(marbleX - goal.x, 2) +
-            Math.pow(marbleY - goal.y, 2)
+            Math.pow(marbleX - goalX, 2) +
+            Math.pow(marbleY - goalY, 2)
           );
           collision = distance <= (marbleRadius + goalRadius);
         } else if (goal.shape === 'rectangle') {
@@ -641,8 +648,8 @@ class GameLogic {
           const halfHeight = (goal.height || 100) / 2;
 
           // Find the closest point on the rectangle to the marble center
-          const closestX = Math.max(goal.x - halfWidth, Math.min(marbleX, goal.x + halfWidth));
-          const closestY = Math.max(goal.y - halfHeight, Math.min(marbleY, goal.y + halfHeight));
+          const closestX = Math.max(goalX - halfWidth, Math.min(marbleX, goalX + halfWidth));
+          const closestY = Math.max(goalY - halfHeight, Math.min(marbleY, goalY + halfHeight));
 
           // Calculate distance from marble center to closest point
           const distance = Math.sqrt(
@@ -654,8 +661,8 @@ class GameLogic {
         } else {
           // Fallback to distance-based check for unknown shapes
           const distance = Math.sqrt(
-            Math.pow(marbleX - goal.x, 2) +
-            Math.pow(marbleY - goal.y, 2)
+            Math.pow(marbleX - goalX, 2) +
+            Math.pow(marbleY - goalY, 2)
           );
           collision = distance < 50; // Keep old behavior as fallback
         }
@@ -731,10 +738,12 @@ class GameLogic {
         );
 
         if (spawnpoint) {
-          // Respawn marble at spawnpoint
+          // Respawn marble at spawnpoint (use current position if spawnpoint is moving)
+          const spawnX = spawnpoint.body ? spawnpoint.body.position.x : spawnpoint.x;
+          const spawnY = spawnpoint.body ? spawnpoint.body.position.y : spawnpoint.y;
           Matter.Body.setPosition(marble.body, {
-            x: spawnpoint.x,
-            y: spawnpoint.y - 50
+            x: spawnX,
+            y: spawnY - 50
           });
           Matter.Body.setVelocity(marble.body, { x: 0, y: 0 });
         }
@@ -753,10 +762,12 @@ class GameLogic {
           );
 
           if (spawnpoint) {
-            // Respawn object at spawnpoint
+            // Respawn object at spawnpoint (use current position if spawnpoint is moving)
+            const spawnX = spawnpoint.body ? spawnpoint.body.position.x : spawnpoint.x;
+            const spawnY = spawnpoint.body ? spawnpoint.body.position.y : spawnpoint.y;
             Matter.Body.setPosition(obj.body, {
-              x: spawnpoint.x,
-              y: spawnpoint.y - 50
+              x: spawnX,
+              y: spawnY - 50
             });
             Matter.Body.setVelocity(obj.body, { x: 0, y: 0 });
           }
@@ -797,8 +808,9 @@ class GameLogic {
         }
 
         if (respawnLocation) {
-          respawnX = respawnLocation.x;
-          respawnY = respawnLocation.y;
+          // Use current position if spawnpoint is moving
+          respawnX = respawnLocation.body ? respawnLocation.body.position.x : respawnLocation.x;
+          respawnY = respawnLocation.body ? respawnLocation.body.position.y : respawnLocation.y;
         }
 
         // Respawn UFO at spawn location or safe location
