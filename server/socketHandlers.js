@@ -221,7 +221,7 @@ function setupSocketHandlers(io, gameLogic) {
     socket.on('chatMessage', (data) => {
       const { message } = data;
       const player = gameLogic.players.get(socket.id);
-      
+
       if (player) {
         // Broadcast chat message to all players
         io.emit('chatMessage', {
@@ -231,6 +231,11 @@ function setupSocketHandlers(io, gameLogic) {
           timestamp: Date.now()
         });
       }
+    });
+
+    // Handle keepalive messages (for overlays and other passive clients)
+    socket.on('keepalive', () => {
+      resetIdleTimeout();
     });
   });
 
