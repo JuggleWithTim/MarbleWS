@@ -451,9 +451,8 @@ class Game {
         
         // Render players with smooth interpolation
         this.gameState.players.forEach(player => {
-            const isCurrentPlayer = player.id === this.currentPlayer?.id;
-            const color = isCurrentPlayer ? '#4ecdc4' : '#ff6b6b';
-            
+            const color = player.color || '#4ecdc4'; // Fallback to teal if no color provided
+
             // Use interpolated position for smooth movement
             const interpolated = this.getInterpolatedPosition(`player_${player.id}`);
             if (interpolated) {
