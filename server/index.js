@@ -106,7 +106,7 @@ app.get('/admin', basicAuth, (req, res) => {
   const fs = require('fs');
   const filePath = path.join(__dirname, '../client/admin.html');
   let html = fs.readFileSync(filePath, 'utf8');
-  html = html.replace(/__BASE_PATH__/g, JSON.stringify(process.env.BASE_PATH || ''));
+  html = html.replace(/__BASE_PATH__/g, process.env.BASE_PATH || '');
   res.send(html);
 });
 
@@ -114,7 +114,7 @@ app.get('/admin.html', basicAuth, (req, res) => {
   const fs = require('fs');
   const filePath = path.join(__dirname, '../client/admin.html');
   let html = fs.readFileSync(filePath, 'utf8');
-  html = html.replace(/__BASE_PATH__/g, JSON.stringify(process.env.BASE_PATH || ''));
+  html = html.replace(/__BASE_PATH__/g, process.env.BASE_PATH || '');
   res.send(html);
 });
 
