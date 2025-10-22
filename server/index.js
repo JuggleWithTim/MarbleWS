@@ -287,9 +287,19 @@ app.get('/api/admin/levels', basicAuth, (req, res) => {
 app.delete('/api/admin/levels/:levelName', basicAuth, (req, res) => {
   const fs = require('fs');
   const levelPath = path.join(__dirname, '../levels', `${req.params.levelName}.json`);
+  const deletedDir = path.join(__dirname, '../levels/deleted');
 
   if (fs.existsSync(levelPath)) {
-    fs.unlinkSync(levelPath);
+    // Create deleted directory if it doesn't exist
+    if (!fs.existsSync(deletedDir)) {
+      fs.mkdirSync(deletedDir, { recursive: true });
+    }
+
+    // Move file to deleted directory with timestamp to avoid conflicts
+    const timestamp = Date.now();
+    const deletedPath = path.join(deletedDir, `${req.params.levelName}_${timestamp}.json`);
+    fs.renameSync(levelPath, deletedPath);
+
     res.json({ success: true });
   } else {
     res.status(404).json({ error: 'Level not found' });
