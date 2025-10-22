@@ -240,15 +240,15 @@ app.get('/api/current-level', (req, res) => {
   }
 });
 
-app.post('/api/levels/:levelName', (req, res) => {
+app.post('/api/levels/:levelName', basicAuth, (req, res) => {
   const fs = require('fs');
   const levelsDir = path.join(__dirname, '../levels');
   const levelPath = path.join(levelsDir, `${req.params.levelName}.json`);
-  
+
   if (!fs.existsSync(levelsDir)) {
     fs.mkdirSync(levelsDir, { recursive: true });
   }
-  
+
   try {
     fs.writeFileSync(levelPath, JSON.stringify(req.body, null, 2));
     res.json({ success: true });
