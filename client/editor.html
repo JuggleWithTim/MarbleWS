@@ -530,8 +530,9 @@
         </div>
     </div>
 
-    <script src="js/editor.js"></script>
-    <script>
+    <script type="module">
+        import { LevelEditor } from './js/editor/main.js';
+
         // Initialize the editor when page loads
         window.addEventListener('DOMContentLoaded', () => {
             const editor = new LevelEditor();
