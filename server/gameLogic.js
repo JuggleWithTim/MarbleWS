@@ -123,23 +123,24 @@ class GameLogic {
     // Add UFO to physics world
     Matter.World.add(this.world, ufoBody);
 
-    // Load saved appearance or generate default
-    const savedAppearance = this.loadPlayerAppearance(userId);
-    const color = savedAppearance.type === 'default' ? savedAppearance.color : generateColorFromSeed(userId);
+    // Load saved appearance and progress data
+    const savedData = this.loadPlayerAppearance(userId);
+    const color = savedData.ufoAppearance.type === 'default' ? savedData.ufoAppearance.color : generateColorFromSeed(userId);
 
     const player = {
       id: socketId,
       username,
       userId,
       color,
-      ufoAppearance: savedAppearance,
+      ufoAppearance: savedData.ufoAppearance,
       body: ufoBody,
       x: spawnX,
       y: spawnY,
       beamActive: false,
       beamTarget: null,
-      xp: 0,
-      level: 1,
+      xp: savedData.xp,
+      level: savedData.level,
+      coins: savedData.coins,
       targetX: spawnX,
       targetY: spawnY
     };
@@ -156,8 +157,9 @@ class GameLogic {
       y: spawnY,
       beamActive: false,
       beamTarget: null,
-      xp: 0,
-      level: 1
+      xp: savedData.xp,
+      level: savedData.level,
+      coins: savedData.coins
     };
   }
 
@@ -257,14 +259,14 @@ class GameLogic {
       // Always update the color field for username display, regardless of UFO type
       player.color = appearance.color;
 
-      // Save appearance to persistent storage
-      this.savePlayerAppearance(player.userId, appearance);
+      // Save appearance and progress to persistent storage
+      this.savePlayerAppearance(player.userId, appearance, player.level, player.xp, player.coins);
 
       console.log(`Player ${player.username} updated appearance:`, appearance);
     }
   }
 
-  savePlayerAppearance(userId, appearance) {
+  savePlayerAppearance(userId, appearance, level = 1, xp = 0, coins = 100) {
     try {
       // Create players directory if it doesn't exist
       const playersDir = path.join(__dirname, '../players');
@@ -277,6 +279,9 @@ class GameLogic {
       fs.writeFileSync(appearanceFile, JSON.stringify({
         userId,
         ufoAppearance: appearance,
+        level,
+        xp,
+        coins,
         lastUpdated: new Date().toISOString()
       }, null, 2));
 
@@ -293,17 +298,27 @@ class GameLogic {
 
       if (fs.existsSync(appearanceFile)) {
         const data = JSON.parse(fs.readFileSync(appearanceFile, 'utf8'));
-        return data.ufoAppearance;
+        return {
+          ufoAppearance: data.ufoAppearance,
+          level: data.level || 1,
+          xp: data.xp || 0,
+          coins: data.coins || 100
+        };
       }
     } catch (error) {
       console.error('Failed to load player appearance:', error);
     }
 
-    // Return default appearance if loading fails
+    // Return default data if loading fails
     return {
-      type: 'default',
-      color: generateColorFromSeed(userId),
-      image: null
+      ufoAppearance: {
+        type: 'default',
+        color: generateColorFromSeed(userId),
+        image: null
+      },
+      level: 1,
+      xp: 0,
+      coins: 100
     };
   }
 
@@ -807,9 +822,23 @@ class GameLogic {
       // Award XP to all players
       this.players.forEach(player => {
         player.xp += 100;
+        let leveledUp = false;
         if (player.xp >= player.level * 1000) {
+          const oldLevel = player.level;
           player.level++;
           player.xp = 0;
+          // Award coins for leveling up: level × 100
+          const coinReward = oldLevel * 100;
+          player.coins += coinReward;
+          console.log(`Player ${player.username} leveled up to ${player.level} and gained ${coinReward} coins!`);
+          leveledUp = true;
+        }
+
+        // Save progress after XP gain (whether leveled up or not)
+        this.savePlayerAppearance(player.userId, player.ufoAppearance, player.level, player.xp, player.coins);
+
+        if (leveledUp) {
+          console.log(`Player ${player.username} progress saved after leveling up`);
         }
       });
 
@@ -1190,7 +1219,8 @@ class GameLogic {
         beamActive: player.beamActive,
         beamTarget: player.beamTarget,
         xp: player.xp,
-        level: player.level
+        level: player.level,
+        coins: player.coins
       })),
       marbles: this.marbles.map(marble => ({
         id: marble.id,

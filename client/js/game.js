@@ -141,6 +141,14 @@ class Game {
         this.networking.on('gameStateUpdate', (gameState) => {
             this.gameState = gameState;
             this.updateInterpolationFromGameState(gameState);
+
+            // Update current player data if we're logged in
+            if (this.currentPlayer && gameState.players) {
+                const updatedPlayer = gameState.players.find(p => p.id === this.currentPlayer.id);
+                if (updatedPlayer) {
+                    this.currentPlayer = updatedPlayer;
+                }
+            }
         });
         
         this.networking.on('chatMessage', (data) => {
