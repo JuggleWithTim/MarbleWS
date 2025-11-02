@@ -237,6 +237,35 @@ function setupSocketHandlers(io, gameLogic) {
     socket.on('keepalive', () => {
       resetIdleTimeout();
     });
+
+    // Handle player appearance updates
+    socket.on('updateAppearance', (data) => {
+      resetIdleTimeout();
+
+      // Input validation
+      if (typeof data !== 'object' || !data.appearance || typeof data.appearance !== 'object') {
+        return;
+      }
+
+      const { appearance } = data;
+
+      // Validate appearance structure
+      if (typeof appearance.type !== 'string' ||
+          (appearance.type !== 'default' && appearance.type !== 'custom')) {
+        return;
+      }
+
+      if (appearance.type === 'default' && typeof appearance.color !== 'string') {
+        return;
+      }
+
+      if (appearance.type === 'custom' && typeof appearance.image !== 'string') {
+        return;
+      }
+
+      // Update player appearance in game logic
+      gameLogic.updatePlayerAppearance(socket.id, appearance);
+    });
   });
 
   // Broadcast game state updates periodically

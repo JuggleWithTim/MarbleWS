@@ -1,4 +1,6 @@
 const Matter = require('matter-js');
+const fs = require('fs');
+const path = require('path');
 
 // Generate a consistent random color based on a string seed
 function generateColorFromSeed(seed) {
@@ -121,14 +123,16 @@ class GameLogic {
     // Add UFO to physics world
     Matter.World.add(this.world, ufoBody);
 
-    // Generate a consistent color for this player based on their userId
-    const color = generateColorFromSeed(userId);
+    // Load saved appearance or generate default
+    const savedAppearance = this.loadPlayerAppearance(userId);
+    const color = savedAppearance.type === 'default' ? savedAppearance.color : generateColorFromSeed(userId);
 
     const player = {
       id: socketId,
       username,
       userId,
       color,
+      ufoAppearance: savedAppearance,
       body: ufoBody,
       x: spawnX,
       y: spawnY,
@@ -242,6 +246,67 @@ class GameLogic {
         player.beamTarget = null;
       }
     }
+  }
+
+  updatePlayerAppearance(socketId, appearance) {
+    const player = this.players.get(socketId);
+    if (player) {
+      // Update the player's appearance
+      player.ufoAppearance = { ...appearance };
+
+      // If it's a default type, also update the legacy color field for backward compatibility
+      if (appearance.type === 'default') {
+        player.color = appearance.color;
+      }
+
+      // Save appearance to persistent storage
+      this.savePlayerAppearance(player.userId, appearance);
+
+      console.log(`Player ${player.username} updated appearance:`, appearance);
+    }
+  }
+
+  savePlayerAppearance(userId, appearance) {
+    try {
+      // Create players directory if it doesn't exist
+      const playersDir = path.join(__dirname, '../players');
+      if (!fs.existsSync(playersDir)) {
+        fs.mkdirSync(playersDir, { recursive: true });
+      }
+
+      // Save appearance data to a JSON file named after the userId
+      const appearanceFile = path.join(playersDir, `${userId}.json`);
+      fs.writeFileSync(appearanceFile, JSON.stringify({
+        userId,
+        ufoAppearance: appearance,
+        lastUpdated: new Date().toISOString()
+      }, null, 2));
+
+      console.log(`Saved appearance for user ${userId}`);
+    } catch (error) {
+      console.error('Failed to save player appearance:', error);
+    }
+  }
+
+  loadPlayerAppearance(userId) {
+    try {
+      const playersDir = path.join(__dirname, '../players');
+      const appearanceFile = path.join(playersDir, `${userId}.json`);
+
+      if (fs.existsSync(appearanceFile)) {
+        const data = JSON.parse(fs.readFileSync(appearanceFile, 'utf8'));
+        return data.ufoAppearance;
+      }
+    } catch (error) {
+      console.error('Failed to load player appearance:', error);
+    }
+
+    // Return default appearance if loading fails
+    return {
+      type: 'default',
+      color: generateColorFromSeed(userId),
+      image: null
+    };
   }
 
   loadLevel(levelData) {
@@ -1121,6 +1186,7 @@ class GameLogic {
         username: player.username,
         userId: player.userId,
         color: player.color,
+        ufoAppearance: player.ufoAppearance,
         x: player.x,
         y: player.y,
         beamActive: player.beamActive,

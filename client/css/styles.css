@@ -324,6 +324,138 @@ body {
     font-size: 0.9em;
 }
 
+/* Wardrobe Controls */
+#wardrobeControls {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 100;
+}
+
+#wardrobeBtn {
+    background: #ff6b6b;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    margin: 2px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background 0.3s ease;
+}
+
+#wardrobeBtn:hover {
+    background: #e55a5a;
+}
+
+.wardrobe-section {
+    margin-bottom: 25px;
+}
+
+.wardrobe-section h3 {
+    color: #4ecdc4;
+    margin-bottom: 15px;
+    font-size: 1.1em;
+}
+
+#ufoColorPicker {
+    width: 60px;
+    height: 40px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#ufoDesignsList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.ufo-design-item {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    min-width: 100px;
+    border: 2px solid transparent;
+}
+
+.ufo-design-item:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.ufo-design-item.selected {
+    border-color: #4ecdc4;
+    background: rgba(78, 205, 196, 0.1);
+}
+
+.ufo-preview {
+    width: 60px;
+    height: 40px;
+    margin: 0 auto 8px;
+    border-radius: 5px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.default-ufo {
+    background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+    position: relative;
+}
+
+.default-ufo::before {
+    content: '';
+    position: absolute;
+    top: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 30px;
+    height: 15px;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 50% 50% 50% 50% / 100% 100% 50% 50%;
+}
+
+.default-ufo::after {
+    content: '';
+    position: absolute;
+    bottom: 5px;
+    left: 10px;
+    width: 4px;
+    height: 4px;
+    background: #ffff00;
+    border-radius: 50%;
+    box-shadow: 10px 0 0 #ffff00, 20px 0 0 #ffff00, 30px 0 0 #ffff00, 40px 0 0 #ffff00;
+}
+
+.ufo-design-item span {
+    font-size: 0.8em;
+    opacity: 0.9;
+}
+
+.wardrobe-actions {
+    text-align: center;
+    margin-top: 20px;
+}
+
+#applyWardrobeBtn {
+    background: #4ecdc4;
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background 0.3s ease;
+}
+
+#applyWardrobeBtn:hover {
+    background: #44a08d;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     #gameCanvas {

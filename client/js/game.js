@@ -105,12 +105,15 @@ class Game {
         }
         
         this.controls.setupUIControls(this, this.networking.BASE_PATH);
-        
+
+        // Setup wardrobe controls
+        this.setupWardrobeControls();
+
         // Setup beam controls
         this.controls.on('beamActivate', () => {
             this.activateBeam(true);
         });
-        
+
         this.controls.on('beamDeactivate', () => {
             this.activateBeam(false);
         });
@@ -456,11 +459,11 @@ class Game {
             // Use interpolated position for smooth movement
             const interpolated = this.getInterpolatedPosition(`player_${player.id}`);
             if (interpolated) {
-                this.renderer.drawUFO(interpolated.x, interpolated.y, color, player.beamActive);
+                this.renderer.drawUFO(interpolated.x, interpolated.y, color, player.beamActive, player.ufoAppearance);
                 this.renderer.drawPlayerName(interpolated.x, interpolated.y, player.username, color);
             } else {
                 // Fallback to server position if no interpolation data
-                this.renderer.drawUFO(player.x, player.y, color, player.beamActive);
+                this.renderer.drawUFO(player.x, player.y, color, player.beamActive, player.ufoAppearance);
                 this.renderer.drawPlayerName(player.x, player.y, player.username, color);
             }
         });
@@ -573,7 +576,7 @@ class Game {
     // Remove interpolation data for objects that no longer exist
     cleanupInterpolationData(gameState) {
         const existingIds = new Set();
-        
+
         // Collect all existing object IDs
         if (gameState.players) {
             gameState.players.forEach(player => existingIds.add(`player_${player.id}`));
@@ -589,12 +592,132 @@ class Game {
                 existingIds.add(`levelobj_${obj.id}`);
             });
         }
-        
+
         // Remove interpolation data for objects that no longer exist
         for (const [objectId] of this.interpolatedObjects) {
             if (!existingIds.has(objectId)) {
                 this.interpolatedObjects.delete(objectId);
             }
+        }
+    }
+
+    setupWardrobeControls() {
+        const wardrobeBtn = document.getElementById('wardrobeBtn');
+        const wardrobeModal = document.getElementById('wardrobeModal');
+        const closeBtn = wardrobeModal.querySelector('.close');
+        const applyBtn = document.getElementById('applyWardrobeBtn');
+        const colorPicker = document.getElementById('ufoColorPicker');
+        const designsList = document.getElementById('ufoDesignsList');
+
+        if (!wardrobeBtn || !wardrobeModal || !closeBtn || !applyBtn || !colorPicker || !designsList) {
+            console.warn('Wardrobe controls not found');
+            return;
+        }
+
+        // Show wardrobe modal
+        wardrobeBtn.addEventListener('click', () => {
+            this.showWardrobeModal();
+        });
+
+        // Close modal
+        closeBtn.addEventListener('click', () => {
+            wardrobeModal.style.display = 'none';
+        });
+
+        // Close modal when clicking outside
+        window.addEventListener('click', (event) => {
+            if (event.target === wardrobeModal) {
+                wardrobeModal.style.display = 'none';
+            }
+        });
+
+        // Apply changes
+        applyBtn.addEventListener('click', () => {
+            this.applyWardrobeChanges();
+            wardrobeModal.style.display = 'none';
+        });
+
+        // Handle design selection
+        designsList.addEventListener('click', (event) => {
+            const designItem = event.target.closest('.ufo-design-item');
+            if (designItem) {
+                // Remove selected class from all items
+                designsList.querySelectorAll('.ufo-design-item').forEach(item => {
+                    item.classList.remove('selected');
+                });
+                // Add selected class to clicked item
+                designItem.classList.add('selected');
+            }
+        });
+    }
+
+    async showWardrobeModal() {
+        const wardrobeModal = document.getElementById('wardrobeModal');
+        const colorPicker = document.getElementById('ufoColorPicker');
+        const designsList = document.getElementById('ufoDesignsList');
+
+        if (!this.currentPlayer) return;
+
+        // Set current color
+        const currentAppearance = this.currentPlayer.ufoAppearance || { type: 'default', color: this.currentPlayer.color };
+        colorPicker.value = currentAppearance.color || '#4ecdc4';
+
+        // Clear existing designs
+        designsList.innerHTML = '';
+
+        // Add default UFO option
+        const defaultItem = document.createElement('div');
+        defaultItem.className = 'ufo-design-item' + (currentAppearance.type === 'default' ? ' selected' : '');
+        defaultItem.setAttribute('data-type', 'default');
+        defaultItem.innerHTML = `
+            <div class="ufo-preview default-ufo"></div>
+            <span>Default UFO</span>
+        `;
+        designsList.appendChild(defaultItem);
+
+        // Add available custom UFO images
+        // In a production app, you might want to fetch this from a server endpoint
+        const customImages = ['CustomUFO1.png'];
+
+        customImages.forEach(imageName => {
+            const customItem = document.createElement('div');
+            customItem.className = 'ufo-design-item' + (currentAppearance.type === 'custom' && currentAppearance.image === imageName ? ' selected' : '');
+            customItem.setAttribute('data-type', 'custom');
+            customItem.setAttribute('data-image', imageName);
+            customItem.innerHTML = `
+                <div class="ufo-preview" style="background-image: url('img/ufo/${imageName}')"></div>
+                <span>${imageName.replace('.png', '')}</span>
+            `;
+            designsList.appendChild(customItem);
+        });
+
+        wardrobeModal.style.display = 'flex';
+    }
+
+    applyWardrobeChanges() {
+        const colorPicker = document.getElementById('ufoColorPicker');
+        const selectedDesign = document.querySelector('#ufoDesignsList .ufo-design-item.selected');
+
+        if (!selectedDesign) return;
+
+        const designType = selectedDesign.getAttribute('data-type');
+        const appearance = {
+            type: designType,
+            color: colorPicker.value
+        };
+
+        if (designType === 'custom') {
+            appearance.image = selectedDesign.getAttribute('data-image');
+        }
+
+        // Send appearance update to server
+        this.networking.updatePlayerAppearance(appearance);
+
+        // Update local player appearance for immediate feedback
+        if (this.currentPlayer) {
+            this.currentPlayer.ufoAppearance = appearance;
+            // Always update the color property for username display
+            this.currentPlayer.color = appearance.color;
         }
     }
 }

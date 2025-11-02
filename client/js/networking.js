@@ -154,6 +154,12 @@ class Networking {
         }
     }
 
+    updatePlayerAppearance(appearance) {
+        if (this.socket && this.connected) {
+            this.socket.emit('updateAppearance', { appearance });
+        }
+    }
+
     // Event system
     on(event, callback) {
         if (!this.callbacks[event]) {
