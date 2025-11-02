@@ -169,6 +169,16 @@ class Game {
             const response = await fetch(`${this.networking.BASE_PATH}/api/client-config`);
             const config = await response.json();
 
+            // Show top bar and player info for all users (not just dev mode)
+            const topBar = document.getElementById('topBar');
+            if (topBar) {
+                topBar.style.display = '';
+            }
+            const playerInfo = document.getElementById('playerInfo');
+            if (playerInfo) {
+                playerInfo.style.display = '';
+            }
+
             if (config.devMode) {
                 // Show dev login option
                 const devLogin = document.getElementById('devLogin');
@@ -194,8 +204,7 @@ class Game {
 
                 // Show dev-only UI elements
                 const devOnlyIds = [
-                    'playerInfo',
-                    'gameControls',
+                    'topBarActions',
                     'onlinePlayers',
                     'chat',
                     'gameUI'
@@ -303,19 +312,24 @@ class Game {
 
     updatePlayerInfo() {
         if (!this.currentPlayer) return;
-        
+
         const playerName = document.getElementById('playerName');
         const playerLevel = document.getElementById('playerLevel');
+        const playerCoins = document.getElementById('playerCoins');
         const xpFill = document.getElementById('xpFill');
-        
+
         if (playerName) {
             playerName.textContent = this.currentPlayer.username;
         }
-        
+
         if (playerLevel) {
             playerLevel.textContent = `Level ${this.currentPlayer.level}`;
         }
-        
+
+        if (playerCoins) {
+            playerCoins.textContent = `Coins: ${this.currentPlayer.coins}`;
+        }
+
         if (xpFill) {
             const xpPercent = (this.currentPlayer.xp / (this.currentPlayer.level * 1000)) * 100;
             xpFill.style.width = `${xpPercent}%`;

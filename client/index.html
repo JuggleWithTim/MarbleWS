@@ -24,25 +24,34 @@
     </div>
 
     <div id="gameScreen" class="screen" style="display: none;">
-        <div id="wardrobeControls">
-            <button id="wardrobeBtn">Wardrobe</button>
-        </div>
-
-        <div id="gameUI" style="display:none;">
-<div id="playerInfo" style="display:none;">
-                <span id="playerName">Player</span>
-                <span id="playerLevel">Level 1</span>
+        <div id="topBar">
+            <div id="playerInfo" style="display:none;">
+                <div id="playerStats">
+                    <span id="playerName">Player</span>
+                    <span id="playerLevel">Level 1</span>
+                    <span id="playerCoins">Coins: 100</span>
+                    <button id="wardrobeBtn">Wardrobe</button>
+                </div>
                 <div id="xpBar">
                     <div id="xpFill"></div>
                 </div>
             </div>
-
-<div id="gameControls" style="display:none;">
+            <div id="topBarActions" style="display:none;">
                 <button id="levelSelectBtn">Select Level</button>
                 <button id="editorBtn">Level Editor</button>
                 <button id="testEmoteBtn">Test Emote</button>
             </div>
+            <div id="controls">
+                <div class="control-info">
+                    <h3>Controls:</h3>
+                    <p><strong>WASD</strong> - Move UFO</p>
+                    <p><strong>SPACEBAR</strong> - Activate Beam</p>
+                    <p><strong>Goal:</strong> Help the marble reach the finish!</p>
+                </div>
+            </div>
+        </div>
 
+        <div id="gameUI" style="display:none;">
 <div id="onlinePlayers" style="display:none;">
                 <h3>Online Players</h3>
                 <div id="playersList"></div>
@@ -50,15 +59,6 @@
         </div>
 
         <canvas id="gameCanvas" width="1920" height="1080"></canvas>
-
-        <div id="controls">
-            <div class="control-info">
-                <h3>Controls:</h3>
-                <p><strong>WASD</strong> - Move UFO</p>
-                <p><strong>SPACEBAR</strong> - Activate Beam</p>
-                <p><strong>Goal:</strong> Help the marble reach the finish!</p>
-            </div>
-        </div>
 
 <div id="chat" style="display:none;">
             <div id="chatMessages"></div>
