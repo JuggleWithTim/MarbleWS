@@ -254,10 +254,8 @@ class GameLogic {
       // Update the player's appearance
       player.ufoAppearance = { ...appearance };
 
-      // If it's a default type, also update the legacy color field for backward compatibility
-      if (appearance.type === 'default') {
-        player.color = appearance.color;
-      }
+      // Always update the color field for username display, regardless of UFO type
+      player.color = appearance.color;
 
       // Save appearance to persistent storage
       this.savePlayerAppearance(player.userId, appearance);
