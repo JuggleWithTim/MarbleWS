@@ -1,6 +1,7 @@
 // Core functionality for the LevelEditor class
 
 import { DEFAULT_LEVEL, CANVAS_SCALE, RESIZE_HANDLE_SIZE, ROTATION_HANDLE_OFFSET } from './constants.js';
+import { loadObjectImage } from './utils.js';
 
 export class LevelEditorCore {
     constructor() {
@@ -117,5 +118,19 @@ export class LevelEditorCore {
         level.backgroundImage = level.backgroundImage || DEFAULT_LEVEL.backgroundImage;
 
         return level;
+    }
+
+    // Load object background image using the utility function
+    loadObjectImage(url) {
+        const promise = loadObjectImage(url, this.objectImages);
+
+        // When the image loads, trigger a re-render
+        promise.then(() => {
+            if (this.render) {
+                this.render();
+            }
+        });
+
+        return promise;
     }
 }
