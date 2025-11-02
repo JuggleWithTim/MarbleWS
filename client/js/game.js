@@ -106,7 +106,7 @@ class Game {
         
         this.controls.setupUIControls(this, this.networking.BASE_PATH);
 
-        // Setup wardrobe controls
+        // Setup wardrobe and store controls
         this.setupWardrobeControls();
 
         // Setup beam controls
@@ -161,6 +161,11 @@ class Game {
         
         this.networking.on('error', (error) => {
             this.showError(error.message);
+        });
+
+        // Add unlock result handler
+        this.networking.socket.on('unlockResult', (result) => {
+            this.handleUnlockResult(result);
         });
     }
 
@@ -624,6 +629,31 @@ class Game {
     }
 
     setupWardrobeControls() {
+        // Setup Store controls
+        const storeBtn = document.getElementById('storeBtn');
+        const storeModal = document.getElementById('storeModal');
+        const storeCloseBtn = storeModal.querySelector('.close');
+
+        if (storeBtn && storeModal && storeCloseBtn) {
+            // Show store modal
+            storeBtn.addEventListener('click', () => {
+                this.showStoreModal();
+            });
+
+            // Close store modal
+            storeCloseBtn.addEventListener('click', () => {
+                storeModal.style.display = 'none';
+            });
+
+            // Close store modal when clicking outside
+            window.addEventListener('click', (event) => {
+                if (event.target === storeModal) {
+                    storeModal.style.display = 'none';
+                }
+            });
+        }
+
+        // Setup Wardrobe controls
         const wardrobeBtn = document.getElementById('wardrobeBtn');
         const wardrobeModal = document.getElementById('wardrobeModal');
         const closeBtn = wardrobeModal.querySelector('.close');
@@ -659,18 +689,68 @@ class Game {
             wardrobeModal.style.display = 'none';
         });
 
-        // Handle design selection
-        designsList.addEventListener('click', (event) => {
-            const designItem = event.target.closest('.ufo-design-item');
-            if (designItem) {
-                // Remove selected class from all items
-                designsList.querySelectorAll('.ufo-design-item').forEach(item => {
-                    item.classList.remove('selected');
-                });
-                // Add selected class to clicked item
-                designItem.classList.add('selected');
+        // Note: Individual click handlers are now added to each UFO item in showWardrobeModal
+    }
+
+    async showStoreModal() {
+        const storeModal = document.getElementById('storeModal');
+        const storeItemsList = document.getElementById('storeItemsList');
+
+        if (!this.currentPlayer || !storeItemsList) return;
+
+        // Clear existing items
+        storeItemsList.innerHTML = '';
+
+        // UFO costs and data
+        const ufoData = {
+            'CustomUFO1.png': { cost: 50, name: 'Custom UFO 1' },
+            'Fez.png': { cost: 100, name: 'Fez UFO' }
+        };
+
+        // Get player's unlocked UFOs
+        const unlockedUFOs = this.currentPlayer.unlockedUFOs || [];
+
+        // Add store items
+        Object.entries(ufoData).forEach(([imageName, data]) => {
+            const isUnlocked = unlockedUFOs.includes(imageName);
+
+            const storeItem = document.createElement('div');
+            storeItem.className = 'store-item' + (isUnlocked ? ' unlocked' : '');
+
+            let itemHTML = `
+                <div class="store-preview" style="background-image: url('img/ufo/${imageName}')"></div>
+                <div class="store-item-name">${data.name}</div>
+                <div class="store-price">${data.cost} coins</div>
+            `;
+
+            if (isUnlocked) {
+                itemHTML += `<div class="store-owned">OWNED</div>`;
+            } else {
+                const canAfford = this.currentPlayer.coins >= data.cost;
+                itemHTML += `
+                    <button class="store-buy-btn ${canAfford ? '' : 'disabled'}" data-ufo="${imageName}" ${canAfford ? '' : 'disabled'}>
+                        ${canAfford ? 'Buy' : 'Not enough coins'}
+                    </button>
+                `;
             }
+
+            storeItem.innerHTML = itemHTML;
+
+            // Add click handler for purchase button
+            if (!isUnlocked) {
+                const buyBtn = storeItem.querySelector('.store-buy-btn');
+                if (buyBtn && !buyBtn.disabled) {
+                    buyBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.purchaseUFO(imageName, data.cost);
+                    });
+                }
+            }
+
+            storeItemsList.appendChild(storeItem);
         });
+
+        storeModal.style.display = 'flex';
     }
 
     async showWardrobeModal() {
@@ -687,7 +767,10 @@ class Game {
         // Clear existing designs
         designsList.innerHTML = '';
 
-        // Add default UFO option
+        // Get player's unlocked UFOs (initialize as empty array if not present)
+        const unlockedUFOs = this.currentPlayer.unlockedUFOs || [];
+
+        // Add default UFO option (always available)
         const defaultItem = document.createElement('div');
         defaultItem.className = 'ufo-design-item' + (currentAppearance.type === 'default' ? ' selected' : '');
         defaultItem.setAttribute('data-type', 'default');
@@ -695,25 +778,91 @@ class Game {
             <div class="ufo-preview default-ufo"></div>
             <span>Default UFO</span>
         `;
+        defaultItem.addEventListener('click', () => this.selectUFODesign(defaultItem));
         designsList.appendChild(defaultItem);
 
-        // Add available custom UFO images
-        // In a production app, you might want to fetch this from a server endpoint
+        // Add only unlocked custom UFO images
         const customImages = ['CustomUFO1.png', 'Fez.png'];
 
         customImages.forEach(imageName => {
-            const customItem = document.createElement('div');
-            customItem.className = 'ufo-design-item' + (currentAppearance.type === 'custom' && currentAppearance.image === imageName ? ' selected' : '');
-            customItem.setAttribute('data-type', 'custom');
-            customItem.setAttribute('data-image', imageName);
-            customItem.innerHTML = `
-                <div class="ufo-preview" style="background-image: url('img/ufo/${imageName}')"></div>
-                <span>${imageName.replace('.png', '')}</span>
-            `;
-            designsList.appendChild(customItem);
+            const isUnlocked = unlockedUFOs.includes(imageName);
+            const isSelected = currentAppearance.type === 'custom' && currentAppearance.image === imageName;
+
+            if (isUnlocked) {
+                const customItem = document.createElement('div');
+                customItem.className = 'ufo-design-item' + (isSelected ? ' selected' : '');
+                customItem.setAttribute('data-type', 'custom');
+                customItem.setAttribute('data-image', imageName);
+
+                customItem.innerHTML = `
+                    <div class="ufo-preview" style="background-image: url('img/ufo/${imageName}')"></div>
+                    <span>${imageName.replace('.png', '')}</span>
+                `;
+
+                // Add click event for unlocked items
+                customItem.addEventListener('click', () => this.selectUFODesign(customItem));
+                designsList.appendChild(customItem);
+            }
         });
 
         wardrobeModal.style.display = 'flex';
+    }
+
+    selectUFODesign(designItem) {
+        // Remove selected class from all items
+        const designsList = document.getElementById('ufoDesignsList');
+        designsList.querySelectorAll('.ufo-design-item').forEach(item => {
+            item.classList.remove('selected');
+        });
+        // Add selected class to clicked item
+        designItem.classList.add('selected');
+    }
+
+    purchaseUFO(ufoImage, cost) {
+        if (!this.currentPlayer) return;
+
+        // Check if player has enough coins
+        if (this.currentPlayer.coins < cost) {
+            this.showError('Not enough coins to purchase this UFO!');
+            return;
+        }
+
+        // Send unlock request to server
+        this.networking.unlockUFO(ufoImage);
+    }
+
+    handleUnlockResult(result) {
+        if (result.success) {
+            // Update local player data
+            if (this.currentPlayer) {
+                this.currentPlayer.coins = result.remainingCoins;
+                this.currentPlayer.unlockedUFOs = result.unlockedUFOs;
+                this.updatePlayerInfo();
+            }
+
+            // Update networking currentPlayer as well
+            if (this.networking.currentPlayer) {
+                this.networking.currentPlayer.coins = result.remainingCoins;
+                this.networking.currentPlayer.unlockedUFOs = result.unlockedUFOs;
+            }
+
+            // Refresh both store and wardrobe modals to show updated state
+            const storeModal = document.getElementById('storeModal');
+            const wardrobeModal = document.getElementById('wardrobeModal');
+
+            if (storeModal.style.display === 'flex') {
+                this.showStoreModal();
+            }
+            if (wardrobeModal.style.display === 'flex') {
+                this.showWardrobeModal();
+            }
+
+            // Show success message
+            this.showError(`Successfully unlocked ${result.ufoImage.replace('.png', '')} for ${result.cost} coins!`);
+        } else {
+            // Show error message
+            this.showError(result.message || 'Failed to unlock UFO');
+        }
     }
 
     applyWardrobeChanges() {

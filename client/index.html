@@ -30,7 +30,8 @@
                     <span id="playerName">Player</span>
                     <span id="playerLevel">Level 1</span>
                     <span id="playerCoins">Coins: 100</span>
-                    <button id="wardrobeBtn">Wardrobe</button>
+                    <button id="storeBtn">Store</button>
+                    <button id="wardrobeBtn">Garage</button>
                 </div>
                 <div id="xpBar">
                     <div id="xpFill"></div>
@@ -77,21 +78,36 @@
         </div>
     </div>
 
+    <div id="storeModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Store</h2>
+            <div id="storeContent">
+                <div class="store-section">
+                    <h3>Custom UFO Designs</h3>
+                    <div id="storeItemsList">
+                        <!-- Store items will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="wardrobeModal" class="modal" style="display: none;">
         <div class="modal-content">
             <span class="close">&times;</span>
-            <h2>Customize Your UFO</h2>
+            <h2>Space Garage</h2>
             <div id="wardrobeContent">
                 <div class="wardrobe-section">
-                    <h3>UFO Color</h3>
+                    <h3>UFO & Username Color</h3>
                     <input type="color" id="ufoColorPicker" value="#4ecdc4">
                 </div>
                 <div class="wardrobe-section">
-                    <h3>Custom UFO Designs</h3>
+                    <h3>Unlocked UFO Designs</h3>
                     <div id="ufoDesignsList">
                         <div class="ufo-design-item selected" data-type="default">
                             <div class="ufo-preview default-ufo"></div>
-                            <span>Default UFO</span>
+                            <span>Default</span>
                         </div>
                     </div>
                 </div>

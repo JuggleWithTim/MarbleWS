@@ -473,6 +473,78 @@ body {
     opacity: 0.9;
 }
 
+.ufo-design-item.locked {
+    opacity: 0.7;
+    cursor: default;
+}
+
+.ufo-design-item.locked:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.ufo-locked-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-around;
+    padding: 4px;
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 6px;
+    pointer-events: auto;
+}
+
+.lock-icon {
+    font-size: 1.5em;
+    margin-bottom: 2px;
+    opacity: 0.9;
+}
+
+.ufo-cost {
+    font-size: 0.7em;
+    color: #ffc107;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 6px;
+    background: rgba(255, 193, 7, 0.1);
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+.purchase-btn {
+    background: #ffc107;
+    color: #000;
+    border: 2px solid #e0a800;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8em;
+    font-weight: bold;
+    transition: all 0.2s ease;
+    min-width: 80px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.purchase-btn:hover:not(:disabled) {
+    background: #e0a800;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.purchase-btn:hover {
+    background: #e0a800;
+}
+
+.purchase-btn:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
 .wardrobe-actions {
     text-align: center;
     margin-top: 20px;
@@ -491,6 +563,116 @@ body {
 
 #applyWardrobeBtn:hover {
     background: #44a08d;
+}
+
+/* Store Controls */
+#storeBtn {
+    background: #ffc107;
+    color: #000;
+    border: none;
+    padding: 8px 15px;
+    margin: 2px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background 0.3s ease;
+}
+
+#storeBtn:hover {
+    background: #e0a800;
+}
+
+.store-section {
+    margin-bottom: 25px;
+}
+
+.store-section h3 {
+    color: #ffc107;
+    margin-bottom: 15px;
+    font-size: 1.1em;
+}
+
+#storeItemsList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.store-item {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    min-width: 120px;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.store-item:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.store-item.unlocked {
+    border-color: #28a745;
+    background: rgba(40, 167, 69, 0.1);
+}
+
+.store-preview {
+    width: 60px;
+    height: 40px;
+    margin: 0 auto 10px;
+    border-radius: 5px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.store-item-name {
+    font-size: 0.9em;
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #ffc107;
+}
+
+.store-price {
+    font-size: 0.8em;
+    color: #ffc107;
+    margin-bottom: 10px;
+    background: rgba(255, 193, 7, 0.1);
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.store-buy-btn {
+    background: #ffc107;
+    color: #000;
+    border: 2px solid #e0a800;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85em;
+    font-weight: bold;
+    transition: all 0.2s ease;
+    min-width: 80px;
+}
+
+.store-buy-btn:hover:not(:disabled) {
+    background: #e0a800;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.store-buy-btn:disabled {
+    background: #6c757d;
+    border-color: #5a6268;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.store-owned {
+    color: #28a745;
+    font-weight: bold;
+    font-size: 0.8em;
 }
 
 /* Responsive Design */

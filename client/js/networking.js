@@ -160,6 +160,12 @@ class Networking {
         }
     }
 
+    unlockUFO(ufoImage) {
+        if (this.socket && this.connected) {
+            this.socket.emit('unlockUFO', { ufoImage });
+        }
+    }
+
     // Event system
     on(event, callback) {
         if (!this.callbacks[event]) {

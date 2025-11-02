@@ -133,6 +133,7 @@ class GameLogic {
       userId,
       color,
       ufoAppearance: savedData.ufoAppearance,
+      unlockedUFOs: savedData.unlockedUFOs,
       body: ufoBody,
       x: spawnX,
       y: spawnY,
@@ -153,6 +154,8 @@ class GameLogic {
       username,
       userId,
       color,
+      ufoAppearance: savedData.ufoAppearance,
+      unlockedUFOs: savedData.unlockedUFOs,
       x: spawnX,
       y: spawnY,
       beamActive: false,
@@ -253,6 +256,12 @@ class GameLogic {
   updatePlayerAppearance(socketId, appearance) {
     const player = this.players.get(socketId);
     if (player) {
+      // Validate that custom UFOs are unlocked before allowing selection
+      if (appearance.type === 'custom' && !player.unlockedUFOs.includes(appearance.image)) {
+        console.log(`Player ${player.username} attempted to select locked UFO: ${appearance.image}`);
+        return; // Reject the appearance change
+      }
+
       // Update the player's appearance
       player.ufoAppearance = { ...appearance };
 
@@ -260,13 +269,56 @@ class GameLogic {
       player.color = appearance.color;
 
       // Save appearance and progress to persistent storage
-      this.savePlayerData(player.userId, appearance, player.level, player.xp, player.coins);
+      this.savePlayerData(player.userId, appearance, player.level, player.xp, player.coins, player.unlockedUFOs);
 
       console.log(`Player ${player.username} updated appearance:`, appearance);
     }
   }
 
-  savePlayerData(userId, appearance, level = 1, xp = 0, coins = 100) {
+  unlockUFO(socketId, ufoImage) {
+    const player = this.players.get(socketId);
+    if (!player) return { success: false, message: 'Player not found' };
+
+    // Define UFO costs
+    const ufoCosts = {
+      'CustomUFO1.png': 50,
+      'Fez.png': 100
+    };
+
+    const cost = ufoCosts[ufoImage];
+    if (!cost) {
+      return { success: false, message: 'Invalid UFO image' };
+    }
+
+    // Check if already unlocked
+    if (player.unlockedUFOs.includes(ufoImage)) {
+      return { success: false, message: 'UFO already unlocked' };
+    }
+
+    // Check if player has enough coins
+    if (player.coins < cost) {
+      return { success: false, message: 'Not enough coins' };
+    }
+
+    // Deduct coins and add to unlocked list
+    player.coins -= cost;
+    player.unlockedUFOs.push(ufoImage);
+
+    // Save updated data
+    this.savePlayerData(player.userId, player.ufoAppearance, player.level, player.xp, player.coins, player.unlockedUFOs);
+
+    console.log(`Player ${player.username} unlocked UFO ${ufoImage} for ${cost} coins`);
+
+    return {
+      success: true,
+      ufoImage,
+      cost,
+      remainingCoins: player.coins,
+      unlockedUFOs: player.unlockedUFOs
+    };
+  }
+
+  savePlayerData(userId, appearance, level = 1, xp = 0, coins = 100, unlockedUFOs = []) {
     try {
       // Create players directory if it doesn't exist
       const playersDir = path.join(__dirname, '../players');
@@ -282,6 +334,7 @@ class GameLogic {
         level,
         xp,
         coins,
+        unlockedUFOs,
         lastUpdated: new Date().toISOString()
       }, null, 2));
 
@@ -302,7 +355,8 @@ class GameLogic {
           ufoAppearance: data.ufoAppearance,
           level: data.level || 1,
           xp: data.xp || 0,
-          coins: data.coins || 100
+          coins: data.coins || 100,
+          unlockedUFOs: data.unlockedUFOs || []
         };
       }
     } catch (error) {
@@ -318,7 +372,8 @@ class GameLogic {
       },
       level: 1,
       xp: 0,
-      coins: 100
+      coins: 100,
+      unlockedUFOs: []
     };
   }
 
@@ -1214,6 +1269,7 @@ class GameLogic {
         userId: player.userId,
         color: player.color,
         ufoAppearance: player.ufoAppearance,
+        unlockedUFOs: player.unlockedUFOs,
         x: player.x,
         y: player.y,
         beamActive: player.beamActive,

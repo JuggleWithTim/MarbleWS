@@ -266,6 +266,25 @@ function setupSocketHandlers(io, gameLogic) {
       // Update player appearance in game logic
       gameLogic.updatePlayerAppearance(socket.id, appearance);
     });
+
+    // Handle UFO unlock purchases
+    socket.on('unlockUFO', (data) => {
+      resetIdleTimeout();
+
+      // Input validation
+      if (typeof data !== 'object' || typeof data.ufoImage !== 'string') {
+        socket.emit('unlockResult', { success: false, message: 'Invalid request' });
+        return;
+      }
+
+      const { ufoImage } = data;
+
+      // Attempt to unlock the UFO
+      const result = gameLogic.unlockUFO(socket.id, ufoImage);
+
+      // Send result back to client
+      socket.emit('unlockResult', result);
+    });
   });
 
   // Broadcast game state updates periodically
