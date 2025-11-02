@@ -283,6 +283,82 @@
         .json-button.danger:hover {
             background: #e55a5a;
         }
+
+        /* Tooltip styles */
+        .tooltip-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip-icon {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            background: rgba(78, 205, 196, 0.8);
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 16px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: help;
+            margin-left: 8px;
+            vertical-align: middle;
+            transition: background 0.3s ease;
+        }
+
+        .tooltip-icon:hover {
+            background: #4ecdc4;
+        }
+
+        .tooltip-text {
+            visibility: hidden;
+            max-width: 250px;
+            background-color: rgba(0, 0, 0, 0.9);
+            color: #fff;
+            text-align: left;
+            border-radius: 6px;
+            padding: 8px 12px;
+            position: fixed; /* Changed from absolute to fixed to position relative to viewport */
+            z-index: 10001;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.8em;
+            line-height: 1.4;
+            border: 1px solid rgba(78, 205, 196, 0.3);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            word-wrap: break-word;
+            pointer-events: none; /* Prevent tooltips from interfering with mouse events */
+        }
+
+        .tooltip-text::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: rgba(0, 0, 0, 0.9) transparent transparent transparent;
+        }
+
+        .tooltip-container:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* Adjust tooltip positioning for different sections */
+        .level-info .tooltip-text {
+            left: 0;
+            margin-left: 0;
+            width: 200px;
+        }
+
+        .tool-section .tooltip-text {
+            left: 0;
+            margin-left: 0;
+            width: 200px;
+        }
     </style>
 </head>
 <body>
@@ -291,15 +367,30 @@
             <div class="level-info">
                 <h2>Level Editor</h2>
                 <div class="property-group">
-                    <label>Level Name:</label>
+                    <label>Level Name:
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">The unique identifier for this level. Used when saving/loading levels and for level progression.</span>
+                        </span>
+                    </label>
                     <input type="text" id="levelName" placeholder="Enter level name" value="new-level">
                 </div>
                 <div class="property-group">
-                    <label>Description:</label>
+                    <label>Description:
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Optional description text for the level. This is for your reference and doesn't affect gameplay.</span>
+                        </span>
+                    </label>
                     <input type="text" id="levelDescription" placeholder="Level description">
                 </div>
                 <div class="property-group">
-                    <label>Background Image:</label>
+                    <label>Level Background Image:
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">URL or path to an image that will be displayed as the level background. Leave empty for a transparent background.</span>
+                        </span>
+                    </label>
                     <input type="text" id="backgroundImage" placeholder="Image URL or path">
                 </div>
             </div>
@@ -314,7 +405,12 @@
             </div>
 
             <div class="tool-section">
-                <h3>Connection Type</h3>
+                <h3>Connection Type
+                    <span class="tooltip-container">
+                        <span class="tooltip-icon">?</span>
+                        <span class="tooltip-text">Choose how objects are connected: Revolute (hinge joint), Rope (slack connection), Spring (elastic), or Distance (fixed length).</span>
+                    </span>
+                </h3>
                 <div class="property-group">
                     <label>Type:</label>
                     <select id="connectionType">
@@ -330,43 +426,93 @@
                 <h3>Object Properties</h3>
                 <div class="checkbox-group">
                     <input type="checkbox" id="objectStatic" checked>
-                    <label for="objectStatic">Static</label>
+                    <label for="objectStatic">Static
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Static objects are not affected by gravity. They stay fixed in place.</span>
+                        </span>
+                    </label>
                 </div>
                 <div class="checkbox-group">
                     <input type="checkbox" id="objectSolid" checked>
-                    <label for="objectSolid">Solid</label>
+                    <label for="objectSolid">Solid
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Solid objects can be collided with by the marble and other objects. Non-solid objects pass through other objects.</span>
+                        </span>
+                    </label>
                 </div>
                 <div class="checkbox-group">
                     <input type="checkbox" id="objectSpawnpoint">
-                    <label for="objectSpawnpoint">Spawnpoint</label>
+                    <label for="objectSpawnpoint">Spawnpoint
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">The marble will spawn at this object's position when the level starts.</span>
+                        </span>
+                    </label>
                 </div>
                 <div class="checkbox-group">
                     <input type="checkbox" id="objectPlayerspawn">
-                    <label for="objectPlayerspawn">Playerspawn</label>
+                    <label for="objectPlayerspawn">Playerspawn
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Player UFO's spawn here. If not specified, they will spawn at the default spawnpoint.</span>
+                        </span>
+                    </label>
                 </div>
                 <div class="checkbox-group">
                     <input type="checkbox" id="objectEmotespawn">
-                    <label for="objectEmotespawn">Emotespawn</label>
+                    <label for="objectEmotespawn">Emotespawn
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Emotes from Twitch chat spawn here. If not specified, they will spawn at the default spawnpoint.</span>
+                        </span>
+                    </label>
                 </div>
                 <div class="checkbox-group">
                     <input type="checkbox" id="objectGoal">
-                    <label for="objectGoal">Goal</label>
+                    <label for="objectGoal">Goal
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Entering this object with the marble completes the level and loads the next level specified in the Next Level field.</span>
+                        </span>
+                    </label>
                 </div>
                 <div class="property-group" id="nextLevelContainer" style="display: none;">
-                    <label>Next Level:</label>
+                    <label>Next Level:
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Name of the level to load when this goal is reached.</span>
+                        </span>
+                    </label>
                     <input type="text" id="objectNextLevel" placeholder="Level to load when goal is reached">
                 </div>
                 <div class="checkbox-group">
                     <input type="checkbox" id="objectTeleporter">
-                    <label for="objectTeleporter">Teleporter</label>
+                    <label for="objectTeleporter">Teleporter
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Entering this object instantly moves the marble/player/object to another teleporter target.</span>
+                        </span>
+                    </label>
                 </div>
                 <div class="property-group" id="teleporterTargetContainer" style="display: none;">
-                    <label>Teleporter Target:</label>
+                    <label>Teleporter Target:
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Name of the target object where the marble/player/object will be transported.</span>
+                        </span>
+                    </label>
                     <input type="text" id="objectTeleporterTarget" placeholder="Object name of teleporter destination">
                 </div>
                 <div class="checkbox-group">
                     <input type="checkbox" id="objectActive">
-                    <label for="objectActive">Active (Elevator)</label>
+                    <label for="objectActive">Active (Elevator)
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Object moves automatically between two points, creating elevators, moving platforms, etc.</span>
+                        </span>
+                    </label>
                 </div>
                 <div id="activeOptionsContainer" style="display: none; margin-left: 20px; border-left: 2px solid rgba(78, 205, 196, 0.3); padding-left: 10px;">
                     <div class="property-group">
@@ -403,48 +549,103 @@
                     </div>
                 </div>
                 <div class="property-group">
-                    <label>Color:</label>
+                    <label>Color:
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">The color of the object. Will be overridden if a background image is set.</span>
+                        </span>
+                    </label>
                     <input type="color" id="objectColor" value="#888888">
                 </div>
                 <div class="property-group">
-                    <label>Alpha (Transparency):</label>
+                    <label>Alpha (Transparency):
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">How transparent the object is. 0 = fully transparent, 255 = fully opaque.</span>
+                        </span>
+                    </label>
                     <input type="range" id="objectAlpha" min="0" max="255" value="255" step="1">
                     <span id="alphaValue" style="color: #ffffff; font-size: 0.8em; margin-left: 10px;">100%</span>
                 </div>
                 <div class="property-group">
-                    <label>Background Image:</label>
+                    <label>Background Image:
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">URL or path to an image to display on the object.</span>
+                        </span>
+                    </label>
                     <input type="text" id="objectBackgroundImage" placeholder="Image URL or path">
                 </div>
                 <div class="property-group">
-                    <label>Width:</label>
+                    <label>Width:
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Width of rectangular objects in pixels.</span>
+                        </span>
+                    </label>
                     <input type="number" id="objectWidth" value="100" min="10" max="500">
                 </div>
                 <div class="property-group">
-                    <label>Height:</label>
+                    <label>Height:
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Height of rectangular objects in pixels.</span>
+                        </span>
+                    </label>
                     <input type="number" id="objectHeight" value="20" min="10" max="500">
                 </div>
                 <div class="property-group">
-                    <label>Radius:</label>
+                    <label>Radius:
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Radius of circular objects in pixels.</span>
+                        </span>
+                    </label>
                     <input type="number" id="objectRadius" value="25" min="5" max="200">
                 </div>
                 <div class="property-group">
-                    <label>Friction:</label>
+                    <label>Friction:
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">How much the object resists sliding against other surfaces. Higher values = more friction.</span>
+                        </span>
+                    </label>
                     <input type="number" id="objectFriction" value="0.3" min="0" max="2" step="0.1">
                 </div>
                 <div class="property-group">
-                    <label>Restitution:</label>
+                    <label>Restitution:
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">How bouncy the object is. Higher values = more bounce when colliding.</span>
+                        </span>
+                    </label>
                     <input type="number" id="objectRestitution" value="0.3" min="0" max="2" step="0.1">
                 </div>
                 <div class="property-group">
-                    <label>Density:</label>
+                    <label>Density:
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">How heavy the object feels. Affects physics interactions with other objects.</span>
+                        </span>
+                    </label>
                     <input type="number" id="objectDensity" value="0.001" min="0.0001" max="1.0" step="0.0001">
                 </div>
                 <div class="property-group">
-                    <label>Rotation (degrees):</label>
+                    <label>Rotation (degrees):
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Rotation angle of the object in degrees.</span>
+                        </span>
+                    </label>
                     <input type="number" id="objectRotation" value="0" min="-180" max="180" step="15">
                 </div>
                 <div class="property-group">
-                    <label>Z-Index:</label>
+                    <label>Z-Index:
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Drawing order of objects. Higher values appear on top of lower values.</span>
+                        </span>
+                    </label>
                     <input type="number" id="objectZIndex" value="0" min="-10" max="10" step="1">
                 </div>
             </div>
@@ -457,33 +658,73 @@
             </div>
 
             <div class="tool-section">
-                <h3>Marble Properties</h3>
+                <h3>Marble Properties
+                    <span class="tooltip-container">
+                        <span class="tooltip-icon">?</span>
+                        <span class="tooltip-text">Properties that affect the marble behavior in this level.</span>
+                    </span>
+                </h3>
                 <div class="property-group">
-                    <label>Color:</label>
+                    <label>Color:
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">The color of the marble.</span>
+                        </span>
+                    </label>
                     <input type="color" id="marbleColor" value="#ff6b6b">
                 </div>
                 <div class="property-group">
-                    <label>Radius:</label>
+                    <label>Radius:
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Size of the marble in pixels.</span>
+                        </span>
+                    </label>
                     <input type="number" id="marbleRadius" value="30" min="10" max="100" step="1">
                 </div>
                 <div class="property-group">
-                    <label>Friction:</label>
+                    <label>Friction:
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">How much the marble resists sliding. Very low values allow smooth rolling.</span>
+                        </span>
+                    </label>
                     <input type="number" id="marbleFriction" value="0.000005" min="0" max="0.1" step="0.000001">
                 </div>
                 <div class="property-group">
-                    <label>Restitution:</label>
+                    <label>Restitution:
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">How bouncy the marble is when it collides with objects.</span>
+                        </span>
+                    </label>
                     <input type="number" id="marbleRestitution" value="0.7" min="0" max="2" step="0.1">
                 </div>
                 <div class="property-group">
-                    <label>Density:</label>
+                    <label>Density:
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">How heavy the marble feels. Affects physics interactions with other objects.</span>
+                        </span>
+                    </label>
                     <input type="number" id="marbleDensity" value="0.004" min="0.0001" max="0.1" step="0.0001">
                 </div>
             </div>
 
             <div class="tool-section">
-                <h3>World Physics</h3>
+                <h3>World Physics
+                    <span class="tooltip-container">
+                        <span class="tooltip-icon">?</span>
+                        <span class="tooltip-text">Global physics settings that affect all objects in the level.</span>
+                    </span>
+                </h3>
                 <div class="property-group">
-                    <label>Gravity:</label>
+                    <label>Gravity:
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Strength of gravitational pull. Higher values make objects fall faster. 0 = no gravity.</span>
+                        </span>
+                    </label>
                     <input type="number" id="worldGravity" value="0.8" min="0" max="5" step="0.1">
                 </div>
             </div>
@@ -529,6 +770,49 @@
             </div>
         </div>
     </div>
+
+    <script>
+        // Tooltip positioning logic
+        document.addEventListener('DOMContentLoaded', () => {
+            // Position tooltips dynamically when they become visible
+            const tooltipContainers = document.querySelectorAll('.tooltip-container');
+
+            tooltipContainers.forEach(container => {
+                const icon = container.querySelector('.tooltip-icon');
+                const tooltip = container.querySelector('.tooltip-text');
+
+                if (icon && tooltip) {
+                    // Position tooltip when icon is hovered
+                    icon.addEventListener('mouseenter', () => {
+                        const iconRect = icon.getBoundingClientRect();
+                        const tooltipRect = tooltip.getBoundingClientRect();
+                        const viewportWidth = window.innerWidth;
+                        const viewportHeight = window.innerHeight;
+
+                        // Default position: above the icon, centered
+                        let left = iconRect.left + (iconRect.width / 2) - (tooltipRect.width / 2);
+                        let top = iconRect.top - tooltipRect.height - 8; // 8px gap
+
+                        // Adjust if tooltip would go off-screen horizontally
+                        if (left < 10) {
+                            left = 10; // Minimum margin from left edge
+                        } else if (left + tooltipRect.width > viewportWidth - 10) {
+                            left = viewportWidth - tooltipRect.width - 10; // Maximum margin from right edge
+                        }
+
+                        // Adjust if tooltip would go off-screen vertically (above)
+                        if (top < 10) {
+                            // Position below the icon instead
+                            top = iconRect.bottom + 8;
+                        }
+
+                        tooltip.style.left = left + 'px';
+                        tooltip.style.top = top + 'px';
+                    });
+                }
+            });
+        });
+    </script>
 
     <script type="module">
         import { LevelEditor } from './js/editor/main.js';
