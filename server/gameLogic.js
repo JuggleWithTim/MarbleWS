@@ -54,6 +54,7 @@ class GameLogic {
     this.constraints = [];
     this.eventListeners = new Map();
     this.teleportCooldowns = new Map(); // Track teleport cooldowns per object
+    this.goalCooldowns = new Map(); // Track goal cooldowns per object
     this.activeObjects = new Map(); // Track active object movement state
 
     // Configure physics
@@ -799,11 +800,21 @@ class GameLogic {
 
     if (goals.length === 0) return false;
 
+    // Get current timestamp for cooldown checks
+    const now = Date.now();
+
     // Get marble radius from properties
     const marbleRadius = this.marbleProperties ? this.marbleProperties.radius : 30;
 
     // Check if any marble reached any goal
     for (const goal of goals) {
+      // Check if goal is on cooldown
+      const cooldownKey = goal.id;
+      const lastWin = this.goalCooldowns.get(cooldownKey);
+      if (lastWin && (now - lastWin) < 5000) { // 5 second cooldown
+        continue; // Skip this goal, it's on cooldown
+      }
+
       for (const marble of this.marbles) {
         const marbleX = marble.body.position.x;
         const marbleY = marble.body.position.y;
@@ -846,6 +857,16 @@ class GameLogic {
         }
 
         if (collision) {
+          // Set cooldown to prevent rapid repeated triggering
+          this.goalCooldowns.set(cooldownKey, now);
+
+          // Clean up old cooldowns (keep only recent ones)
+          for (const [key, timestamp] of this.goalCooldowns.entries()) {
+            if (now - timestamp > 10000) { // Remove cooldowns older than 10 seconds
+              this.goalCooldowns.delete(key);
+            }
+          }
+
           // If this goal has a nextLevel property, return it
           if (goal.nextLevel) {
             return { win: true, nextLevel: goal.nextLevel };
