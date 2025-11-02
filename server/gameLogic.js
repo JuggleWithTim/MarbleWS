@@ -124,7 +124,7 @@ class GameLogic {
     Matter.World.add(this.world, ufoBody);
 
     // Load saved appearance and progress data
-    const savedData = this.loadPlayerAppearance(userId);
+    const savedData = this.loadPlayerData(userId);
     const color = savedData.ufoAppearance.type === 'default' ? savedData.ufoAppearance.color : generateColorFromSeed(userId);
 
     const player = {
@@ -260,13 +260,13 @@ class GameLogic {
       player.color = appearance.color;
 
       // Save appearance and progress to persistent storage
-      this.savePlayerAppearance(player.userId, appearance, player.level, player.xp, player.coins);
+      this.savePlayerData(player.userId, appearance, player.level, player.xp, player.coins);
 
       console.log(`Player ${player.username} updated appearance:`, appearance);
     }
   }
 
-  savePlayerAppearance(userId, appearance, level = 1, xp = 0, coins = 100) {
+  savePlayerData(userId, appearance, level = 1, xp = 0, coins = 100) {
     try {
       // Create players directory if it doesn't exist
       const playersDir = path.join(__dirname, '../players');
@@ -285,13 +285,13 @@ class GameLogic {
         lastUpdated: new Date().toISOString()
       }, null, 2));
 
-      console.log(`Saved appearance for user ${userId}`);
+      console.log(`Saved player data for user ${userId}`);
     } catch (error) {
-      console.error('Failed to save player appearance:', error);
+      console.error('Failed to save player data:', error);
     }
   }
 
-  loadPlayerAppearance(userId) {
+  loadPlayerData(userId) {
     try {
       const playersDir = path.join(__dirname, '../players');
       const appearanceFile = path.join(playersDir, `${userId}.json`);
@@ -306,7 +306,7 @@ class GameLogic {
         };
       }
     } catch (error) {
-      console.error('Failed to load player appearance:', error);
+      console.error('Failed to load player data:', error);
     }
 
     // Return default data if loading fails
@@ -835,7 +835,7 @@ class GameLogic {
         }
 
         // Save progress after XP gain (whether leveled up or not)
-        this.savePlayerAppearance(player.userId, player.ufoAppearance, player.level, player.xp, player.coins);
+        this.savePlayerData(player.userId, player.ufoAppearance, player.level, player.xp, player.coins);
 
         if (leveledUp) {
           console.log(`Player ${player.username} progress saved after leveling up`);
