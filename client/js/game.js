@@ -677,7 +677,7 @@ class Game {
 
         // Add available custom UFO images
         // In a production app, you might want to fetch this from a server endpoint
-        const customImages = ['CustomUFO1.png'];
+        const customImages = ['CustomUFO1.png', 'Fez.png'];
 
         customImages.forEach(imageName => {
             const customItem = document.createElement('div');
