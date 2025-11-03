@@ -63,7 +63,8 @@ class Renderer {
         };
     }async loadImage(url) {
         if (this.images.has(url)) {
-            return this.images.get(url);
+            const cached = this.images.get(url);
+            return Promise.resolve(cached);
         }
 
         return new Promise((resolve, reject) => {
@@ -77,6 +78,7 @@ class Renderer {
             };
             img.onerror = () => {
                 console.warn(`Failed to load image: ${url}`);
+                this.images.set(url, null);
                 resolve(null);
             };
             img.src = url;

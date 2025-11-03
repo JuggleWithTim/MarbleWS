@@ -256,11 +256,16 @@ export function createConnection(objA, objB, pointA, pointB, connectionType, con
 
 // Image loading utilities
 export function loadObjectImage(url, imageCache) {
-    if (!url) return null;
+    if (!url) return Promise.resolve(null);
 
     // Check if image is already cached
     if (imageCache.has(url)) {
-        return imageCache.get(url);
+        const cached = imageCache.get(url);
+        if (cached instanceof Promise) {
+            return cached;
+        } else {
+            return Promise.resolve(cached);
+        }
     }
 
     // Create a new image and cache it
