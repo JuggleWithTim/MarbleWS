@@ -291,6 +291,25 @@ function setupSocketHandlers(io, gameLogic) {
       // Send result back to client
       socket.emit('unlockResult', result);
     });
+
+    // Handle passenger unlock purchases
+    socket.on('unlockPassenger', (data) => {
+      resetIdleTimeout();
+
+      // Input validation
+      if (typeof data !== 'object' || typeof data.passengerImage !== 'string') {
+        socket.emit('unlockResult', { success: false, message: 'Invalid request' });
+        return;
+      }
+
+      const { passengerImage } = data;
+
+      // Attempt to unlock the passenger
+      const result = gameLogic.unlockPassenger(socket.id, passengerImage);
+
+      // Send result back to client
+      socket.emit('unlockResult', result);
+    });
   });
 
   // Broadcast game state updates periodically

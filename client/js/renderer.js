@@ -163,6 +163,26 @@ class Renderer {
             this.drawDefaultUFO(size, ufoColor, beamActive);
         }
 
+        // Draw passenger on top of UFO if one is selected
+        if (appearance && appearance.passenger) {
+            const passengerUrl = `img/passenger/${appearance.passenger}`;
+            const passengerImg = this.images.get(passengerUrl);
+
+            if (passengerImg && passengerImg.complete) {
+                // Draw passenger image centered on top of UFO
+                // Position it slightly above the UFO center
+                const passengerSize = size * 1.5; // Make passenger slightly larger than UFO
+                this.ctx.drawImage(passengerImg,
+                    -passengerSize / 2, -passengerSize / 2 - size * 0.8,
+                    passengerSize, passengerSize);
+            } else {
+                // Start loading the passenger image if not already loading
+                if (!passengerImg) {
+                    this.loadImage(passengerUrl);
+                }
+            }
+        }
+
         this.ctx.restore();
     }
 

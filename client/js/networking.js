@@ -170,6 +170,12 @@ class Networking {
         }
     }
 
+    unlockPassenger(passengerImage) {
+        if (this.socket && this.connected) {
+            this.socket.emit('unlockPassenger', { passengerImage });
+        }
+    }
+
     // Event system
     on(event, callback) {
         if (!this.callbacks[event]) {

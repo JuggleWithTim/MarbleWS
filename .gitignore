@@ -5,10 +5,14 @@ yarn-debug.log*
 yarn-error.log*
 
 # Not my art, so I'm excluding it to avoid giving it an MIT license while making commits to the repo
-client\img\*
-client/img/*
-\client\img\*
-/client/img/*
+client\img\ufo\*
+client/img/ufo/*
+\client\img\ufo\*
+/client/img/ufo/*
+client\img\passenger\*
+client/img/passenger/*
+\client\img\passenger\*
+/client/img/passenger/*
 
 # Environment variables
 .env
