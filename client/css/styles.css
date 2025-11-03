@@ -78,41 +78,66 @@ body {
     padding: 0;
 }
 
-#gameUI {
+/* Top Bar */
+#topBar {
     position: absolute;
-    top: 20px;
+    top: -130px;
     left: 20px;
+    right: 20px;
     z-index: 100;
-    background: rgba(0, 0, 0, 0.7);
-    padding: 15px;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 15px 20px;
     border-radius: 10px;
-    min-width: 200px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-height: 50px;
 }
 
 #playerInfo {
-    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#playerStats {
+    display: flex;
+    align-items: center;
+    gap: 20px;
 }
 
 #playerName {
     font-size: 1.2em;
     font-weight: bold;
-    display: block;
-    margin-bottom: 5px;
+    color: #4ecdc4;
 }
 
 #playerLevel {
     font-size: 0.9em;
-    opacity: 0.8;
-    display: block;
-    margin-bottom: 10px;
+    opacity: 0.9;
+    background: rgba(78, 205, 196, 0.1);
+    padding: 4px 8px;
+    border-radius: 5px;
+    border: 1px solid rgba(78, 205, 196, 0.3);
+}
+
+#playerCoins {
+    font-size: 0.9em;
+    opacity: 0.9;
+    background: rgba(255, 193, 7, 0.1);
+    padding: 4px 8px;
+    border-radius: 5px;
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    color: #ffc107;
 }
 
 #xpBar {
-    width: 100%;
-    height: 8px;
+    width: 200px;
+    height: 10px;
     background: rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
+    border-radius: 5px;
     overflow: hidden;
+    margin-left: 10px;
 }
 
 #xpFill {
@@ -120,6 +145,22 @@ body {
     background: linear-gradient(90deg, #4ecdc4, #44a08d);
     width: 0%;
     transition: width 0.3s ease;
+}
+
+#topBarActions {
+    display: flex;
+    gap: 10px;
+}
+
+#gameUI {
+    position: absolute;
+    top: 100px;
+    left: 20px;
+    z-index: 100;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 15px;
+    border-radius: 10px;
+    min-width: 200px;
 }
 
 #gameControls {
@@ -162,7 +203,7 @@ body {
     border: 2px solid rgba(255, 255, 255, 0.3);
     border-radius: 10px;
     background: #1a1a2e;
-    margin: 20px;
+    margin: 140px 20px 20px 20px; /* Increased top margin to account for top bar */
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
     /* Scale down 1920x1080 to fit screen while maintaining aspect ratio */
     width: 1280px;
@@ -172,17 +213,13 @@ body {
 
 /* Controls Info */
 #controls {
-    position: absolute;
-    bottom: 20px;
-    left: 20px;
-    background: rgba(0, 0, 0, 0.7);
-    padding: 15px;
-    border-radius: 10px;
     font-size: 0.9em;
+    display: flex;
+    gap: 10px;
 }
 
 #controls h3 {
-    margin-bottom: 10px;
+    margin-bottom: 5px;
     color: #4ecdc4;
 }
 
@@ -194,7 +231,7 @@ body {
 /* Chat */
 #chat {
     position: absolute;
-    bottom: 20px;
+    bottom:150px;
     right: 20px;
     width: 300px;
     height: 200px;
@@ -324,6 +361,377 @@ body {
     font-size: 0.9em;
 }
 
+/* Wardrobe Controls */
+#wardrobeControls {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 100;
+}
+
+#wardrobeBtn {
+    background: #4ecdc4;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    margin: 2px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background 0.3s ease;
+}
+
+#wardrobeBtn:hover {
+    background: #44a08d;
+}
+
+.wardrobe-section {
+    margin-bottom: 25px;
+}
+
+.wardrobe-section h3 {
+    color: #4ecdc4;
+    margin-bottom: 15px;
+    font-size: 1.1em;
+}
+
+#ufoColorPicker {
+    width: 60px;
+    height: 40px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#ufoDesignsList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.ufo-design-item {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    min-width: 100px;
+    border: 2px solid transparent;
+}
+
+.ufo-design-item:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.ufo-design-item.selected {
+    border-color: #4ecdc4;
+    background: rgba(78, 205, 196, 0.1);
+}
+
+.ufo-preview {
+    width: 60px;
+    height: 40px;
+    margin: 0 auto 8px;
+    border-radius: 5px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.default-ufo {
+    background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+    position: relative;
+}
+
+.default-ufo::before {
+    content: '';
+    position: absolute;
+    top: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 30px;
+    height: 15px;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 50% 50% 50% 50% / 100% 100% 50% 50%;
+}
+
+.default-ufo::after {
+    content: '';
+    position: absolute;
+    bottom: 5px;
+    left: 10px;
+    width: 4px;
+    height: 4px;
+    background: #ffff00;
+    border-radius: 50%;
+    box-shadow: 10px 0 0 #ffff00, 20px 0 0 #ffff00, 30px 0 0 #ffff00, 40px 0 0 #ffff00;
+}
+
+.ufo-design-item span {
+    font-size: 0.8em;
+    opacity: 0.9;
+}
+
+#passengerDesignsList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.passenger-design-item {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    min-width: 100px;
+    border: 2px solid transparent;
+}
+
+.passenger-design-item:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.passenger-design-item.selected {
+    border-color: #4ecdc4;
+    background: rgba(78, 205, 196, 0.1);
+}
+
+.passenger-preview {
+    width: 60px;
+    height: 40px;
+    margin: 0 auto 8px;
+    border-radius: 5px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.no-passenger {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px dashed rgba(255, 255, 255, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5em;
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.no-passenger::before {
+    content: '✖';
+}
+
+.passenger-design-item span {
+    font-size: 0.8em;
+    opacity: 0.9;
+}
+
+.ufo-design-item.locked {
+    opacity: 0.7;
+    cursor: default;
+}
+
+.ufo-design-item.locked:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.ufo-locked-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-around;
+    padding: 4px;
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 6px;
+    pointer-events: auto;
+}
+
+.lock-icon {
+    font-size: 1.5em;
+    margin-bottom: 2px;
+    opacity: 0.9;
+}
+
+.ufo-cost {
+    font-size: 0.7em;
+    color: #ffc107;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 6px;
+    background: rgba(255, 193, 7, 0.1);
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+.purchase-btn {
+    background: #ffc107;
+    color: #000;
+    border: 2px solid #e0a800;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8em;
+    font-weight: bold;
+    transition: all 0.2s ease;
+    min-width: 80px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.purchase-btn:hover:not(:disabled) {
+    background: #e0a800;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.purchase-btn:hover {
+    background: #e0a800;
+}
+
+.purchase-btn:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.wardrobe-actions {
+    text-align: center;
+    margin-top: 20px;
+}
+
+#applyWardrobeBtn {
+    background: #4ecdc4;
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background 0.3s ease;
+}
+
+#applyWardrobeBtn:hover {
+    background: #44a08d;
+}
+
+/* Store Controls */
+#storeBtn {
+    background: #ffc107;
+    color: #000;
+    border: none;
+    padding: 8px 15px;
+    margin: 2px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background 0.3s ease;
+}
+
+#storeBtn:hover {
+    background: #e0a800;
+}
+
+.store-section {
+    margin-bottom: 25px;
+}
+
+.store-section h3 {
+    color: #ffc107;
+    margin-bottom: 15px;
+    font-size: 1.1em;
+}
+
+#ufoStoreItemsList,
+#passengerStoreItemsList {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+.store-item {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.store-item:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.store-item.unlocked {
+    border-color: #28a745;
+    background: rgba(40, 167, 69, 0.1);
+}
+
+.store-preview {
+    width: 60px;
+    height: 40px;
+    margin: 0 auto 10px;
+    border-radius: 5px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.store-item-name {
+    font-size: 0.9em;
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #ffc107;
+}
+
+.store-price {
+    font-size: 0.8em;
+    color: #ffc107;
+    margin-bottom: 10px;
+    background: rgba(255, 193, 7, 0.1);
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.store-buy-btn {
+    background: #ffc107;
+    color: #000;
+    border: 2px solid #e0a800;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85em;
+    font-weight: bold;
+    transition: all 0.2s ease;
+    min-width: 80px;
+}
+
+.store-buy-btn:hover:not(:disabled) {
+    background: #e0a800;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.store-buy-btn:disabled {
+    background: #6c757d;
+    border-color: #5a6268;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.store-owned {
+    color: #28a745;
+    font-weight: bold;
+    font-size: 0.8em;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     #gameCanvas {
@@ -367,4 +775,88 @@ body {
     0% { opacity: 0.6; }
     50% { opacity: 1; }
     100% { opacity: 0.6; }
+}
+
+/* Level Up Splash Screen */
+.level-up-splash {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.level-up-content {
+    text-align: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 40px 60px;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    border: 3px solid #4ecdc4;
+    animation: splashEnter 0.5s ease-out;
+    max-width: 400px;
+    width: 90%;
+}
+
+.level-up-title {
+    font-size: 3.5em;
+    font-weight: bold;
+    color: #ffffff;
+    margin-bottom: 20px;
+    text-shadow: 0 0 20px rgba(78, 205, 196, 0.8);
+    animation: titleGlow 2s ease-in-out infinite alternate;
+}
+
+.level-up-level {
+    font-size: 2.5em;
+    font-weight: bold;
+    color: #4ecdc4;
+    margin-bottom: 15px;
+    background: rgba(78, 205, 196, 0.1);
+    padding: 10px 20px;
+    border-radius: 10px;
+    border: 2px solid rgba(78, 205, 196, 0.3);
+}
+
+.level-up-coins {
+    font-size: 1.8em;
+    color: #ffc107;
+    font-weight: bold;
+    background: rgba(255, 193, 7, 0.1);
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 2px solid rgba(255, 193, 7, 0.3);
+    animation: coinPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes splashEnter {
+    from {
+        transform: scale(0.8) translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes titleGlow {
+    from { text-shadow: 0 0 20px rgba(78, 205, 196, 0.8); }
+    to { text-shadow: 0 0 30px rgba(78, 205, 196, 1), 0 0 40px rgba(78, 205, 196, 0.5); }
+}
+
+@keyframes coinPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
 }

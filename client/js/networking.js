@@ -106,6 +106,10 @@ class Networking {
             this.emit('chatMessage', data);
         });
 
+        this.socket.on('playerLeveledUp', (data) => {
+            this.emit('playerLeveledUp', data);
+        });
+
         this.socket.on('error', (error) => {
             console.error('Server error:', error);
             this.emit('error', error);
@@ -151,6 +155,24 @@ class Networking {
     spawnTestEmote(emoteName) {
         if (this.socket && this.connected) {
             this.socket.emit('spawnTestEmote', { emoteName });
+        }
+    }
+
+    updatePlayerAppearance(appearance) {
+        if (this.socket && this.connected) {
+            this.socket.emit('updateAppearance', { appearance });
+        }
+    }
+
+    unlockUFO(ufoImage) {
+        if (this.socket && this.connected) {
+            this.socket.emit('unlockUFO', { ufoImage });
+        }
+    }
+
+    unlockPassenger(passengerImage) {
+        if (this.socket && this.connected) {
+            this.socket.emit('unlockPassenger', { passengerImage });
         }
     }
 

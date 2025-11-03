@@ -105,12 +105,15 @@ class Game {
         }
         
         this.controls.setupUIControls(this, this.networking.BASE_PATH);
-        
+
+        // Setup wardrobe and store controls
+        this.setupWardrobeControls();
+
         // Setup beam controls
         this.controls.on('beamActivate', () => {
             this.activateBeam(true);
         });
-        
+
         this.controls.on('beamDeactivate', () => {
             this.activateBeam(false);
         });
@@ -138,6 +141,14 @@ class Game {
         this.networking.on('gameStateUpdate', (gameState) => {
             this.gameState = gameState;
             this.updateInterpolationFromGameState(gameState);
+
+            // Update current player data if we're logged in
+            if (this.currentPlayer && gameState.players) {
+                const updatedPlayer = gameState.players.find(p => p.id === this.currentPlayer.id);
+                if (updatedPlayer) {
+                    this.currentPlayer = updatedPlayer;
+                }
+            }
         });
         
         this.networking.on('chatMessage', (data) => {
@@ -151,12 +162,31 @@ class Game {
         this.networking.on('error', (error) => {
             this.showError(error.message);
         });
+
+        this.networking.on('playerLeveledUp', (data) => {
+            this.showLevelUpSplash(data);
+        });
+
+        // Add unlock result handler
+        this.networking.socket.on('unlockResult', (result) => {
+            this.handleUnlockResult(result);
+        });
     }
 
     async checkDevMode() {
         try {
             const response = await fetch(`${this.networking.BASE_PATH}/api/client-config`);
             const config = await response.json();
+
+            // Show top bar and player info for all users (not just dev mode)
+            const topBar = document.getElementById('topBar');
+            if (topBar) {
+                topBar.style.display = '';
+            }
+            const playerInfo = document.getElementById('playerInfo');
+            if (playerInfo) {
+                playerInfo.style.display = '';
+            }
 
             if (config.devMode) {
                 // Show dev login option
@@ -183,8 +213,7 @@ class Game {
 
                 // Show dev-only UI elements
                 const devOnlyIds = [
-                    'playerInfo',
-                    'gameControls',
+                    'topBarActions',
                     'onlinePlayers',
                     'chat',
                     'gameUI'
@@ -290,21 +319,46 @@ class Game {
         }
     }
 
+    showLevelUpSplash(data) {
+        const splash = document.getElementById('levelUpSplash');
+        const levelElement = document.getElementById('levelUpLevel');
+        const coinsElement = document.getElementById('levelUpCoins');
+
+        if (!splash || !levelElement || !coinsElement) return;
+
+        // Update the content
+        levelElement.textContent = `Level ${data.newLevel}`;
+        coinsElement.textContent = `+${data.coinReward} Coins`;
+
+        // Show the splash screen
+        splash.style.display = 'flex';
+
+        // Hide after 3 seconds
+        setTimeout(() => {
+            splash.style.display = 'none';
+        }, 5000);
+    }
+
     updatePlayerInfo() {
         if (!this.currentPlayer) return;
-        
+
         const playerName = document.getElementById('playerName');
         const playerLevel = document.getElementById('playerLevel');
+        const playerCoins = document.getElementById('playerCoins');
         const xpFill = document.getElementById('xpFill');
-        
+
         if (playerName) {
             playerName.textContent = this.currentPlayer.username;
         }
-        
+
         if (playerLevel) {
             playerLevel.textContent = `Level ${this.currentPlayer.level}`;
         }
-        
+
+        if (playerCoins) {
+            playerCoins.textContent = `Coins: ${this.currentPlayer.coins}`;
+        }
+
         if (xpFill) {
             const xpPercent = (this.currentPlayer.xp / (this.currentPlayer.level * 1000)) * 100;
             xpFill.style.width = `${xpPercent}%`;
@@ -456,11 +510,11 @@ class Game {
             // Use interpolated position for smooth movement
             const interpolated = this.getInterpolatedPosition(`player_${player.id}`);
             if (interpolated) {
-                this.renderer.drawUFO(interpolated.x, interpolated.y, color, player.beamActive);
+                this.renderer.drawUFO(interpolated.x, interpolated.y, color, player.beamActive, player.ufoAppearance);
                 this.renderer.drawPlayerName(interpolated.x, interpolated.y, player.username, color);
             } else {
                 // Fallback to server position if no interpolation data
-                this.renderer.drawUFO(player.x, player.y, color, player.beamActive);
+                this.renderer.drawUFO(player.x, player.y, color, player.beamActive, player.ufoAppearance);
                 this.renderer.drawPlayerName(player.x, player.y, player.username, color);
             }
         });
@@ -573,7 +627,7 @@ class Game {
     // Remove interpolation data for objects that no longer exist
     cleanupInterpolationData(gameState) {
         const existingIds = new Set();
-        
+
         // Collect all existing object IDs
         if (gameState.players) {
             gameState.players.forEach(player => existingIds.add(`player_${player.id}`));
@@ -589,12 +643,409 @@ class Game {
                 existingIds.add(`levelobj_${obj.id}`);
             });
         }
-        
+
         // Remove interpolation data for objects that no longer exist
         for (const [objectId] of this.interpolatedObjects) {
             if (!existingIds.has(objectId)) {
                 this.interpolatedObjects.delete(objectId);
             }
+        }
+    }
+
+    setupWardrobeControls() {
+        // Setup Store controls
+        const storeBtn = document.getElementById('storeBtn');
+        const storeModal = document.getElementById('storeModal');
+        const storeCloseBtn = storeModal.querySelector('.close');
+
+        if (storeBtn && storeModal && storeCloseBtn) {
+            // Show store modal
+            storeBtn.addEventListener('click', () => {
+                this.showStoreModal();
+            });
+
+            // Close store modal
+            storeCloseBtn.addEventListener('click', () => {
+                storeModal.style.display = 'none';
+            });
+
+            // Close store modal when clicking outside
+            window.addEventListener('click', (event) => {
+                if (event.target === storeModal) {
+                    storeModal.style.display = 'none';
+                }
+            });
+        }
+
+        // Setup Wardrobe controls
+        const wardrobeBtn = document.getElementById('wardrobeBtn');
+        const wardrobeModal = document.getElementById('wardrobeModal');
+        const closeBtn = wardrobeModal.querySelector('.close');
+        const applyBtn = document.getElementById('applyWardrobeBtn');
+        const colorPicker = document.getElementById('ufoColorPicker');
+        const designsList = document.getElementById('ufoDesignsList');
+
+        if (!wardrobeBtn || !wardrobeModal || !closeBtn || !applyBtn || !colorPicker || !designsList) {
+            console.warn('Wardrobe controls not found');
+            return;
+        }
+
+        // Show wardrobe modal
+        wardrobeBtn.addEventListener('click', () => {
+            this.showWardrobeModal();
+        });
+
+        // Close modal
+        closeBtn.addEventListener('click', () => {
+            wardrobeModal.style.display = 'none';
+        });
+
+        // Close modal when clicking outside
+        window.addEventListener('click', (event) => {
+            if (event.target === wardrobeModal) {
+                wardrobeModal.style.display = 'none';
+            }
+        });
+
+        // Apply changes
+        applyBtn.addEventListener('click', () => {
+            this.applyWardrobeChanges();
+            wardrobeModal.style.display = 'none';
+        });
+
+        // Note: Individual click handlers are now added to each UFO item in showWardrobeModal
+    }
+
+    async showStoreModal() {
+        const storeModal = document.getElementById('storeModal');
+        const ufoStoreItemsList = document.getElementById('ufoStoreItemsList');
+        const passengerStoreItemsList = document.getElementById('passengerStoreItemsList');
+
+        if (!this.currentPlayer || !ufoStoreItemsList || !passengerStoreItemsList) return;
+
+        // Clear existing items
+        ufoStoreItemsList.innerHTML = '';
+        passengerStoreItemsList.innerHTML = '';
+
+        // UFO costs and data
+        const ufoData = {
+            'CustomUFO1.png': { cost: 50, name: 'TestUFO 1' },
+            'ufoderp.png': { cost: 75, name: 'Derpcraft' },
+            'Fez.png': { cost: 100, name: 'Fez' }
+        };
+
+        // Passenger costs and data
+        const passengerData = {
+            'luminoCoffee.png': { cost: 75, name: 'Lumino Coffee' },
+            'Derp.png': { cost: 75, name: 'Derp' }
+        };
+
+        // Get player's unlocked UFOs and passengers
+        const unlockedUFOs = this.currentPlayer.unlockedUFOs || [];
+        const unlockedPassengers = this.currentPlayer.unlockedPassengers || [];
+
+        // Add UFO store items
+        Object.entries(ufoData).forEach(([imageName, data]) => {
+            const isUnlocked = unlockedUFOs.includes(imageName);
+
+            const storeItem = document.createElement('div');
+            storeItem.className = 'store-item' + (isUnlocked ? ' unlocked' : '');
+
+            let itemHTML = `
+                <div class="store-preview" style="background-image: url('img/ufo/${imageName}')"></div>
+                <div class="store-item-name">${data.name}</div>
+                <div class="store-price">${data.cost} coins</div>
+            `;
+
+            if (isUnlocked) {
+                itemHTML += `<div class="store-owned">OWNED</div>`;
+            } else {
+                const canAfford = this.currentPlayer.coins >= data.cost;
+                itemHTML += `
+                    <button class="store-buy-btn ${canAfford ? '' : 'disabled'}" data-ufo="${imageName}" ${canAfford ? '' : 'disabled'}>
+                        ${canAfford ? 'Buy' : 'Not enough coins'}
+                    </button>
+                `;
+            }
+
+            storeItem.innerHTML = itemHTML;
+
+            // Add click handler for purchase button
+            if (!isUnlocked) {
+                const buyBtn = storeItem.querySelector('.store-buy-btn');
+                if (buyBtn && !buyBtn.disabled) {
+                    buyBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.purchaseUFO(imageName, data.cost);
+                    });
+                }
+            }
+
+            ufoStoreItemsList.appendChild(storeItem);
+        });
+
+        // Add passenger store items
+        Object.entries(passengerData).forEach(([imageName, data]) => {
+            const isUnlocked = unlockedPassengers.includes(imageName);
+
+            const storeItem = document.createElement('div');
+            storeItem.className = 'store-item passenger-item' + (isUnlocked ? ' unlocked' : '');
+
+            let itemHTML = `
+                <div class="store-preview" style="background-image: url('img/passenger/${imageName}')"></div>
+                <div class="store-item-name">${data.name}</div>
+                <div class="store-price">${data.cost} coins</div>
+            `;
+
+            if (isUnlocked) {
+                itemHTML += `<div class="store-owned">OWNED</div>`;
+            } else {
+                const canAfford = this.currentPlayer.coins >= data.cost;
+                itemHTML += `
+                    <button class="store-buy-btn ${canAfford ? '' : 'disabled'}" data-passenger="${imageName}" ${canAfford ? '' : 'disabled'}>
+                        ${canAfford ? 'Buy' : 'Not enough coins'}
+                    </button>
+                `;
+            }
+
+            storeItem.innerHTML = itemHTML;
+
+            // Add click handler for purchase button
+            if (!isUnlocked) {
+                const buyBtn = storeItem.querySelector('.store-buy-btn');
+                if (buyBtn && !buyBtn.disabled) {
+                    buyBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.purchasePassenger(imageName, data.cost);
+                    });
+                }
+            }
+
+            passengerStoreItemsList.appendChild(storeItem);
+        });
+
+        storeModal.style.display = 'flex';
+    }
+
+    async showWardrobeModal() {
+        const wardrobeModal = document.getElementById('wardrobeModal');
+        const colorPicker = document.getElementById('ufoColorPicker');
+        const designsList = document.getElementById('ufoDesignsList');
+        const passengerDesignsList = document.getElementById('passengerDesignsList');
+
+        if (!this.currentPlayer) return;
+
+        // Set current color
+        const currentAppearance = this.currentPlayer.ufoAppearance || { type: 'default', color: this.currentPlayer.color };
+        colorPicker.value = currentAppearance.color || '#4ecdc4';
+
+        // Clear existing designs
+        designsList.innerHTML = '';
+        passengerDesignsList.innerHTML = '';
+
+        // Get player's unlocked UFOs and passengers (initialize as empty array if not present)
+        const unlockedUFOs = this.currentPlayer.unlockedUFOs || [];
+        const unlockedPassengers = this.currentPlayer.unlockedPassengers || [];
+
+        // Add default UFO option (always available)
+        const defaultItem = document.createElement('div');
+        defaultItem.className = 'ufo-design-item' + (currentAppearance.type === 'default' ? ' selected' : '');
+        defaultItem.setAttribute('data-type', 'default');
+        defaultItem.innerHTML = `
+            <div class="ufo-preview default-ufo"></div>
+            <span>Default UFO</span>
+        `;
+        defaultItem.addEventListener('click', () => this.selectUFODesign(defaultItem));
+        designsList.appendChild(defaultItem);
+
+        // Add only unlocked custom UFO images
+        const customImages = ['CustomUFO1.png', 'Fez.png', 'ufoderp.png'];
+
+        customImages.forEach(imageName => {
+            const isUnlocked = unlockedUFOs.includes(imageName);
+            const isSelected = currentAppearance.type === 'custom' && currentAppearance.image === imageName;
+
+            if (isUnlocked) {
+                const customItem = document.createElement('div');
+                customItem.className = 'ufo-design-item' + (isSelected ? ' selected' : '');
+                customItem.setAttribute('data-type', 'custom');
+                customItem.setAttribute('data-image', imageName);
+
+                customItem.innerHTML = `
+                    <div class="ufo-preview" style="background-image: url('img/ufo/${imageName}')"></div>
+                    <span>${imageName.replace('.png', '')}</span>
+                `;
+
+                // Add click event for unlocked items
+                customItem.addEventListener('click', () => this.selectUFODesign(customItem));
+                designsList.appendChild(customItem);
+            }
+        });
+
+        // Add no passenger option (always available)
+        const noPassengerItem = document.createElement('div');
+        noPassengerItem.className = 'passenger-design-item' + (!currentAppearance.passenger ? ' selected' : '');
+        noPassengerItem.setAttribute('data-passenger', 'none');
+        noPassengerItem.innerHTML = `
+            <div class="passenger-preview no-passenger"></div>
+            <span>No Passenger</span>
+        `;
+        noPassengerItem.addEventListener('click', () => this.selectPassengerDesign(noPassengerItem));
+        passengerDesignsList.appendChild(noPassengerItem);
+
+        // Add only unlocked passenger images
+        const passengerImages = ['luminoCoffee.png', 'Derp.png'];
+
+        passengerImages.forEach(imageName => {
+            const isUnlocked = unlockedPassengers.includes(imageName);
+            const isSelected = currentAppearance.passenger === imageName;
+
+            if (isUnlocked) {
+                const passengerItem = document.createElement('div');
+                passengerItem.className = 'passenger-design-item' + (isSelected ? ' selected' : '');
+                passengerItem.setAttribute('data-passenger', imageName);
+
+                passengerItem.innerHTML = `
+                    <div class="passenger-preview" style="background-image: url('img/passenger/${imageName}')"></div>
+                    <span>${imageName.replace('.png', '')}</span>
+                `;
+
+                // Add click event for unlocked items
+                passengerItem.addEventListener('click', () => this.selectPassengerDesign(passengerItem));
+                passengerDesignsList.appendChild(passengerItem);
+            }
+        });
+
+        wardrobeModal.style.display = 'flex';
+    }
+
+    selectUFODesign(designItem) {
+        // Remove selected class from all items
+        const designsList = document.getElementById('ufoDesignsList');
+        designsList.querySelectorAll('.ufo-design-item').forEach(item => {
+            item.classList.remove('selected');
+        });
+        // Add selected class to clicked item
+        designItem.classList.add('selected');
+    }
+
+    selectPassengerDesign(passengerItem) {
+        // Remove selected class from all items
+        const passengerDesignsList = document.getElementById('passengerDesignsList');
+        passengerDesignsList.querySelectorAll('.passenger-design-item').forEach(item => {
+            item.classList.remove('selected');
+        });
+        // Add selected class to clicked item
+        passengerItem.classList.add('selected');
+    }
+
+    purchaseUFO(ufoImage, cost) {
+        if (!this.currentPlayer) return;
+
+        // Check if player has enough coins
+        if (this.currentPlayer.coins < cost) {
+            this.showError('Not enough coins to purchase this UFO!');
+            return;
+        }
+
+        // Send unlock request to server
+        this.networking.unlockUFO(ufoImage);
+    }
+
+    purchasePassenger(passengerImage, cost) {
+        if (!this.currentPlayer) return;
+
+        // Check if player has enough coins
+        if (this.currentPlayer.coins < cost) {
+            this.showError('Not enough coins to purchase this passenger!');
+            return;
+        }
+
+        // Send unlock request to server
+        this.networking.unlockPassenger(passengerImage);
+    }
+
+    handleUnlockResult(result) {
+        if (result.success) {
+            // Update local player data
+            if (this.currentPlayer) {
+                this.currentPlayer.coins = result.remainingCoins;
+                if (result.unlockedUFOs) {
+                    this.currentPlayer.unlockedUFOs = result.unlockedUFOs;
+                }
+                if (result.unlockedPassengers) {
+                    this.currentPlayer.unlockedPassengers = result.unlockedPassengers;
+                }
+                this.updatePlayerInfo();
+            }
+
+            // Update networking currentPlayer as well
+            if (this.networking.currentPlayer) {
+                this.networking.currentPlayer.coins = result.remainingCoins;
+                if (result.unlockedUFOs) {
+                    this.networking.currentPlayer.unlockedUFOs = result.unlockedUFOs;
+                }
+                if (result.unlockedPassengers) {
+                    this.networking.currentPlayer.unlockedPassengers = result.unlockedPassengers;
+                }
+            }
+
+            // Refresh both store and wardrobe modals to show updated state
+            const storeModal = document.getElementById('storeModal');
+            const wardrobeModal = document.getElementById('wardrobeModal');
+
+            if (storeModal.style.display === 'flex') {
+                this.showStoreModal();
+            }
+            if (wardrobeModal.style.display === 'flex') {
+                this.showWardrobeModal();
+            }
+
+            // Show success message
+            const itemName = result.passengerImage ?
+                result.passengerImage.replace('.png', '') :
+                result.ufoImage.replace('.png', '');
+            const itemType = result.passengerImage ? 'passenger' : 'UFO';
+            this.showError(`Successfully unlocked ${itemName} ${itemType} for ${result.cost} coins!`);
+        } else {
+            // Show error message
+            this.showError(result.message || 'Failed to unlock item');
+        }
+    }
+
+    applyWardrobeChanges() {
+        const colorPicker = document.getElementById('ufoColorPicker');
+        const selectedDesign = document.querySelector('#ufoDesignsList .ufo-design-item.selected');
+        const selectedPassenger = document.querySelector('#passengerDesignsList .passenger-design-item.selected');
+
+        if (!selectedDesign) return;
+
+        const designType = selectedDesign.getAttribute('data-type');
+        const appearance = {
+            type: designType,
+            color: colorPicker.value
+        };
+
+        if (designType === 'custom') {
+            appearance.image = selectedDesign.getAttribute('data-image');
+        }
+
+        // Add passenger selection if one is selected (not "none")
+        if (selectedPassenger) {
+            const passengerValue = selectedPassenger.getAttribute('data-passenger');
+            if (passengerValue && passengerValue !== 'none') {
+                appearance.passenger = passengerValue;
+            }
+        }
+
+        // Send appearance update to server
+        this.networking.updatePlayerAppearance(appearance);
+
+        // Update local player appearance for immediate feedback
+        if (this.currentPlayer) {
+            this.currentPlayer.ufoAppearance = appearance;
+            // Always update the color property for username display
+            this.currentPlayer.color = appearance.color;
         }
     }
 }

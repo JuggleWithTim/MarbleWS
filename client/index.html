@@ -24,21 +24,35 @@
     </div>
 
     <div id="gameScreen" class="screen" style="display: none;">
-        <div id="gameUI" style="display:none;">
-<div id="playerInfo" style="display:none;">
-                <span id="playerName">Player</span>
-                <span id="playerLevel">Level 1</span>
+        <div id="topBar">
+            <div id="playerInfo" style="display:none;">
+                <div id="playerStats">
+                    <span id="playerName">Player</span>
+                    <span id="playerLevel">Level 1</span>
+                    <span id="playerCoins">Coins: 100</span>
+                    <button id="storeBtn">Store</button>
+                    <button id="wardrobeBtn">Garage</button>
+                </div>
                 <div id="xpBar">
                     <div id="xpFill"></div>
                 </div>
             </div>
-            
-<div id="gameControls" style="display:none;">
+            <div id="topBarActions" style="display:none;">
                 <button id="levelSelectBtn">Select Level</button>
                 <button id="editorBtn">Level Editor</button>
                 <button id="testEmoteBtn">Test Emote</button>
             </div>
+            <div id="controls">
+                <div class="control-info">
+                    <h3>Controls:</h3>
+                    <p><strong>WASD</strong> - Move UFO</p>
+                    <p><strong>SPACEBAR</strong> - Activate Beam</p>
+                    <p><strong>Goal:</strong> Help the marble reach the finish!</p>
+                </div>
+            </div>
+        </div>
 
+        <div id="gameUI" style="display:none;">
 <div id="onlinePlayers" style="display:none;">
                 <h3>Online Players</h3>
                 <div id="playersList"></div>
@@ -46,15 +60,6 @@
         </div>
 
         <canvas id="gameCanvas" width="1920" height="1080"></canvas>
-
-        <div id="controls">
-            <div class="control-info">
-                <h3>Controls:</h3>
-                <p><strong>WASD</strong> - Move UFO</p>
-                <p><strong>SPACEBAR</strong> - Activate Beam</p>
-                <p><strong>Goal:</strong> Help the marble reach the finish!</p>
-            </div>
-        </div>
 
 <div id="chat" style="display:none;">
             <div id="chatMessages"></div>
@@ -70,6 +75,70 @@
             <span class="close">&times;</span>
             <h2>Select Level</h2>
             <div id="levelsList"></div>
+        </div>
+    </div>
+
+    <div id="storeModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Store</h2>
+            <div id="storeContent">
+                <div class="store-section">
+                    <h3>UFO</h3>
+                    <div id="ufoStoreItemsList">
+                        <!-- UFO store items will be populated by JavaScript -->
+                    </div>
+                </div>
+                <div class="store-section">
+                    <h3>Pilot</h3>
+                    <div id="passengerStoreItemsList">
+                        <!-- Passenger store items will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="wardrobeModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Space Garage</h2>
+            <div id="wardrobeContent">
+                <div class="wardrobe-section">
+                    <h3>UFO & Username Color</h3>
+                    <input type="color" id="ufoColorPicker" value="#4ecdc4">
+                </div>
+                <div class="wardrobe-section">
+                    <h3>Unlocked UFO Designs</h3>
+                    <div id="ufoDesignsList">
+                        <div class="ufo-design-item selected" data-type="default">
+                            <div class="ufo-preview default-ufo"></div>
+                            <span>Default</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="wardrobe-section">
+                    <h3>Unlocked Passengers</h3>
+                    <div id="passengerDesignsList">
+                        <div class="passenger-design-item selected" data-passenger="none">
+                            <div class="passenger-preview no-passenger"></div>
+                            <span>No Passenger</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="wardrobe-actions">
+                    <button id="applyWardrobeBtn">Apply Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Level Up Splash Screen -->
+    <div id="levelUpSplash" class="level-up-splash" style="display: none;">
+        <div class="level-up-content">
+            <div class="level-up-title">LEVEL UP!</div>
+            <div id="levelUpLevel" class="level-up-level">Level 2</div>
+            <div id="levelUpCoins" class="level-up-coins">+100 Coins</div>
         </div>
     </div>
 

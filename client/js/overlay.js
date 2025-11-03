@@ -184,10 +184,10 @@ class TransparentRenderer extends Renderer {
                 const color = player.color || '#4ecdc4'; // Fallback to teal if no color provided
                 const interpolated = getInterpolatedPosition(id);
                 if (interpolated) {
-                    renderer.drawUFO(interpolated.x, interpolated.y, color, player.beamActive);
+                    renderer.drawUFO(interpolated.x, interpolated.y, color, player.beamActive, player.ufoAppearance);
                     renderer.drawPlayerName(interpolated.x, interpolated.y, player.username, color);
                 } else {
-                    renderer.drawUFO(player.x, player.y, color, player.beamActive);
+                    renderer.drawUFO(player.x, player.y, color, player.beamActive, player.ufoAppearance);
                     renderer.drawPlayerName(player.x, player.y, player.username, color);
                 }
             });

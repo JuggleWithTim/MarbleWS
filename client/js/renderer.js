@@ -63,7 +63,8 @@ class Renderer {
         };
     }async loadImage(url) {
         if (this.images.has(url)) {
-            return this.images.get(url);
+            const cached = this.images.get(url);
+            return Promise.resolve(cached);
         }
 
         return new Promise((resolve, reject) => {
@@ -77,6 +78,7 @@ class Renderer {
             };
             img.onerror = () => {
                 console.warn(`Failed to load image: ${url}`);
+                this.images.set(url, null);
                 resolve(null);
             };
             img.src = url;
@@ -123,19 +125,74 @@ class Renderer {
         this.ctx.restore();
     }
 
-    drawUFO(x, y, color = '#4ecdc4', beamActive = false) {
+    drawUFO(x, y, color = '#4ecdc4', beamActive = false, appearance = null) {
         const screenPos = this.worldToScreen(x, y);
         const size = 30 * this.camera.zoom;
-        
+
         this.ctx.save();
         this.ctx.translate(screenPos.x, screenPos.y);
-        
+
+        // Check if player has custom appearance
+        if (appearance && appearance.type === 'custom' && appearance.image) {
+            // Try to draw custom UFO image
+            const imageUrl = `img/ufo/${appearance.image}`;
+            const img = this.images.get(imageUrl);
+
+            if (img && img.complete) {
+                // Draw custom image - center it properly like the default UFO
+                // Use the same dimensions as the default UFO body (60x36) but scale to fit
+                const ufoWidth = size * 2;  // 60 units wide (same as default)
+                const ufoHeight = size * 1.2;  // 36 units tall (same as default)
+                this.ctx.drawImage(img, -size, -size * 0.6, ufoWidth, ufoHeight);
+
+                // Draw beam effect for custom UFOs too
+                if (beamActive) {
+                    this.drawBeamEffect(size);
+                }
+            } else {
+                // Image not loaded yet or failed, fallback to default UFO
+                this.drawDefaultUFO(size, color, beamActive);
+                // Start loading the image if not already loading
+                if (!img) {
+                    this.loadImage(imageUrl);
+                }
+            }
+        } else {
+            // Use color from appearance or fallback to provided color
+            const ufoColor = (appearance && appearance.color) ? appearance.color : color;
+            this.drawDefaultUFO(size, ufoColor, beamActive);
+        }
+
+        // Draw passenger on top of UFO if one is selected
+        if (appearance && appearance.passenger) {
+            const passengerUrl = `img/passenger/${appearance.passenger}`;
+            const passengerImg = this.images.get(passengerUrl);
+
+            if (passengerImg && passengerImg.complete) {
+                // Draw passenger image centered on top of UFO
+                // Position it slightly above the UFO center
+                const passengerSize = size * 1.5; // Make passenger slightly larger than UFO
+                this.ctx.drawImage(passengerImg,
+                    -passengerSize / 2, -passengerSize / 2 - size * 0.8,
+                    passengerSize, passengerSize);
+            } else {
+                // Start loading the passenger image if not already loading
+                if (!passengerImg) {
+                    this.loadImage(passengerUrl);
+                }
+            }
+        }
+
+        this.ctx.restore();
+    }
+
+    drawDefaultUFO(size, color, beamActive) {
         // UFO body
         this.ctx.fillStyle = color;
         this.ctx.beginPath();
         this.ctx.ellipse(0, 0, size, size * 0.6, 0, 0, Math.PI * 2);
         this.ctx.fill();
-        
+
         // UFO dome
         this.ctx.fillStyle = '#ffffff';
         this.ctx.globalAlpha = 0.7;
@@ -143,43 +200,45 @@ class Renderer {
         this.ctx.ellipse(0, -size * 0.2, size * 0.6, size * 0.4, 0, 0, Math.PI * 2);
         this.ctx.fill();
         this.ctx.globalAlpha = 1;
-        
+
         // UFO lights
         for (let i = 0; i < 6; i++) {
             const angle = (i / 6) * Math.PI * 2;
             const lightX = Math.cos(angle) * size * 0.8;
             const lightY = Math.sin(angle) * size * 0.5;
-            
+
             this.ctx.fillStyle = '#ffff00';
             this.ctx.beginPath();
             this.ctx.arc(lightX, lightY, size * 0.1, 0, Math.PI * 2);
             this.ctx.fill();
         }
-        
+
         // Beam effect
         if (beamActive) {
-            this.ctx.fillStyle = 'rgba(76, 205, 196, 0.3)';
-            this.ctx.beginPath();
-            this.ctx.moveTo(-size * 0.5, size * 0.6);
-            this.ctx.lineTo(size * 0.5, size * 0.6);
-            this.ctx.lineTo(size * 1.5, size * 3);
-            this.ctx.lineTo(-size * 1.5, size * 3);
-            this.ctx.closePath();
-            this.ctx.fill();
-            
-            // Beam particles
-            for (let i = 0; i < 10; i++) {
-                const particleX = (Math.random() - 0.5) * size * 2;
-                const particleY = size * 0.6 + Math.random() * size * 2.4;
-                
-                this.ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-                this.ctx.beginPath();
-                this.ctx.arc(particleX, particleY, size * 0.05, 0, Math.PI * 2);
-                this.ctx.fill();
-            }
+            this.drawBeamEffect(size);
         }
-        
-        this.ctx.restore();
+    }
+
+    drawBeamEffect(size) {
+        this.ctx.fillStyle = 'rgba(76, 205, 196, 0.3)';
+        this.ctx.beginPath();
+        this.ctx.moveTo(-size * 0.5, size * 0.6);
+        this.ctx.lineTo(size * 0.5, size * 0.6);
+        this.ctx.lineTo(size * 1.5, size * 3);
+        this.ctx.lineTo(-size * 1.5, size * 3);
+        this.ctx.closePath();
+        this.ctx.fill();
+
+        // Beam particles
+        for (let i = 0; i < 10; i++) {
+            const particleX = (Math.random() - 0.5) * size * 2;
+            const particleY = size * 0.6 + Math.random() * size * 2.4;
+
+            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            this.ctx.beginPath();
+            this.ctx.arc(particleX, particleY, size * 0.05, 0, Math.PI * 2);
+            this.ctx.fill();
+        }
     }
 
     drawMarble(x, y, angle = 0, color = '#ff6b6b', radiusOverride = 30) {

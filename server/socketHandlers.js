@@ -47,6 +47,12 @@ function setupSocketHandlers(io, gameLogic) {
     }
   });
 
+  // Listen for player level up events from gameLogic
+  gameLogic.on('playerLeveledUp', (levelUpData) => {
+    // Send level up event only to the player who leveled up
+    io.to(levelUpData.playerId).emit('playerLeveledUp', levelUpData);
+  });
+
   io.on('connection', (socket) => {
     // Get real client IP address from proxy headers
     const clientIP = getClientIP(socket);
@@ -236,6 +242,73 @@ function setupSocketHandlers(io, gameLogic) {
     // Handle keepalive messages (for overlays and other passive clients)
     socket.on('keepalive', () => {
       resetIdleTimeout();
+    });
+
+    // Handle player appearance updates
+    socket.on('updateAppearance', (data) => {
+      resetIdleTimeout();
+
+      // Input validation
+      if (typeof data !== 'object' || !data.appearance || typeof data.appearance !== 'object') {
+        return;
+      }
+
+      const { appearance } = data;
+
+      // Validate appearance structure
+      if (typeof appearance.type !== 'string' ||
+          (appearance.type !== 'default' && appearance.type !== 'custom')) {
+        return;
+      }
+
+      if (appearance.type === 'default' && typeof appearance.color !== 'string') {
+        return;
+      }
+
+      if (appearance.type === 'custom' && typeof appearance.image !== 'string') {
+        return;
+      }
+
+      // Update player appearance in game logic
+      gameLogic.updatePlayerAppearance(socket.id, appearance);
+    });
+
+    // Handle UFO unlock purchases
+    socket.on('unlockUFO', (data) => {
+      resetIdleTimeout();
+
+      // Input validation
+      if (typeof data !== 'object' || typeof data.ufoImage !== 'string') {
+        socket.emit('unlockResult', { success: false, message: 'Invalid request' });
+        return;
+      }
+
+      const { ufoImage } = data;
+
+      // Attempt to unlock the UFO
+      const result = gameLogic.unlockUFO(socket.id, ufoImage);
+
+      // Send result back to client
+      socket.emit('unlockResult', result);
+    });
+
+    // Handle passenger unlock purchases
+    socket.on('unlockPassenger', (data) => {
+      resetIdleTimeout();
+
+      // Input validation
+      if (typeof data !== 'object' || typeof data.passengerImage !== 'string') {
+        socket.emit('unlockResult', { success: false, message: 'Invalid request' });
+        return;
+      }
+
+      const { passengerImage } = data;
+
+      // Attempt to unlock the passenger
+      const result = gameLogic.unlockPassenger(socket.id, passengerImage);
+
+      // Send result back to client
+      socket.emit('unlockResult', result);
     });
   });
 

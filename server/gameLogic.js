@@ -1,4 +1,6 @@
 const Matter = require('matter-js');
+const fs = require('fs');
+const path = require('path');
 
 // Generate a consistent random color based on a string seed
 function generateColorFromSeed(seed) {
@@ -52,6 +54,7 @@ class GameLogic {
     this.constraints = [];
     this.eventListeners = new Map();
     this.teleportCooldowns = new Map(); // Track teleport cooldowns per object
+    this.goalCooldowns = new Map(); // Track goal cooldowns per object
     this.activeObjects = new Map(); // Track active object movement state
 
     // Configure physics
@@ -121,21 +124,26 @@ class GameLogic {
     // Add UFO to physics world
     Matter.World.add(this.world, ufoBody);
 
-    // Generate a consistent color for this player based on their userId
-    const color = generateColorFromSeed(userId);
+    // Load saved appearance and progress data
+    const savedData = this.loadPlayerData(userId);
+    const color = savedData.ufoAppearance.type === 'default' ? savedData.ufoAppearance.color : generateColorFromSeed(userId);
 
     const player = {
       id: socketId,
       username,
       userId,
       color,
+      ufoAppearance: savedData.ufoAppearance,
+      unlockedUFOs: savedData.unlockedUFOs,
+      unlockedPassengers: savedData.unlockedPassengers,
       body: ufoBody,
       x: spawnX,
       y: spawnY,
       beamActive: false,
       beamTarget: null,
-      xp: 0,
-      level: 1,
+      xp: savedData.xp,
+      level: savedData.level,
+      coins: savedData.coins,
       targetX: spawnX,
       targetY: spawnY
     };
@@ -148,12 +156,16 @@ class GameLogic {
       username,
       userId,
       color,
+      ufoAppearance: savedData.ufoAppearance,
+      unlockedUFOs: savedData.unlockedUFOs,
+      unlockedPassengers: savedData.unlockedPassengers,
       x: spawnX,
       y: spawnY,
       beamActive: false,
       beamTarget: null,
-      xp: 0,
-      level: 1
+      xp: savedData.xp,
+      level: savedData.level,
+      coins: savedData.coins
     };
   }
 
@@ -242,6 +254,183 @@ class GameLogic {
         player.beamTarget = null;
       }
     }
+  }
+
+  updatePlayerAppearance(socketId, appearance) {
+    const player = this.players.get(socketId);
+    if (player) {
+      // Validate that custom UFOs are unlocked before allowing selection
+      if (appearance.type === 'custom' && !player.unlockedUFOs.includes(appearance.image)) {
+        console.log(`Player ${player.username} attempted to select locked UFO: ${appearance.image}`);
+        return; // Reject the appearance change
+      }
+
+      // Validate that passengers are unlocked before allowing selection
+      if (appearance.passenger && !player.unlockedPassengers.includes(appearance.passenger)) {
+        console.log(`Player ${player.username} attempted to select locked passenger: ${appearance.passenger}`);
+        return; // Reject the appearance change
+      }
+
+      // Update the player's appearance
+      player.ufoAppearance = { ...appearance };
+
+      // Always update the color field for username display, regardless of UFO type
+      player.color = appearance.color;
+
+      // Save appearance and progress to persistent storage
+      this.savePlayerData(player.userId, appearance, player.level, player.xp, player.coins, player.unlockedUFOs, player.unlockedPassengers);
+
+      console.log(`Player ${player.username} updated appearance:`, appearance);
+    }
+  }
+
+  unlockUFO(socketId, ufoImage) {
+    const player = this.players.get(socketId);
+    if (!player) return { success: false, message: 'Player not found' };
+
+    // Define UFO costs
+    const ufoCosts = {
+      'CustomUFO1.png': 50,
+      'ufoderp.png': 75,
+      'Fez.png': 100
+    };
+
+    const cost = ufoCosts[ufoImage];
+    if (!cost) {
+      return { success: false, message: 'Invalid UFO image' };
+    }
+
+    // Check if already unlocked
+    if (player.unlockedUFOs.includes(ufoImage)) {
+      return { success: false, message: 'UFO already unlocked' };
+    }
+
+    // Check if player has enough coins
+    if (player.coins < cost) {
+      return { success: false, message: 'Not enough coins' };
+    }
+
+    // Deduct coins and add to unlocked list
+    player.coins -= cost;
+    player.unlockedUFOs.push(ufoImage);
+
+    // Save updated data
+    this.savePlayerData(player.userId, player.ufoAppearance, player.level, player.xp, player.coins, player.unlockedUFOs, player.unlockedPassengers);
+
+    console.log(`Player ${player.username} unlocked UFO ${ufoImage} for ${cost} coins`);
+
+    return {
+      success: true,
+      ufoImage,
+      cost,
+      remainingCoins: player.coins,
+      unlockedUFOs: player.unlockedUFOs
+    };
+  }
+
+  unlockPassenger(socketId, passengerImage) {
+    const player = this.players.get(socketId);
+    if (!player) return { success: false, message: 'Player not found' };
+
+    // Define passenger costs
+    const passengerCosts = {
+      'luminoCoffee.png': 75,
+      'Derp.png': 75
+    };
+
+    const cost = passengerCosts[passengerImage];
+    if (!cost) {
+      return { success: false, message: 'Invalid passenger image' };
+    }
+
+    // Check if already unlocked
+    if (player.unlockedPassengers.includes(passengerImage)) {
+      return { success: false, message: 'Passenger already unlocked' };
+    }
+
+    // Check if player has enough coins
+    if (player.coins < cost) {
+      return { success: false, message: 'Not enough coins' };
+    }
+
+    // Deduct coins and add to unlocked list
+    player.coins -= cost;
+    player.unlockedPassengers.push(passengerImage);
+
+    // Save updated data
+    this.savePlayerData(player.userId, player.ufoAppearance, player.level, player.xp, player.coins, player.unlockedUFOs, player.unlockedPassengers);
+
+    console.log(`Player ${player.username} unlocked passenger ${passengerImage} for ${cost} coins`);
+
+    return {
+      success: true,
+      passengerImage,
+      cost,
+      remainingCoins: player.coins,
+      unlockedPassengers: player.unlockedPassengers
+    };
+  }
+
+  savePlayerData(userId, appearance, level = 1, xp = 0, coins = 100, unlockedUFOs = [], unlockedPassengers = []) {
+    try {
+      // Create players directory if it doesn't exist
+      const playersDir = path.join(process.cwd(), 'players');
+      if (!fs.existsSync(playersDir)) {
+        fs.mkdirSync(playersDir, { recursive: true });
+      }
+
+      // Save appearance data to a JSON file named after the userId
+      const appearanceFile = path.join(playersDir, `${userId}.json`);
+      fs.writeFileSync(appearanceFile, JSON.stringify({
+        userId,
+        ufoAppearance: appearance,
+        level,
+        xp,
+        coins,
+        unlockedUFOs,
+        unlockedPassengers,
+        lastUpdated: new Date().toISOString()
+      }, null, 2));
+
+      console.log(`Saved player data for user ${userId}`);
+    } catch (error) {
+      console.error('Failed to save player data:', error);
+    }
+  }
+
+  loadPlayerData(userId) {
+    try {
+      const playersDir = path.join(process.cwd(), 'players');
+      const appearanceFile = path.join(playersDir, `${userId}.json`);
+
+      if (fs.existsSync(appearanceFile)) {
+        const data = JSON.parse(fs.readFileSync(appearanceFile, 'utf8'));
+        return {
+          ufoAppearance: data.ufoAppearance,
+          level: data.level || 1,
+          xp: data.xp || 0,
+          coins: data.coins || 100,
+          unlockedUFOs: data.unlockedUFOs || [],
+          unlockedPassengers: data.unlockedPassengers || []
+        };
+      }
+    } catch (error) {
+      console.error('Failed to load player data:', error);
+    }
+
+    // Return default data if loading fails
+    return {
+      ufoAppearance: {
+        type: 'default',
+        color: generateColorFromSeed(userId),
+        image: null
+      },
+      level: 1,
+      xp: 0,
+      coins: 100,
+      unlockedUFOs: [],
+      unlockedPassengers: []
+    };
   }
 
   loadLevel(levelData) {
@@ -666,11 +855,21 @@ class GameLogic {
 
     if (goals.length === 0) return false;
 
+    // Get current timestamp for cooldown checks
+    const now = Date.now();
+
     // Get marble radius from properties
     const marbleRadius = this.marbleProperties ? this.marbleProperties.radius : 30;
 
     // Check if any marble reached any goal
     for (const goal of goals) {
+      // Check if goal is on cooldown
+      const cooldownKey = goal.id;
+      const lastWin = this.goalCooldowns.get(cooldownKey);
+      if (lastWin && (now - lastWin) < 5000) { // 5 second cooldown
+        continue; // Skip this goal, it's on cooldown
+      }
+
       for (const marble of this.marbles) {
         const marbleX = marble.body.position.x;
         const marbleY = marble.body.position.y;
@@ -713,6 +912,16 @@ class GameLogic {
         }
 
         if (collision) {
+          // Set cooldown to prevent rapid repeated triggering
+          this.goalCooldowns.set(cooldownKey, now);
+
+          // Clean up old cooldowns (keep only recent ones)
+          for (const [key, timestamp] of this.goalCooldowns.entries()) {
+            if (now - timestamp > 10000) { // Remove cooldowns older than 10 seconds
+              this.goalCooldowns.delete(key);
+            }
+          }
+
           // If this goal has a nextLevel property, return it
           if (goal.nextLevel) {
             return { win: true, nextLevel: goal.nextLevel };
@@ -744,9 +953,32 @@ class GameLogic {
       // Award XP to all players
       this.players.forEach(player => {
         player.xp += 100;
+        player.coins += 5;
+        let leveledUp = false;
         if (player.xp >= player.level * 1000) {
+          const oldLevel = player.level;
           player.level++;
           player.xp = 0;
+          // Award coins for leveling up: level × 100
+          const coinReward = oldLevel * 100;
+          player.coins += coinReward;
+          console.log(`Player ${player.username} leveled up to ${player.level} and gained ${coinReward} coins!`);
+          leveledUp = true;
+
+          // Emit level up event for splash screen
+          this.emit('playerLeveledUp', {
+            playerId: player.id,
+            username: player.username,
+            newLevel: player.level,
+            coinReward: coinReward
+          });
+        }
+
+        // Save progress after XP gain (whether leveled up or not)
+        this.savePlayerData(player.userId, player.ufoAppearance, player.level, player.xp, player.coins);
+
+        if (leveledUp) {
+          console.log(`Player ${player.username} progress saved after leveling up`);
         }
       });
 
@@ -801,21 +1033,34 @@ class GameLogic {
         const pos = obj.body.position;
         if (pos.x < worldBounds.minX || pos.x > worldBounds.maxX ||
             pos.y < worldBounds.minY || pos.y > worldBounds.maxY) {
-          // Find spawnpoint
-          const spawnpoint = this.levelObjects.find(sp =>
-            sp.properties && sp.properties.includes('spawnpoint')
-          );
+          let respawnX, respawnY;
 
-          if (spawnpoint) {
-            // Respawn object at spawnpoint (use current position if spawnpoint is moving)
-            const spawnX = spawnpoint.body ? spawnpoint.body.position.x : spawnpoint.x;
-            const spawnY = spawnpoint.body ? spawnpoint.body.position.y : spawnpoint.y;
-            Matter.Body.setPosition(obj.body, {
-              x: spawnX,
-              y: spawnY - 50
-            });
-            Matter.Body.setVelocity(obj.body, { x: 0, y: 0 });
+          // If the object being respawned is a spawnpoint, respawn at center of canvas
+          if (obj.properties && obj.properties.includes('spawnpoint')) {
+            respawnX = 960; // Center of canvas
+            respawnY = 540;
+          } else {
+            // Find spawnpoint for other objects
+            const spawnpoint = this.levelObjects.find(sp =>
+              sp.properties && sp.properties.includes('spawnpoint')
+            );
+
+            if (spawnpoint) {
+              // Respawn object at spawnpoint (use current position if spawnpoint is moving)
+              respawnX = spawnpoint.body ? spawnpoint.body.position.x : spawnpoint.x;
+              respawnY = spawnpoint.body ? spawnpoint.body.position.y : spawnpoint.y;
+            } else {
+              // Fallback to center if no spawnpoint found
+              respawnX = 960;
+              respawnY = 540;
+            }
           }
+
+          Matter.Body.setPosition(obj.body, {
+            x: respawnX,
+            y: respawnY - 50
+          });
+          Matter.Body.setVelocity(obj.body, { x: 0, y: 0 });
         }
       }
     });
@@ -1121,12 +1366,16 @@ class GameLogic {
         username: player.username,
         userId: player.userId,
         color: player.color,
+        ufoAppearance: player.ufoAppearance,
+        unlockedUFOs: player.unlockedUFOs,
+        unlockedPassengers: player.unlockedPassengers,
         x: player.x,
         y: player.y,
         beamActive: player.beamActive,
         beamTarget: player.beamTarget,
         xp: player.xp,
-        level: player.level
+        level: player.level,
+        coins: player.coins
       })),
       marbles: this.marbles.map(marble => ({
         id: marble.id,
