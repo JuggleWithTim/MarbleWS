@@ -908,6 +908,14 @@ class GameLogic {
           player.coins += coinReward;
           console.log(`Player ${player.username} leveled up to ${player.level} and gained ${coinReward} coins!`);
           leveledUp = true;
+
+          // Emit level up event for splash screen
+          this.emit('playerLeveledUp', {
+            playerId: player.id,
+            username: player.username,
+            newLevel: player.level,
+            coinReward: coinReward
+          });
         }
 
         // Save progress after XP gain (whether leveled up or not)

@@ -47,6 +47,12 @@ function setupSocketHandlers(io, gameLogic) {
     }
   });
 
+  // Listen for player level up events from gameLogic
+  gameLogic.on('playerLeveledUp', (levelUpData) => {
+    // Send level up event only to the player who leveled up
+    io.to(levelUpData.playerId).emit('playerLeveledUp', levelUpData);
+  });
+
   io.on('connection', (socket) => {
     // Get real client IP address from proxy headers
     const clientIP = getClientIP(socket);

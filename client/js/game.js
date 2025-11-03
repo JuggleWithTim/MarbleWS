@@ -163,6 +163,10 @@ class Game {
             this.showError(error.message);
         });
 
+        this.networking.on('playerLeveledUp', (data) => {
+            this.showLevelUpSplash(data);
+        });
+
         // Add unlock result handler
         this.networking.socket.on('unlockResult', (result) => {
             this.handleUnlockResult(result);
@@ -313,6 +317,26 @@ class Game {
             errorElement.textContent = message;
             errorElement.style.display = 'block';
         }
+    }
+
+    showLevelUpSplash(data) {
+        const splash = document.getElementById('levelUpSplash');
+        const levelElement = document.getElementById('levelUpLevel');
+        const coinsElement = document.getElementById('levelUpCoins');
+
+        if (!splash || !levelElement || !coinsElement) return;
+
+        // Update the content
+        levelElement.textContent = `Level ${data.newLevel}`;
+        coinsElement.textContent = `+${data.coinReward} Coins`;
+
+        // Show the splash screen
+        splash.style.display = 'flex';
+
+        // Hide after 3 seconds
+        setTimeout(() => {
+            splash.style.display = 'none';
+        }, 5000);
     }
 
     updatePlayerInfo() {

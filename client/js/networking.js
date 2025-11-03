@@ -106,6 +106,10 @@ class Networking {
             this.emit('chatMessage', data);
         });
 
+        this.socket.on('playerLeveledUp', (data) => {
+            this.emit('playerLeveledUp', data);
+        });
+
         this.socket.on('error', (error) => {
             console.error('Server error:', error);
             this.emit('error', error);
