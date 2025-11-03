@@ -898,6 +898,7 @@ class GameLogic {
       // Award XP to all players
       this.players.forEach(player => {
         player.xp += 100;
+        player.coins += 5;
         let leveledUp = false;
         if (player.xp >= player.level * 1000) {
           const oldLevel = player.level;
