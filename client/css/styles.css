@@ -647,9 +647,10 @@ body {
     font-size: 1.1em;
 }
 
-#storeItemsList {
-    display: flex;
-    flex-wrap: wrap;
+#ufoStoreItemsList,
+#passengerStoreItemsList {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
     gap: 15px;
 }
 
@@ -658,9 +659,10 @@ body {
     padding: 15px;
     border-radius: 8px;
     text-align: center;
-    min-width: 120px;
     border: 2px solid transparent;
     transition: all 0.3s ease;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .store-item:hover {

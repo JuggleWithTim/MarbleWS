@@ -718,22 +718,25 @@ class Game {
 
     async showStoreModal() {
         const storeModal = document.getElementById('storeModal');
-        const storeItemsList = document.getElementById('storeItemsList');
+        const ufoStoreItemsList = document.getElementById('ufoStoreItemsList');
+        const passengerStoreItemsList = document.getElementById('passengerStoreItemsList');
 
-        if (!this.currentPlayer || !storeItemsList) return;
+        if (!this.currentPlayer || !ufoStoreItemsList || !passengerStoreItemsList) return;
 
         // Clear existing items
-        storeItemsList.innerHTML = '';
+        ufoStoreItemsList.innerHTML = '';
+        passengerStoreItemsList.innerHTML = '';
 
         // UFO costs and data
         const ufoData = {
-            'CustomUFO1.png': { cost: 50, name: 'Custom UFO 1' },
-            'Fez.png': { cost: 100, name: 'Fez UFO' }
+            'CustomUFO1.png': { cost: 50, name: 'TestUFO 1' },
+            'Fez.png': { cost: 100, name: 'Fez' }
         };
 
         // Passenger costs and data
         const passengerData = {
-            'luminoCoffee.png': { cost: 75, name: 'Lumino Coffee' }
+            'luminoCoffee.png': { cost: 75, name: 'Lumino Coffee' },
+            'Derp.png': { cost: 75, name: 'Derp' }
         };
 
         // Get player's unlocked UFOs and passengers
@@ -777,7 +780,7 @@ class Game {
                 }
             }
 
-            storeItemsList.appendChild(storeItem);
+            ufoStoreItemsList.appendChild(storeItem);
         });
 
         // Add passenger store items
@@ -789,7 +792,7 @@ class Game {
 
             let itemHTML = `
                 <div class="store-preview" style="background-image: url('img/passenger/${imageName}')"></div>
-                <div class="store-item-name">${data.name} (Passenger)</div>
+                <div class="store-item-name">${data.name}</div>
                 <div class="store-price">${data.cost} coins</div>
             `;
 
@@ -817,7 +820,7 @@ class Game {
                 }
             }
 
-            storeItemsList.appendChild(storeItem);
+            passengerStoreItemsList.appendChild(storeItem);
         });
 
         storeModal.style.display = 'flex';
@@ -890,7 +893,7 @@ class Game {
         passengerDesignsList.appendChild(noPassengerItem);
 
         // Add only unlocked passenger images
-        const passengerImages = ['luminoCoffee.png'];
+        const passengerImages = ['luminoCoffee.png', 'Derp.png'];
 
         passengerImages.forEach(imageName => {
             const isUnlocked = unlockedPassengers.includes(imageName);
