@@ -730,6 +730,7 @@ class Game {
         // UFO costs and data
         const ufoData = {
             'CustomUFO1.png': { cost: 50, name: 'TestUFO 1' },
+            'ufoderp.png': { cost: 75, name: 'Derpcraft' },
             'Fez.png': { cost: 100, name: 'Fez' }
         };
 
@@ -858,7 +859,7 @@ class Game {
         designsList.appendChild(defaultItem);
 
         // Add only unlocked custom UFO images
-        const customImages = ['CustomUFO1.png', 'Fez.png'];
+        const customImages = ['CustomUFO1.png', 'Fez.png', 'ufoderp.png'];
 
         customImages.forEach(imageName => {
             const isUnlocked = unlockedUFOs.includes(imageName);

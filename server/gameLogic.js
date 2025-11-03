@@ -291,6 +291,7 @@ class GameLogic {
     // Define UFO costs
     const ufoCosts = {
       'CustomUFO1.png': 50,
+      'ufoderp.png': 75,
       'Fez.png': 100
     };
 
