@@ -978,21 +978,34 @@ class GameLogic {
         const pos = obj.body.position;
         if (pos.x < worldBounds.minX || pos.x > worldBounds.maxX ||
             pos.y < worldBounds.minY || pos.y > worldBounds.maxY) {
-          // Find spawnpoint
-          const spawnpoint = this.levelObjects.find(sp =>
-            sp.properties && sp.properties.includes('spawnpoint')
-          );
+          let respawnX, respawnY;
 
-          if (spawnpoint) {
-            // Respawn object at spawnpoint (use current position if spawnpoint is moving)
-            const spawnX = spawnpoint.body ? spawnpoint.body.position.x : spawnpoint.x;
-            const spawnY = spawnpoint.body ? spawnpoint.body.position.y : spawnpoint.y;
-            Matter.Body.setPosition(obj.body, {
-              x: spawnX,
-              y: spawnY - 50
-            });
-            Matter.Body.setVelocity(obj.body, { x: 0, y: 0 });
+          // If the object being respawned is a spawnpoint, respawn at center of canvas
+          if (obj.properties && obj.properties.includes('spawnpoint')) {
+            respawnX = 960; // Center of canvas
+            respawnY = 540;
+          } else {
+            // Find spawnpoint for other objects
+            const spawnpoint = this.levelObjects.find(sp =>
+              sp.properties && sp.properties.includes('spawnpoint')
+            );
+
+            if (spawnpoint) {
+              // Respawn object at spawnpoint (use current position if spawnpoint is moving)
+              respawnX = spawnpoint.body ? spawnpoint.body.position.x : spawnpoint.x;
+              respawnY = spawnpoint.body ? spawnpoint.body.position.y : spawnpoint.y;
+            } else {
+              // Fallback to center if no spawnpoint found
+              respawnX = 960;
+              respawnY = 540;
+            }
           }
+
+          Matter.Body.setPosition(obj.body, {
+            x: respawnX,
+            y: respawnY - 50
+          });
+          Matter.Body.setVelocity(obj.body, { x: 0, y: 0 });
         }
       }
     });
