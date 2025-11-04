@@ -887,7 +887,7 @@ class Game {
         noPassengerItem.setAttribute('data-passenger', 'none');
         noPassengerItem.innerHTML = `
             <div class="passenger-preview no-passenger"></div>
-            <span>No Passenger</span>
+            <span>No Pilot</span>
         `;
         noPassengerItem.addEventListener('click', () => this.selectPassengerDesign(noPassengerItem));
         passengerDesignsList.appendChild(noPassengerItem);
