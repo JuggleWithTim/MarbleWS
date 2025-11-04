@@ -27,6 +27,18 @@ class Game {
 
         // Track if a level has been loaded to prevent double-loading
         this.levelLoaded = false;
+
+        // UFO and passenger data
+        this.ufoData = {
+            'CustomUFO1.png': { cost: 50, name: 'TestUFO 1' },
+            'ufoderp.png': { cost: 75, name: 'Derpcraft' },
+            'Fez.png': { cost: 100, name: 'Fez' }
+        };
+
+        this.passengerData = {
+            'luminoCoffee.png': { cost: 75, name: 'Lumino Coffee' },
+            'Derp.png': { cost: 75, name: 'Derp' }
+        };
     }
 
     // Linear interpolation function
@@ -727,25 +739,12 @@ class Game {
         ufoStoreItemsList.innerHTML = '';
         passengerStoreItemsList.innerHTML = '';
 
-        // UFO costs and data
-        const ufoData = {
-            'CustomUFO1.png': { cost: 50, name: 'TestUFO 1' },
-            'ufoderp.png': { cost: 75, name: 'Derpcraft' },
-            'Fez.png': { cost: 100, name: 'Fez' }
-        };
-
-        // Passenger costs and data
-        const passengerData = {
-            'luminoCoffee.png': { cost: 75, name: 'Lumino Coffee' },
-            'Derp.png': { cost: 75, name: 'Derp' }
-        };
-
         // Get player's unlocked UFOs and passengers
         const unlockedUFOs = this.currentPlayer.unlockedUFOs || [];
         const unlockedPassengers = this.currentPlayer.unlockedPassengers || [];
 
         // Add UFO store items
-        Object.entries(ufoData).forEach(([imageName, data]) => {
+        Object.entries(this.ufoData).forEach(([imageName, data]) => {
             const isUnlocked = unlockedUFOs.includes(imageName);
 
             const storeItem = document.createElement('div');
@@ -785,7 +784,7 @@ class Game {
         });
 
         // Add passenger store items
-        Object.entries(passengerData).forEach(([imageName, data]) => {
+        Object.entries(this.passengerData).forEach(([imageName, data]) => {
             const isUnlocked = unlockedPassengers.includes(imageName);
 
             const storeItem = document.createElement('div');
@@ -859,7 +858,7 @@ class Game {
         designsList.appendChild(defaultItem);
 
         // Add only unlocked custom UFO images
-        const customImages = ['CustomUFO1.png', 'Fez.png', 'ufoderp.png'];
+        const customImages = Object.keys(this.ufoData);
 
         customImages.forEach(imageName => {
             const isUnlocked = unlockedUFOs.includes(imageName);
@@ -873,7 +872,7 @@ class Game {
 
                 customItem.innerHTML = `
                     <div class="ufo-preview" style="background-image: url('img/ufo/${imageName}')"></div>
-                    <span>${imageName.replace('.png', '')}</span>
+                    <span>${this.ufoData[imageName].name}</span>
                 `;
 
                 // Add click event for unlocked items
@@ -894,7 +893,7 @@ class Game {
         passengerDesignsList.appendChild(noPassengerItem);
 
         // Add only unlocked passenger images
-        const passengerImages = ['luminoCoffee.png', 'Derp.png'];
+        const passengerImages = Object.keys(this.passengerData);
 
         passengerImages.forEach(imageName => {
             const isUnlocked = unlockedPassengers.includes(imageName);
@@ -907,7 +906,7 @@ class Game {
 
                 passengerItem.innerHTML = `
                     <div class="passenger-preview" style="background-image: url('img/passenger/${imageName}')"></div>
-                    <span>${imageName.replace('.png', '')}</span>
+                    <span>${this.passengerData[imageName].name}</span>
                 `;
 
                 // Add click event for unlocked items

@@ -95,12 +95,19 @@ export const events = {
                 e.target.checked ? 'block' : 'none';
         });
 
+        // Show/hide advanced rotation options when advanced checkbox is toggled
+        document.getElementById('objectAdvancedRotation').addEventListener('change', (e) => {
+            document.getElementById('advancedRotationOptions').style.display =
+                e.target.checked ? 'block' : 'none';
+        });
+
         // Property inputs
         const propertyInputs = [
             'objectColor', 'objectAlpha', 'objectBackgroundImage', 'objectWidth', 'objectHeight', 'objectRadius',
             'objectFriction', 'objectRestitution', 'objectDensity', 'objectRotation', 'objectStatic',
             'objectSpawnpoint', 'objectPlayerspawn', 'objectEmotespawn', 'objectGoal', 'objectNextLevel', 'objectTeleporter', 'objectTeleporterTarget', 'objectSolid', 'objectZIndex',
-            'objectActive', 'objectPointAX', 'objectPointAY', 'objectPointBX', 'objectPointBY', 'objectTimeToA', 'objectTimeFromA', 'objectSpeedToB', 'objectSpeedFromB'
+            'objectActive', 'objectPointAX', 'objectPointAY', 'objectPointBX', 'objectPointBY', 'objectTimeToA', 'objectTimeFromA', 'objectSpeedToB', 'objectSpeedFromB',
+            'objectRotationA', 'objectRotationB', 'objectAdvancedRotation', 'objectRotationSpeedToB', 'objectRotationSpeedFromB'
         ];
 
         propertyInputs.forEach(id => {
