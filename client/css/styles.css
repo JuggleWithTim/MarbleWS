@@ -73,17 +73,19 @@ body {
 /* Game Screen */
 #gameScreen {
     position: relative;
-    justify-content: flex-start;
+    justify-content: center;
     align-items: flex-start;
     padding: 0;
+    flex-direction: column;
 }
 
 /* Top Bar */
 #topBar {
     position: absolute;
     top: -130px;
-    left: 20px;
-    right: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 1280px;
     z-index: 100;
     background: rgba(0, 0, 0, 0.8);
     padding: 15px 20px;
@@ -203,7 +205,7 @@ body {
     border: 2px solid rgba(255, 255, 255, 0.3);
     border-radius: 10px;
     background: #1a1a2e;
-    margin: 140px 20px 20px 20px; /* Increased top margin to account for top bar */
+    margin: 140px auto 20px auto; /* Increased top margin to account for top bar */
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
     /* Scale down 1920x1080 to fit screen while maintaining aspect ratio */
     width: 1280px;
