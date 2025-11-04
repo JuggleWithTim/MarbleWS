@@ -507,7 +507,7 @@
                 </div>
                 <div class="checkbox-group">
                     <input type="checkbox" id="objectActive">
-                    <label for="objectActive">Active (Elevator)
+                    <label for="objectActive">Active
                         <span class="tooltip-container">
                             <span class="tooltip-icon">?</span>
                             <span class="tooltip-text">Object moves automatically between two points, creating elevators, moving platforms, etc.</span>
@@ -516,7 +516,12 @@
                 </div>
                 <div id="activeOptionsContainer" style="display: none; margin-left: 20px; border-left: 2px solid rgba(78, 205, 196, 0.3); padding-left: 10px;">
                     <div class="property-group">
-                        <label>Point A:</label>
+                        <label>Point A:
+                            <span class="tooltip-container">
+                                <span class="tooltip-icon">?</span>
+                                <span class="tooltip-text">Starting position relative to object center. Use 'Pick' button to click on canvas or enter coordinates manually.</span>
+                            </span>
+                        </label>
                         <div style="display: flex; gap: 5px; align-items: center;">
                             <input type="number" id="objectPointAX" value="0" step="1" style="flex: 1;">
                             <input type="number" id="objectPointAY" value="0" step="1" style="flex: 1;">
@@ -524,7 +529,12 @@
                         </div>
                     </div>
                     <div class="property-group">
-                        <label>Point B:</label>
+                        <label>Point B:
+                            <span class="tooltip-container">
+                                <span class="tooltip-icon">?</span>
+                                <span class="tooltip-text">Ending position relative to object center. Use 'Pick' button to click on canvas or enter coordinates manually.</span>
+                            </span>
+                        </label>
                         <div style="display: flex; gap: 5px; align-items: center;">
                             <input type="number" id="objectPointBX" value="0" step="1" style="flex: 1;">
                             <input type="number" id="objectPointBY" value="0" step="1" style="flex: 1;">
@@ -532,20 +542,87 @@
                         </div>
                     </div>
                     <div class="property-group">
-                        <label>Time to A (seconds):</label>
+                        <label>Time to A (seconds):
+                            <span class="tooltip-container">
+                                <span class="tooltip-icon">?</span>
+                                <span class="tooltip-text">How long it takes to move from Point B back to Point A. Also controls rotation timing when Advanced mode is OFF.</span>
+                            </span>
+                        </label>
                         <input type="number" id="objectTimeToA" value="2" min="0.1" max="60" step="0.1">
                     </div>
                     <div class="property-group">
-                        <label>Time from A (seconds):</label>
+                        <label>Time from A (seconds):
+                            <span class="tooltip-container">
+                                <span class="tooltip-icon">?</span>
+                                <span class="tooltip-text">How long the object waits at Point A before moving to Point B. Also controls rotation timing when Advanced mode is OFF.</span>
+                            </span>
+                        </label>
                         <input type="number" id="objectTimeFromA" value="2" min="0.1" max="60" step="0.1">
                     </div>
                     <div class="property-group">
-                        <label>Speed to B:</label>
+                        <label>Speed to B:
+                            <span class="tooltip-container">
+                                <span class="tooltip-icon">?</span>
+                                <span class="tooltip-text">Movement speed when going from Point A to Point B. Higher values = faster movement.</span>
+                            </span>
+                        </label>
                         <input type="number" id="objectSpeedToB" value="1" min="0.1" max="10" step="0.1">
                     </div>
                     <div class="property-group">
-                        <label>Speed from B:</label>
+                        <label>Speed from B:
+                            <span class="tooltip-container">
+                                <span class="tooltip-icon">?</span>
+                                <span class="tooltip-text">Movement speed when going from Point B back to Point A. Higher values = faster movement.</span>
+                            </span>
+                        </label>
                         <input type="number" id="objectSpeedFromB" value="1" min="0.1" max="10" step="0.1">
+                    </div>
+                    <div class="property-group">
+                        <label>Rotation A (degrees):
+                            <span class="tooltip-container">
+                                <span class="tooltip-icon">?</span>
+                                <span class="tooltip-text">Rotation angle at Point A. 0 = no rotation, 90 = quarter turn clockwise, -90 = quarter turn counter-clockwise.</span>
+                            </span>
+                        </label>
+                        <input type="number" id="objectRotationA" value="0" min="-180" max="180" step="15">
+                    </div>
+                    <div class="property-group">
+                        <label>Rotation B (degrees):
+                            <span class="tooltip-container">
+                                <span class="tooltip-icon">?</span>
+                                <span class="tooltip-text">Rotation angle at Point B. 0 = no rotation, 90 = quarter turn clockwise, -90 = quarter turn counter-clockwise.</span>
+                            </span>
+                        </label>
+                        <input type="number" id="objectRotationB" value="0" min="-180" max="180" step="15">
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="objectAdvancedRotation">
+                        <label for="objectAdvancedRotation">Advanced: Independent rotation timing
+                            <span class="tooltip-container">
+                                <span class="tooltip-icon">?</span>
+                                <span class="tooltip-text">Enable separate rotation speed controls. When OFF: rotation timing matches position movement. When ON: rotation uses independent speed controls below.</span>
+                            </span>
+                        </label>
+                    </div>
+                    <div id="advancedRotationOptions" style="display: none; margin-left: 20px; border-left: 2px solid rgba(78, 205, 196, 0.3); padding-left: 10px;">
+                        <div class="property-group">
+                            <label>Rotation Speed to B (deg/sec):
+                                <span class="tooltip-container">
+                                    <span class="tooltip-icon">?</span>
+                                    <span class="tooltip-text">How fast the object rotates when moving from Point A to Point B. 90°/sec = 90 degrees per second.</span>
+                                </span>
+                            </label>
+                            <input type="number" id="objectRotationSpeedToB" value="90" min="0.1" max="360" step="1">
+                        </div>
+                        <div class="property-group">
+                            <label>Rotation Speed from B (deg/sec):
+                                <span class="tooltip-container">
+                                    <span class="tooltip-icon">?</span>
+                                    <span class="tooltip-text">How fast the object rotates when moving from Point B back to Point A. 90°/sec = 90 degrees per second.</span>
+                                </span>
+                            </label>
+                            <input type="number" id="objectRotationSpeedFromB" value="90" min="0.1" max="360" step="1">
+                        </div>
                     </div>
                 </div>
                 <div class="property-group">

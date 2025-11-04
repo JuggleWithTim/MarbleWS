@@ -1186,17 +1186,109 @@ class GameLogic {
     });
   }
 
+  updateIndependentRotation(obj) {
+    // Handle independent rotation when points are the same
+    // Initialize rotation state if not exists
+    if (!this.activeObjects.has(obj.id)) {
+      this.activeObjects.set(obj.id, {
+        phase: 'toB', // Start by rotating to Rotation B
+        startTime: Date.now(),
+        currentAngle: obj.body.angle
+      });
+    }
+
+    const state = this.activeObjects.get(obj.id);
+    const now = Date.now();
+    const elapsed = (now - state.startTime) / 1000; // Convert to seconds
+
+    // Get rotation values
+    const rotationA = obj.rotationA !== undefined ? obj.rotationA : obj.rotation;
+    const rotationB = obj.rotationB !== undefined ? obj.rotationB : obj.rotation;
+
+    switch (state.phase) {
+      case 'toB':
+        // Rotate from current angle to Rotation B
+        if (obj.timeToA && obj.timeToA > 0) {
+          const progress = Math.min(elapsed / obj.timeToA, 1);
+          const targetAngle = state.currentAngle + (rotationB - state.currentAngle) * progress;
+          Matter.Body.setAngle(obj.body, targetAngle);
+
+          if (progress >= 1) {
+            // Reached Rotation B, start waiting
+            state.phase = 'atB';
+            state.startTime = now;
+          }
+        } else {
+          // No time specified, rotate instantly
+          Matter.Body.setAngle(obj.body, rotationB);
+          state.phase = 'atB';
+          state.startTime = now;
+        }
+        break;
+
+      case 'atB':
+        // Wait at Rotation B for timeFromA seconds
+        if (obj.timeFromA && obj.timeFromA > 0) {
+          if (elapsed >= obj.timeFromA) {
+            state.phase = 'toA';
+            state.startTime = now;
+            state.currentAngle = obj.body.angle;
+          }
+        } else {
+          // No wait time, rotate back immediately
+          state.phase = 'toA';
+          state.startTime = now;
+          state.currentAngle = obj.body.angle;
+        }
+        break;
+
+      case 'toA':
+        // Rotate from Rotation B back to Rotation A
+        if (obj.timeToA && obj.timeToA > 0) {
+          const progress = Math.min(elapsed / obj.timeToA, 1);
+          const targetAngle = rotationB + (rotationA - rotationB) * progress;
+          Matter.Body.setAngle(obj.body, targetAngle);
+
+          if (progress >= 1) {
+            // Reached Rotation A, restart cycle
+            state.phase = 'toB';
+            state.startTime = now;
+            state.currentAngle = obj.body.angle;
+          }
+        } else {
+          // No time specified, rotate instantly and restart
+          Matter.Body.setAngle(obj.body, rotationA);
+          state.phase = 'toB';
+          state.startTime = now;
+          state.currentAngle = obj.body.angle;
+        }
+        break;
+    }
+  }
+
   updateActiveObjects() {
     // Get all active objects
     const activeObjects = this.levelObjects.filter(obj => obj.active && obj.body);
 
     activeObjects.forEach(obj => {
+      // Check if this is an independent rotation case (advancedRotation + same points)
+      const pointsAreSame = obj.pointA && obj.pointB &&
+        Math.abs(obj.pointA.x - obj.pointB.x) < 1 &&
+        Math.abs(obj.pointA.y - obj.pointB.y) < 1;
+
+      if (obj.advancedRotation && pointsAreSame) {
+        // Independent rotation mode - ignore position, just rotate
+        this.updateIndependentRotation(obj);
+        return;
+      }
+
       // Initialize movement state if not exists
       if (!this.activeObjects.has(obj.id)) {
         this.activeObjects.set(obj.id, {
           phase: 'toA', // 'toA', 'atA', 'toB', 'atB', 'fromB'
           startTime: Date.now(),
-          currentPos: { x: obj.body.position.x, y: obj.body.position.y }
+          currentPos: { x: obj.body.position.x, y: obj.body.position.y },
+          currentAngle: obj.body.angle
         });
       }
 
@@ -1232,6 +1324,10 @@ class GameLogic {
         }
       }
 
+      // Get rotation values, defaulting to current object rotation if not specified
+      const rotationA = obj.rotationA !== undefined ? obj.rotationA : obj.rotation;
+      const rotationB = obj.rotationB !== undefined ? obj.rotationB : obj.rotation;
+
       switch (state.phase) {
         case 'toA':
           // Move from current position to point A
@@ -1239,8 +1335,10 @@ class GameLogic {
             const progress = Math.min(elapsed / obj.timeToA, 1);
             const newX = state.currentPos.x + (pointAWorld.x - state.currentPos.x) * progress;
             const newY = state.currentPos.y + (pointAWorld.y - state.currentPos.y) * progress;
+            const newAngle = state.currentAngle + (rotationA - state.currentAngle) * progress;
 
             Matter.Body.setPosition(obj.body, { x: newX, y: newY });
+            Matter.Body.setAngle(obj.body, newAngle);
 
             if (progress >= 1) {
               // Reached point A, start waiting
@@ -1250,6 +1348,7 @@ class GameLogic {
           } else {
             // No time specified, move instantly
             Matter.Body.setPosition(obj.body, pointAWorld);
+            Matter.Body.setAngle(obj.body, rotationA);
             state.phase = 'atA';
             state.startTime = now;
           }
@@ -1305,6 +1404,45 @@ class GameLogic {
             state.phase = 'atB';
             state.startTime = now;
           }
+
+          // Handle rotation based on advanced mode setting
+          if (obj.advancedRotation) {
+            // Advanced mode: Use independent rotation speeds
+            if (obj.rotationSpeedToB && obj.rotationSpeedToB > 0) {
+              const rotationSpeedRadPerSec = (obj.rotationSpeedToB * Math.PI) / 180; // Convert deg/sec to rad/sec
+              const angleChange = rotationSpeedRadPerSec * (1/60); // Change this frame
+              const angleDiff = rotationB - obj.body.angle;
+
+              if (Math.abs(angleDiff) > 0.01) { // Not close enough to target
+                if (Math.abs(angleChange) >= Math.abs(angleDiff)) {
+                  // Reached target rotation
+                  Matter.Body.setAngle(obj.body, rotationB);
+                } else {
+                  // Rotate towards target
+                  const direction = angleDiff > 0 ? 1 : -1;
+                  Matter.Body.setAngle(obj.body, obj.body.angle + angleChange * direction);
+                }
+              }
+            }
+          } else {
+            // Default mode: Use position timing for rotation
+            if (obj.speedToB && obj.speedToB > 0) {
+              // Calculate rotation progress based on position progress
+              const dx = pointBWorld.x - obj.body.position.x;
+              const dy = pointBWorld.y - obj.body.position.y;
+              const distance = Math.sqrt(dx * dx + dy * dy);
+              const totalDistance = Math.sqrt(
+                (pointBWorld.x - pointAWorld.x) ** 2 +
+                (pointBWorld.y - pointAWorld.y) ** 2
+              );
+
+              if (totalDistance > 0) {
+                const progress = 1 - (distance / totalDistance);
+                const targetAngle = rotationA + (rotationB - rotationA) * progress;
+                Matter.Body.setAngle(obj.body, targetAngle);
+              }
+            }
+          }
           break;
 
         case 'atB':
@@ -1332,6 +1470,7 @@ class GameLogic {
                 state.phase = 'toA';
                 state.startTime = now;
                 state.currentPos = { x: obj.body.position.x, y: obj.body.position.y };
+                state.currentAngle = obj.body.angle;
               } else {
                 // Move towards point A
                 const ratio = moveDistance / distance;
@@ -1344,6 +1483,7 @@ class GameLogic {
               state.phase = 'toA';
               state.startTime = now;
               state.currentPos = { x: obj.body.position.x, y: obj.body.position.y };
+              state.currentAngle = obj.body.angle;
             }
           } else {
             // No speed specified, move instantly and restart
@@ -1351,6 +1491,46 @@ class GameLogic {
             state.phase = 'toA';
             state.startTime = now;
             state.currentPos = { x: obj.body.position.x, y: obj.body.position.y };
+            state.currentAngle = obj.body.angle;
+          }
+
+          // Handle rotation based on advanced mode setting
+          if (obj.advancedRotation) {
+            // Advanced mode: Use independent rotation speeds
+            if (obj.rotationSpeedFromB && obj.rotationSpeedFromB > 0) {
+              const rotationSpeedRadPerSec = (obj.rotationSpeedFromB * Math.PI) / 180; // Convert deg/sec to rad/sec
+              const angleChange = rotationSpeedRadPerSec * (1/60); // Change this frame
+              const angleDiff = rotationA - obj.body.angle;
+
+              if (Math.abs(angleDiff) > 0.01) { // Not close enough to target
+                if (Math.abs(angleChange) >= Math.abs(angleDiff)) {
+                  // Reached target rotation
+                  Matter.Body.setAngle(obj.body, rotationA);
+                } else {
+                  // Rotate towards target
+                  const direction = angleDiff > 0 ? 1 : -1;
+                  Matter.Body.setAngle(obj.body, obj.body.angle + angleChange * direction);
+                }
+              }
+            }
+          } else {
+            // Default mode: Use position timing for rotation
+            if (obj.speedFromB && obj.speedFromB > 0) {
+              // Calculate rotation progress based on position progress
+              const dx = pointAWorld.x - obj.body.position.x;
+              const dy = pointAWorld.y - obj.body.position.y;
+              const distance = Math.sqrt(dx * dx + dy * dy);
+              const totalDistance = Math.sqrt(
+                (pointAWorld.x - pointBWorld.x) ** 2 +
+                (pointAWorld.y - pointBWorld.y) ** 2
+              );
+
+              if (totalDistance > 0) {
+                const progress = 1 - (distance / totalDistance);
+                const targetAngle = rotationB + (rotationA - rotationB) * progress;
+                Matter.Body.setAngle(obj.body, targetAngle);
+              }
+            }
           }
           break;
       }

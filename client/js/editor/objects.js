@@ -204,6 +204,12 @@ export const objects = {
                 document.getElementById('objectTimeFromA').value = obj.timeFromA || 2;
                 document.getElementById('objectSpeedToB').value = obj.speedToB || 1;
                 document.getElementById('objectSpeedFromB').value = obj.speedFromB || 1;
+                document.getElementById('objectRotationA').value = obj.rotationA !== undefined ? Math.round((obj.rotationA || 0) * 180 / Math.PI) : Math.round((obj.rotation || 0) * 180 / Math.PI);
+                document.getElementById('objectRotationB').value = obj.rotationB !== undefined ? Math.round((obj.rotationB || 0) * 180 / Math.PI) : Math.round((obj.rotation || 0) * 180 / Math.PI);
+                document.getElementById('objectAdvancedRotation').checked = obj.advancedRotation || false;
+                document.getElementById('advancedRotationOptions').style.display = (obj.advancedRotation) ? 'block' : 'none';
+                document.getElementById('objectRotationSpeedToB').value = obj.rotationSpeedToB !== undefined ? obj.rotationSpeedToB : 90;
+                document.getElementById('objectRotationSpeedFromB').value = obj.rotationSpeedFromB !== undefined ? obj.rotationSpeedFromB : 90;
             }
 
             this.updateStatus(`Selected: ${obj.id}`);
@@ -294,6 +300,17 @@ export const objects = {
             this.selectedObject.timeFromA = parseFloat(document.getElementById('objectTimeFromA').value) || 2;
             this.selectedObject.speedToB = parseFloat(document.getElementById('objectSpeedToB').value) || 1;
             this.selectedObject.speedFromB = parseFloat(document.getElementById('objectSpeedFromB').value) || 1;
+            this.selectedObject.rotationA = parseFloat(document.getElementById('objectRotationA').value) * Math.PI / 180; // Convert to radians
+            this.selectedObject.rotationB = parseFloat(document.getElementById('objectRotationB').value) * Math.PI / 180; // Convert to radians
+            this.selectedObject.advancedRotation = document.getElementById('objectAdvancedRotation').checked;
+            if (this.selectedObject.advancedRotation) {
+                this.selectedObject.rotationSpeedToB = parseFloat(document.getElementById('objectRotationSpeedToB').value) || 90;
+                this.selectedObject.rotationSpeedFromB = parseFloat(document.getElementById('objectRotationSpeedFromB').value) || 90;
+            } else {
+                // Remove advanced rotation properties if not using advanced mode
+                if (this.selectedObject.rotationSpeedToB !== undefined) delete this.selectedObject.rotationSpeedToB;
+                if (this.selectedObject.rotationSpeedFromB !== undefined) delete this.selectedObject.rotationSpeedFromB;
+            }
         } else {
             this.selectedObject.active = false;
             // Remove active properties if not active
@@ -303,6 +320,10 @@ export const objects = {
             if (this.selectedObject.timeFromA) delete this.selectedObject.timeFromA;
             if (this.selectedObject.speedToB) delete this.selectedObject.speedToB;
             if (this.selectedObject.speedFromB) delete this.selectedObject.speedFromB;
+            if (this.selectedObject.rotationA !== undefined) delete this.selectedObject.rotationA;
+            if (this.selectedObject.rotationB !== undefined) delete this.selectedObject.rotationB;
+            if (this.selectedObject.rotationSpeedToB !== undefined) delete this.selectedObject.rotationSpeedToB;
+            if (this.selectedObject.rotationSpeedFromB !== undefined) delete this.selectedObject.rotationSpeedFromB;
         }
 
         this.updateObjectList();
