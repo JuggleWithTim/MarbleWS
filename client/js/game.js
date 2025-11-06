@@ -179,6 +179,10 @@ class Game {
             this.showLevelUpSplash(data);
         });
 
+        this.networking.on('playerReceivedCheer', (data) => {
+            this.showCheerSplash(data);
+        });
+
         // Add unlock result handler
         this.networking.socket.on('unlockResult', (result) => {
             this.handleUnlockResult(result);
@@ -346,6 +350,26 @@ class Game {
         splash.style.display = 'flex';
 
         // Hide after 3 seconds
+        setTimeout(() => {
+            splash.style.display = 'none';
+        }, 5000);
+    }
+
+    showCheerSplash(data) {
+        const splash = document.getElementById('cheerSplash');
+        const bitsElement = document.getElementById('cheerBits');
+        const coinsElement = document.getElementById('cheerCoins');
+
+        if (!splash || !bitsElement || !coinsElement) return;
+
+        // Update the content
+        bitsElement.textContent = `${data.bitsAmount} Bits`;
+        coinsElement.textContent = `+${data.coinsAwarded} Coins`;
+
+        // Show the splash screen
+        splash.style.display = 'flex';
+
+        // Hide after 5 seconds
         setTimeout(() => {
             splash.style.display = 'none';
         }, 5000);
