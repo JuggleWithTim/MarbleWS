@@ -53,6 +53,12 @@ function setupSocketHandlers(io, gameLogic) {
     io.to(levelUpData.playerId).emit('playerLeveledUp', levelUpData);
   });
 
+  // Listen for player cheer events from gameLogic
+  gameLogic.on('playerReceivedCheer', (cheerData) => {
+    // Send cheer notification only to the player who cheered
+    io.to(cheerData.playerId).emit('playerReceivedCheer', cheerData);
+  });
+
   io.on('connection', (socket) => {
     // Get real client IP address from proxy headers
     const clientIP = getClientIP(socket);
