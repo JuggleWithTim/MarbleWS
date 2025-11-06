@@ -398,6 +398,62 @@ class GameLogic {
     }
   }
 
+  addCoinsToPlayer(userId, amount, reason = 'unknown') {
+    try {
+      // Check if player data exists
+      const playersDir = path.join(process.cwd(), 'players');
+      const playerFile = path.join(playersDir, `${userId}.json`);
+      
+      if (!fs.existsSync(playerFile)) {
+        console.log(`Player ${userId} does not exist, skipping coin addition from ${reason}`);
+        return { success: false, reason: 'player_not_found' };
+      }
+
+      // Load player data
+      const playerData = this.loadPlayerData(userId);
+      
+      // Add coins
+      playerData.coins += amount;
+      
+      // Save to disk
+      this.savePlayerData(
+        userId,
+        playerData.ufoAppearance,
+        playerData.level,
+        playerData.xp,
+        playerData.coins,
+        playerData.unlockedUFOs,
+        playerData.unlockedPassengers
+      );
+      
+      // If player is online, update their in-memory state
+      const onlinePlayer = Array.from(this.players.values())
+        .find(p => p.userId === userId);
+      
+      if (onlinePlayer) {
+        onlinePlayer.coins = playerData.coins;
+        console.log(`Updated online player ${onlinePlayer.username}'s coins to ${playerData.coins} (${reason}: +${amount})`);
+        
+        // Emit event for notification (only to the specific player)
+        this.emit('playerReceivedCheer', {
+          playerId: onlinePlayer.id,
+          username: onlinePlayer.username,
+          userId: userId,
+          bitsAmount: amount,
+          coinsAwarded: amount,
+          newBalance: playerData.coins
+        });
+      } else {
+        console.log(`Updated offline player ${userId}'s coins to ${playerData.coins} (${reason}: +${amount})`);
+      }
+      
+      return { success: true, newBalance: playerData.coins, wasOnline: !!onlinePlayer };
+    } catch (error) {
+      console.error(`Failed to add coins to player ${userId}:`, error);
+      return { success: false, reason: 'error', error: error.message };
+    }
+  }
+
   loadPlayerData(userId) {
     try {
       const playersDir = path.join(process.cwd(), 'players');

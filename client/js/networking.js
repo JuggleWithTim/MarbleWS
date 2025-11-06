@@ -110,6 +110,10 @@ class Networking {
             this.emit('playerLeveledUp', data);
         });
 
+        this.socket.on('playerReceivedCheer', (data) => {
+            this.emit('playerReceivedCheer', data);
+        });
+
         this.socket.on('error', (error) => {
             console.error('Server error:', error);
             this.emit('error', error);

@@ -30,6 +30,7 @@ class TwitchChat {
 
     // Event handlers
     this.client.on('message', this.onMessage.bind(this));
+    this.client.on('cheer', this.onCheer.bind(this));
     this.client.on('connected', this.onConnected.bind(this));
     this.client.on('disconnected', this.onDisconnected.bind(this));
 
@@ -63,6 +64,33 @@ class TwitchChat {
         const emote = emotes[0];
         await this.spawnEmoteInGame(emote.id, emote.name);
         this.lastEmoteSpawn = now;
+      }
+    }
+  }
+
+  async onCheer(channel, userstate, message) {
+    // Extract cheer information
+    const bits = parseInt(userstate.bits) || 0;
+    const userId = userstate['user-id'];
+    const username = userstate['display-name'] || userstate.username;
+
+    if (bits <= 0 || !userId) {
+      console.log('Invalid cheer data received');
+      return;
+    }
+
+    console.log(`${username} (${userId}) cheered ${bits} bits!`);
+
+    // Add coins to player (1:1 ratio)
+    const result = this.gameLogic.addCoinsToPlayer(userId, bits, 'cheer');
+
+    if (result.success) {
+      console.log(`Successfully added ${bits} coins to ${username}. New balance: ${result.newBalance}`);
+    } else {
+      if (result.reason === 'player_not_found') {
+        console.log(`Player ${username} (${userId}) has not played the game yet, skipping coin reward`);
+      } else {
+        console.log(`Failed to add coins to ${username}: ${result.reason}`);
       }
     }
   }
