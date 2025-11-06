@@ -45,13 +45,6 @@ export const rendering = {
                 this.drawGrid();
             }
 
-            // Draw connections first (behind objects)
-            if (this.level.connections) {
-                this.level.connections.forEach(connection => {
-                    this.drawConnection(connection);
-                });
-            }
-
             // Sort level objects by zIndex (if present) before rendering
             const sortedObjects = [...this.level.objects].sort((a, b) => {
                 return (a.zIndex || 0) - (b.zIndex || 0);
@@ -65,6 +58,13 @@ export const rendering = {
             // Highlight selected object
             if (this.selectedObject) {
                 this.drawObjectOutline(this.selectedObject);
+            }
+
+            // Draw connections on top (always visible)
+            if (this.level.connections) {
+                this.level.connections.forEach(connection => {
+                    this.drawConnection(connection);
+                });
             }
         } catch (error) {
             console.error('Error in render:', error);
