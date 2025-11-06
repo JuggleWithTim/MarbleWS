@@ -308,36 +308,53 @@ class Renderer {
     drawLevelObject(obj) {
         // Check if object has a background image
         if (obj.backgroundImage) {
-            if (obj.shape === 'rectangle') {
-                this.drawImage(obj.backgroundImage, obj.x, obj.y, obj.width, obj.height, obj.angle);
-            } else if (obj.shape === 'circle') {
-                // For circles, we need a special handling
-                // First try to get the image
-                this.loadImage(obj.backgroundImage).then(img => {
-                    if (img) {
-                        // Create a circular clipping path
-                        const screenPos = this.worldToScreen(obj.x, obj.y);
-                        
-                        this.ctx.save();
-                        this.ctx.translate(screenPos.x, screenPos.y);
-                        if (obj.angle) this.ctx.rotate(obj.angle);
-                        
-                        // Create clipping circle
-                        this.ctx.beginPath();
-                        this.ctx.arc(0, 0, obj.radius * this.camera.zoom, 0, Math.PI * 2);
-                        this.ctx.clip();
-                        
-                        // Draw the image
-                        this.ctx.drawImage(img, 
-                            -obj.radius * this.camera.zoom, -obj.radius * this.camera.zoom,
-                            obj.radius * 2 * this.camera.zoom, obj.radius * 2 * this.camera.zoom);
-                        
-                        this.ctx.restore();
-                    } else {
-                        // Fallback to regular circle if image fails
-                        this.drawCircle(obj.x, obj.y, obj.radius, obj.color, obj.angle);
-                    }
-                });
+            // Check if image is already loaded in cache
+            const cachedImage = this.images.get(obj.backgroundImage);
+
+            if (cachedImage instanceof HTMLImageElement && cachedImage.complete) {
+                // Image is loaded, draw it synchronously
+                if (obj.shape === 'rectangle') {
+                    const screenPos = this.worldToScreen(obj.x, obj.y);
+
+                    this.ctx.save();
+                    this.ctx.translate(screenPos.x, screenPos.y);
+                    this.ctx.rotate(obj.angle || 0);
+                    this.ctx.drawImage(cachedImage,
+                        -obj.width/2 * this.camera.zoom, -obj.height/2 * this.camera.zoom,
+                        obj.width * this.camera.zoom, obj.height * this.camera.zoom);
+                    this.ctx.restore();
+                } else if (obj.shape === 'circle') {
+                    // Create a circular clipping path
+                    const screenPos = this.worldToScreen(obj.x, obj.y);
+
+                    this.ctx.save();
+                    this.ctx.translate(screenPos.x, screenPos.y);
+                    if (obj.angle) this.ctx.rotate(obj.angle);
+
+                    // Create clipping circle
+                    this.ctx.beginPath();
+                    this.ctx.arc(0, 0, obj.radius * this.camera.zoom, 0, Math.PI * 2);
+                    this.ctx.clip();
+
+                    // Draw the image
+                    this.ctx.drawImage(cachedImage,
+                        -obj.radius * this.camera.zoom, -obj.radius * this.camera.zoom,
+                        obj.radius * 2 * this.camera.zoom, obj.radius * 2 * this.camera.zoom);
+
+                    this.ctx.restore();
+                }
+            } else {
+                // Image not loaded yet or failed, draw color fallback and start loading
+                if (!cachedImage) {
+                    this.loadImage(obj.backgroundImage); // Start loading if not already started
+                }
+
+                // Draw fallback
+                if (obj.shape === 'rectangle') {
+                    this.drawRectangle(obj.x, obj.y, obj.width, obj.height, obj.color, obj.angle);
+                } else if (obj.shape === 'circle') {
+                    this.drawCircle(obj.x, obj.y, obj.radius, obj.color, obj.angle);
+                }
             }
         } else {
             // No background image, use regular drawing
