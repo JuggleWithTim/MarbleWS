@@ -64,6 +64,13 @@ export class LevelEditorCore {
 
         this.setupEventListeners();
         this.updateObjectList();
+
+        // Hide remove connections button initially (no object selected)
+        const removeConnectionsBtn = document.getElementById('removeConnections');
+        if (removeConnectionsBtn) {
+            removeConnectionsBtn.style.display = 'none';
+        }
+
         this.render();
     }
 

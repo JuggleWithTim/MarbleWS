@@ -132,6 +132,9 @@ export const objects = {
     selectObject(obj) {
         this.selectedObject = obj;
 
+        // Update remove connections button visibility
+        this.updateRemoveConnectionsButtonVisibility();
+
         if (obj) {
             // Parse color and alpha from stored RGBA string or convert from hex
             let colorHex = obj.color;
@@ -443,5 +446,58 @@ export const objects = {
         this.pointSelectionMode = null;
         this.updateStatus(`Point ${pointLabel} set`);
         this.render();
+    },
+
+    updateRemoveConnectionsButtonVisibility() {
+        const button = document.getElementById('removeConnections');
+        if (!button) return;
+
+        // Show button only if an object is selected AND it has connections
+        const shouldShow = this.selectedObject && this.hasConnections(this.selectedObject);
+        button.style.display = shouldShow ? 'block' : 'none';
+    },
+
+    hasConnections(obj) {
+        if (!this.level.connections || this.level.connections.length === 0) {
+            return false;
+        }
+
+        return this.level.connections.some(connection =>
+            connection.bodyA === obj.id || connection.bodyB === obj.id
+        );
+    },
+
+    removeObjectConnections() {
+        if (!this.selectedObject) {
+            this.updateStatus('No object selected');
+            return;
+        }
+
+        if (!this.level.connections || this.level.connections.length === 0) {
+            this.updateStatus('No connections to remove');
+            return;
+        }
+
+        const objectId = this.selectedObject.id;
+        const initialCount = this.level.connections.length;
+
+        // Filter out connections that reference the selected object
+        this.level.connections = this.level.connections.filter(connection =>
+            connection.bodyA !== objectId && connection.bodyB !== objectId
+        );
+
+        const removedCount = initialCount - this.level.connections.length;
+
+        if (removedCount > 0) {
+            this.updateStatus(`Removed ${removedCount} connection(s) from ${objectId}`);
+        } else {
+            this.updateStatus(`No connections found for ${objectId}`);
+        }
+
+        // Update button visibility after removing connections
+        this.updateRemoveConnectionsButtonVisibility();
+
+        this.render();
+        this.updateJsonDisplay();
     }
 };

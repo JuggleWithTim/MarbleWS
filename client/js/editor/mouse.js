@@ -374,6 +374,10 @@ export const mouse = {
         }
 
         this.level.connections.push(connection);
+
+        // Update remove connections button visibility for both connected objects
+        this.updateRemoveConnectionsButtonVisibility();
+
         this.render();
         this.updateJsonDisplay();
         this.updateStatus(`Created ${connection.type} connection: ${objA.id} ↔ ${objB.id}`);

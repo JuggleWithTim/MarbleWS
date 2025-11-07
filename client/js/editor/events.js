@@ -136,6 +136,9 @@ export const events = {
         document.getElementById('pickPointA').addEventListener('click', () => this.startPointSelection('pointA'));
         document.getElementById('pickPointB').addEventListener('click', () => this.startPointSelection('pointB'));
 
+        // Remove connections button
+        document.getElementById('removeConnections').addEventListener('click', () => this.removeObjectConnections());
+
         // JSON panel event listeners
         document.getElementById('toggleJsonPanel').addEventListener('click', () => this.toggleJsonPanel());
         document.getElementById('closeJsonPanel').addEventListener('click', () => this.hideJsonPanel());
