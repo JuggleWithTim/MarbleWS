@@ -700,6 +700,23 @@ class GameLogic {
         });
         break;
 
+      case 'glue':
+        // Glue constraint - rope with extremely small maximum distance for rigid connection
+        constraint = Matter.Constraint.create({
+          bodyA: bodyA,
+          bodyB: bodyB,
+          pointA: pointA,
+          pointB: pointB,
+          length: 0, // Extremely small maximum distance (almost rigid)
+          stiffness: 0, // Rope stiffness (no active pulling)
+          render: {
+            visible: true,
+            lineWidth: 2,
+            strokeStyle: '#800080' // Purple color for glue
+          }
+        });
+        break;
+
       default:
         console.warn(`Unknown constraint type: ${connection.type}`);
         return;
@@ -1261,13 +1278,42 @@ class GameLogic {
     const rotationA = obj.rotationA !== undefined ? obj.rotationA : obj.rotation;
     const rotationB = obj.rotationB !== undefined ? obj.rotationB : obj.rotation;
 
+      // Helper function to rotate object around a custom pivot point
+      const rotateAroundPivot = (body, angle, pivotX, pivotY) => {
+        // Calculate the angle difference to rotate by
+        const angleDiff = angle - body.angle;
+
+        // Translate to pivot point
+        const translatedX = body.position.x - pivotX;
+        const translatedY = body.position.y - pivotY;
+
+        // Rotate around origin by the angle difference
+        const cos = Math.cos(angleDiff);
+        const sin = Math.sin(angleDiff);
+        const rotatedX = translatedX * cos - translatedY * sin;
+        const rotatedY = translatedX * sin + translatedY * cos;
+
+        // Translate back
+        const finalX = rotatedX + pivotX;
+        const finalY = rotatedY + pivotY;
+
+        Matter.Body.setPosition(body, { x: finalX, y: finalY });
+        Matter.Body.setAngle(body, angle);
+      };
+
     switch (state.phase) {
       case 'toB':
         // Rotate from current angle to Rotation B
         if (obj.timeToA && obj.timeToA > 0) {
           const progress = Math.min(elapsed / obj.timeToA, 1);
           const targetAngle = state.currentAngle + (rotationB - state.currentAngle) * progress;
-          Matter.Body.setAngle(obj.body, targetAngle);
+          if (obj.rotationPoint) {
+            const pivotX = obj.x + obj.rotationPoint.x;
+            const pivotY = obj.y + obj.rotationPoint.y;
+            rotateAroundPivot(obj.body, targetAngle, pivotX, pivotY);
+          } else {
+            Matter.Body.setAngle(obj.body, targetAngle);
+          }
 
           if (progress >= 1) {
             // Reached Rotation B, start waiting
@@ -1276,7 +1322,13 @@ class GameLogic {
           }
         } else {
           // No time specified, rotate instantly
-          Matter.Body.setAngle(obj.body, rotationB);
+          if (obj.rotationPoint) {
+            const pivotX = obj.x + obj.rotationPoint.x;
+            const pivotY = obj.y + obj.rotationPoint.y;
+            rotateAroundPivot(obj.body, rotationB, pivotX, pivotY);
+          } else {
+            Matter.Body.setAngle(obj.body, rotationB);
+          }
           state.phase = 'atB';
           state.startTime = now;
         }
@@ -1303,7 +1355,13 @@ class GameLogic {
         if (obj.timeToA && obj.timeToA > 0) {
           const progress = Math.min(elapsed / obj.timeToA, 1);
           const targetAngle = rotationB + (rotationA - rotationB) * progress;
-          Matter.Body.setAngle(obj.body, targetAngle);
+          if (obj.rotationPoint) {
+            const pivotX = obj.x + obj.rotationPoint.x;
+            const pivotY = obj.y + obj.rotationPoint.y;
+            rotateAroundPivot(obj.body, targetAngle, pivotX, pivotY);
+          } else {
+            Matter.Body.setAngle(obj.body, targetAngle);
+          }
 
           if (progress >= 1) {
             // Reached Rotation A, restart cycle
@@ -1313,7 +1371,13 @@ class GameLogic {
           }
         } else {
           // No time specified, rotate instantly and restart
-          Matter.Body.setAngle(obj.body, rotationA);
+          if (obj.rotationPoint) {
+            const pivotX = obj.x + obj.rotationPoint.x;
+            const pivotY = obj.y + obj.rotationPoint.y;
+            rotateAroundPivot(obj.body, rotationA, pivotX, pivotY);
+          } else {
+            Matter.Body.setAngle(obj.body, rotationA);
+          }
           state.phase = 'toB';
           state.startTime = now;
           state.currentAngle = obj.body.angle;
@@ -1384,6 +1448,29 @@ class GameLogic {
       const rotationA = obj.rotationA !== undefined ? obj.rotationA : obj.rotation;
       const rotationB = obj.rotationB !== undefined ? obj.rotationB : obj.rotation;
 
+      // Helper function to rotate object around a custom pivot point
+      const rotateAroundPivot = (body, angle, pivotX, pivotY) => {
+        // Calculate the angle difference to rotate by
+        const angleDiff = angle - body.angle;
+
+        // Translate to pivot point
+        const translatedX = body.position.x - pivotX;
+        const translatedY = body.position.y - pivotY;
+
+        // Rotate around origin by the angle difference
+        const cos = Math.cos(angleDiff);
+        const sin = Math.sin(angleDiff);
+        const rotatedX = translatedX * cos - translatedY * sin;
+        const rotatedY = translatedX * sin + translatedY * cos;
+
+        // Translate back
+        const finalX = rotatedX + pivotX;
+        const finalY = rotatedY + pivotY;
+
+        Matter.Body.setPosition(body, { x: finalX, y: finalY });
+        Matter.Body.setAngle(body, angle);
+      };
+
       switch (state.phase) {
         case 'toA':
           // Move from current position to point A
@@ -1394,7 +1481,13 @@ class GameLogic {
             const newAngle = state.currentAngle + (rotationA - state.currentAngle) * progress;
 
             Matter.Body.setPosition(obj.body, { x: newX, y: newY });
-            Matter.Body.setAngle(obj.body, newAngle);
+            if (obj.rotationPoint) {
+              const pivotX = obj.body.position.x + obj.rotationPoint.x;
+              const pivotY = obj.body.position.y + obj.rotationPoint.y;
+              rotateAroundPivot(obj.body, newAngle, pivotX, pivotY);
+            } else {
+              Matter.Body.setAngle(obj.body, newAngle);
+            }
 
             if (progress >= 1) {
               // Reached point A, start waiting
@@ -1404,7 +1497,13 @@ class GameLogic {
           } else {
             // No time specified, move instantly
             Matter.Body.setPosition(obj.body, pointAWorld);
-            Matter.Body.setAngle(obj.body, rotationA);
+            if (obj.rotationPoint) {
+              const pivotX = obj.body.position.x + obj.rotationPoint.x;
+              const pivotY = obj.body.position.y + obj.rotationPoint.y;
+              rotateAroundPivot(obj.body, rotationA, pivotX, pivotY);
+            } else {
+              Matter.Body.setAngle(obj.body, rotationA);
+            }
             state.phase = 'atA';
             state.startTime = now;
           }
@@ -1472,11 +1571,24 @@ class GameLogic {
               if (Math.abs(angleDiff) > 0.01) { // Not close enough to target
                 if (Math.abs(angleChange) >= Math.abs(angleDiff)) {
                   // Reached target rotation
-                  Matter.Body.setAngle(obj.body, rotationB);
+                  if (obj.rotationPoint) {
+                    const pivotX = obj.body.position.x + obj.rotationPoint.x;
+                    const pivotY = obj.body.position.y + obj.rotationPoint.y;
+                    rotateAroundPivot(obj.body, rotationB, pivotX, pivotY);
+                  } else {
+                    Matter.Body.setAngle(obj.body, rotationB);
+                  }
                 } else {
                   // Rotate towards target
                   const direction = angleDiff > 0 ? 1 : -1;
-                  Matter.Body.setAngle(obj.body, obj.body.angle + angleChange * direction);
+                  const newAngle = obj.body.angle + angleChange * direction;
+                  if (obj.rotationPoint) {
+                    const pivotX = obj.body.position.x + obj.rotationPoint.x;
+                    const pivotY = obj.body.position.y + obj.rotationPoint.y;
+                    rotateAroundPivot(obj.body, newAngle, pivotX, pivotY);
+                  } else {
+                    Matter.Body.setAngle(obj.body, newAngle);
+                  }
                 }
               }
             }
@@ -1495,7 +1607,13 @@ class GameLogic {
               if (totalDistance > 0) {
                 const progress = 1 - (distance / totalDistance);
                 const targetAngle = rotationA + (rotationB - rotationA) * progress;
-                Matter.Body.setAngle(obj.body, targetAngle);
+                if (obj.rotationPoint) {
+                  const pivotX = obj.body.position.x + obj.rotationPoint.x;
+                  const pivotY = obj.body.position.y + obj.rotationPoint.y;
+                  rotateAroundPivot(obj.body, targetAngle, pivotX, pivotY);
+                } else {
+                  Matter.Body.setAngle(obj.body, targetAngle);
+                }
               }
             }
           }
@@ -1561,11 +1679,24 @@ class GameLogic {
               if (Math.abs(angleDiff) > 0.01) { // Not close enough to target
                 if (Math.abs(angleChange) >= Math.abs(angleDiff)) {
                   // Reached target rotation
-                  Matter.Body.setAngle(obj.body, rotationA);
+                  if (obj.rotationPoint) {
+                    const pivotX = obj.body.position.x + obj.rotationPoint.x;
+                    const pivotY = obj.body.position.y + obj.rotationPoint.y;
+                    rotateAroundPivot(obj.body, rotationA, pivotX, pivotY);
+                  } else {
+                    Matter.Body.setAngle(obj.body, rotationA);
+                  }
                 } else {
                   // Rotate towards target
                   const direction = angleDiff > 0 ? 1 : -1;
-                  Matter.Body.setAngle(obj.body, obj.body.angle + angleChange * direction);
+                  const newAngle = obj.body.angle + angleChange * direction;
+                  if (obj.rotationPoint) {
+                    const pivotX = obj.body.position.x + obj.rotationPoint.x;
+                    const pivotY = obj.body.position.y + obj.rotationPoint.y;
+                    rotateAroundPivot(obj.body, newAngle, pivotX, pivotY);
+                  } else {
+                    Matter.Body.setAngle(obj.body, newAngle);
+                  }
                 }
               }
             }
@@ -1584,7 +1715,13 @@ class GameLogic {
               if (totalDistance > 0) {
                 const progress = 1 - (distance / totalDistance);
                 const targetAngle = rotationB + (rotationA - rotationB) * progress;
-                Matter.Body.setAngle(obj.body, targetAngle);
+                if (obj.rotationPoint) {
+                  const pivotX = obj.body.position.x + obj.rotationPoint.x;
+                  const pivotY = obj.body.position.y + obj.rotationPoint.y;
+                  rotateAroundPivot(obj.body, targetAngle, pivotX, pivotY);
+                } else {
+                  Matter.Body.setAngle(obj.body, targetAngle);
+                }
               }
             }
           }

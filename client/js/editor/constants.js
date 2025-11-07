@@ -46,12 +46,14 @@ export const CONNECTION_TYPES = {
     REVOLUTE: 'revolute',
     ROPE: 'rope',
     SPRING: 'spring',
-    DISTANCE: 'distance'
+    DISTANCE: 'distance',
+    GLUE: 'glue'
 };
 
 export const CONNECTION_DEFAULTS = {
     [CONNECTION_TYPES.REVOLUTE]: { stiffness: 1, damping: 0.1 },
     [CONNECTION_TYPES.ROPE]: { stiffness: 0, damping: 0.05 },
     [CONNECTION_TYPES.SPRING]: { stiffness: 0.1, damping: 0.05 },
-    [CONNECTION_TYPES.DISTANCE]: { stiffness: 1, damping: 0.1 }
+    [CONNECTION_TYPES.DISTANCE]: { stiffness: 1, damping: 0.1 },
+    [CONNECTION_TYPES.GLUE]: { stiffness: 0, damping: 0 }
 };

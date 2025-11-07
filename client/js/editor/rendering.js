@@ -45,13 +45,6 @@ export const rendering = {
                 this.drawGrid();
             }
 
-            // Draw connections first (behind objects)
-            if (this.level.connections) {
-                this.level.connections.forEach(connection => {
-                    this.drawConnection(connection);
-                });
-            }
-
             // Sort level objects by zIndex (if present) before rendering
             const sortedObjects = [...this.level.objects].sort((a, b) => {
                 return (a.zIndex || 0) - (b.zIndex || 0);
@@ -65,6 +58,13 @@ export const rendering = {
             // Highlight selected object
             if (this.selectedObject) {
                 this.drawObjectOutline(this.selectedObject);
+            }
+
+            // Draw connections on top (always visible)
+            if (this.level.connections) {
+                this.level.connections.forEach(connection => {
+                    this.drawConnection(connection);
+                });
             }
         } catch (error) {
             console.error('Error in render:', error);
@@ -317,6 +317,37 @@ export const rendering = {
 
         // Draw active points if object is active
         if (obj.active) {
+            // Draw rotation point
+            if (obj.rotationPoint) {
+                let rotationPointX = obj.x + obj.rotationPoint.x;
+                let rotationPointY = obj.y + obj.rotationPoint.y;
+
+                // Apply rotation to rotation point
+                if (obj.rotation && obj.rotation !== 0) {
+                    const cos = Math.cos(obj.rotation);
+                    const sin = Math.sin(obj.rotation);
+                    const rotatedX = obj.rotationPoint.x * cos - obj.rotationPoint.y * sin;
+                    const rotatedY = obj.rotationPoint.x * sin + obj.rotationPoint.y * cos;
+                    rotationPointX = obj.x + rotatedX;
+                    rotationPointY = obj.y + rotatedY;
+                }
+
+                this.ctx.fillStyle = '#ffff00'; // Yellow for rotation point
+                this.ctx.beginPath();
+                this.ctx.arc(rotationPointX, rotationPointY, 6, 0, Math.PI * 2);
+                this.ctx.fill();
+
+                this.ctx.strokeStyle = '#ffff00';
+                this.ctx.lineWidth = 2;
+                this.ctx.stroke();
+
+                // Label rotation point
+                this.ctx.fillStyle = '#000000';
+                this.ctx.font = '10px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText('R', rotationPointX, rotationPointY - 10);
+            }
+
             // Draw point A
             if (obj.pointA) {
                 let pointAX = obj.x + obj.pointA.x;
@@ -443,6 +474,9 @@ export const rendering = {
                 break;
             case 'distance':
                 this.ctx.strokeStyle = '#00ff00'; // Green for distance constraints
+                break;
+            case 'glue':
+                this.ctx.strokeStyle = '#800080'; // Purple for glue connections
                 break;
             default:
                 this.ctx.strokeStyle = '#ffffff'; // White for unknown types

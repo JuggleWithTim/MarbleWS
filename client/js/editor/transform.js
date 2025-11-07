@@ -118,9 +118,14 @@ export const transform = {
         this.isRotating = true;
         this.initialRotation = this.selectedObject.rotation || 0;
 
-        // Calculate initial mouse angle relative to object center
-        const dx = x - this.selectedObject.x;
-        const dy = y - this.selectedObject.y;
+        // Use rotation point if specified, otherwise use object center
+        const rotationPoint = this.selectedObject.rotationPoint || { x: 0, y: 0 };
+        const pivotX = this.selectedObject.x + rotationPoint.x;
+        const pivotY = this.selectedObject.y + rotationPoint.y;
+
+        // Calculate initial mouse angle relative to rotation pivot
+        const dx = x - pivotX;
+        const dy = y - pivotY;
         this.initialMouseAngle = Math.atan2(dy, dx);
 
         this.updateStatus(`Rotating ${this.selectedObject.id}`);
@@ -130,9 +135,14 @@ export const transform = {
         if (!this.isRotating || !this.selectedObject) return;
 
         try {
-            // Calculate current mouse angle relative to object center
-            const dx = x - this.selectedObject.x;
-            const dy = y - this.selectedObject.y;
+            // Use rotation point if specified, otherwise use object center
+            const rotationPoint = this.selectedObject.rotationPoint || { x: 0, y: 0 };
+            const pivotX = this.selectedObject.x + rotationPoint.x;
+            const pivotY = this.selectedObject.y + rotationPoint.y;
+
+            // Calculate current mouse angle relative to rotation pivot
+            const dx = x - pivotX;
+            const dy = y - pivotY;
             const currentMouseAngle = Math.atan2(dy, dx);
 
             // Calculate angle difference

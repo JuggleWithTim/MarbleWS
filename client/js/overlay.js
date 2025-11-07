@@ -123,71 +123,135 @@ class TransparentRenderer extends Renderer {
     }
 
     // Set camera to show the full board (centered, 1920x1080)
-    function renderGameState(gameState) {// Draw level background (remove to keep transparent overlay)
+    function renderGameState(gameState) {
+        // Draw level background (remove to keep transparent overlay)
         renderer.drawBackground(gameState.backgroundImage);
         renderer.setCamera(960, 540, 1);
 
-        // Draw level objects with smooth interpolation (including active objects)
+        // Create combined array of all renderable objects with z-index
+        const allRenderables = [];
+
+        // Add level objects (already have zIndex)
         if (gameState.levelObjects) {
-            const sortedObjects = [...gameState.levelObjects].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
-            sortedObjects.forEach(obj => {
+            gameState.levelObjects.forEach(obj => {
                 const interpolated = getInterpolatedPosition(`levelobj_${obj.id}`);
-                if (interpolated) {
-                    // Use interpolated position/angle for smooth movement
-                    const objCopy = { ...obj, x: interpolated.x, y: interpolated.y, angle: interpolated.angle };
-                    renderer.drawLevelObject(objCopy);
-                } else {
-                    // Fallback to server position if no interpolation data
-                    renderer.drawLevelObject(obj);
-                }
+                const renderObj = interpolated ?
+                    { ...obj, x: interpolated.x, y: interpolated.y, angle: interpolated.angle } :
+                    obj;
+
+                allRenderables.push({
+                    type: 'levelObject',
+                    data: renderObj,
+                    zIndex: renderObj.zIndex || 0
+                });
             });
         }
 
-        // Draw marbles with interpolation
+        // Add marbles (z-index 50)
         if (gameState.marbles) {
             gameState.marbles.forEach(marble => {
                 const id = `marble_${marble.id || marble.username || marble.playerId || marble.x + '_' + marble.y}`;
                 const interpolated = getInterpolatedPosition(id);
-                if (interpolated) {
-                    const marbleColor = (gameState.marbleProperties && gameState.marbleProperties.color) ?
-                        gameState.marbleProperties.color : '#ff6b6b';
-                    const marbleRadius = (gameState.marbleProperties && gameState.marbleProperties.radius) ?
-                        gameState.marbleProperties.radius : 30;
-                    renderer.drawMarble(interpolated.x, interpolated.y, interpolated.angle, marbleColor, marbleRadius);
-                } else {
-                    const marbleColor = (gameState.marbleProperties && gameState.marbleProperties.color) ?
-                        gameState.marbleProperties.color : '#ff6b6b';
-                    const marbleRadius = (gameState.marbleProperties && gameState.marbleProperties.radius) ?
-                        gameState.marbleProperties.radius : 30;
-                    renderer.drawMarble(marble.x, marble.y, marble.angle, marbleColor, marbleRadius);
-                }
+                const renderMarble = interpolated ?
+                    { ...marble, x: interpolated.x, y: interpolated.y, angle: interpolated.angle } :
+                    marble;
+
+                // Get current level marble properties
+                const marbleColor = (gameState.marbleProperties && gameState.marbleProperties.color) ?
+                    gameState.marbleProperties.color : '#ff6b6b';
+                const marbleRadius = (gameState.marbleProperties && gameState.marbleProperties.radius) ?
+                    gameState.marbleProperties.radius : 30;
+
+                allRenderables.push({
+                    type: 'marble',
+                    data: { ...renderMarble, color: marbleColor, radius: marbleRadius },
+                    zIndex: 50
+                });
             });
         }
 
-        // Draw emotes with interpolation
+        // Add emotes (z-index 50)
         if (gameState.emotes) {
             gameState.emotes.forEach(emote => {
                 const id = `emote_${emote.id || emote.url || emote.x + '_' + emote.y}`;
                 const interpolated = getInterpolatedPosition(id);
-                if (interpolated) {
-                    renderer.drawEmote(interpolated.x, interpolated.y, emote.url, interpolated.angle);
-                } else {
-                    renderer.drawEmote(emote.x, emote.y, emote.url, emote.angle);
-                }
+                const renderEmote = interpolated ?
+                    { ...emote, x: interpolated.x, y: interpolated.y, angle: interpolated.angle } :
+                    emote;
+
+                allRenderables.push({
+                    type: 'emote',
+                    data: renderEmote,
+                    zIndex: 50
+                });
             });
         }
 
-        // Draw players (UFOs and names) with interpolation
+        // Add players (z-index 50)
         if (gameState.players) {
             gameState.players.forEach(player => {
                 const id = `player_${player.id || player.username}`;
-                const color = player.color || '#4ecdc4'; // Fallback to teal if no color provided
+                const interpolated = getInterpolatedPosition(id);
+                const renderPlayer = interpolated ?
+                    { ...player, x: interpolated.x, y: interpolated.y } :
+                    player;
+
+                allRenderables.push({
+                    type: 'player',
+                    data: renderPlayer,
+                    zIndex: 50
+                });
+            });
+        }
+
+        // Sort all renderables by z-index
+        allRenderables.sort((a, b) => a.zIndex - b.zIndex);
+
+        // Render all objects in z-index order
+        allRenderables.forEach(renderable => {
+            switch (renderable.type) {
+                case 'levelObject':
+                    renderer.drawLevelObject(renderable.data);
+                    break;
+                case 'marble':
+                    renderer.drawMarble(
+                        renderable.data.x,
+                        renderable.data.y,
+                        renderable.data.angle,
+                        renderable.data.color,
+                        renderable.data.radius
+                    );
+                    break;
+                case 'emote':
+                    renderer.drawEmote(
+                        renderable.data.x,
+                        renderable.data.y,
+                        renderable.data.url,
+                        renderable.data.angle
+                    );
+                    break;
+                case 'player':
+                    const color = renderable.data.color || '#4ecdc4';
+                    renderer.drawUFO(
+                        renderable.data.x,
+                        renderable.data.y,
+                        color,
+                        renderable.data.beamActive,
+                        renderable.data.ufoAppearance
+                    );
+                    break;
+            }
+        });
+
+        // Draw player names on top of everything (always visible)
+        if (gameState.players) {
+            gameState.players.forEach(player => {
+                const id = `player_${player.id || player.username}`;
+                const color = player.color || '#4ecdc4';
                 const interpolated = getInterpolatedPosition(id);
                 if (interpolated) {
-                    renderer.drawUFO(interpolated.x, interpolated.y, color, player.beamActive, player.ufoAppearance);
                     renderer.drawPlayerName(interpolated.x, interpolated.y, player.username, color);
                 } else {
-                    renderer.drawUFO(player.x, player.y, color, player.beamActive, player.ufoAppearance);
                     renderer.drawPlayerName(player.x, player.y, player.username, color);
                 }
             });

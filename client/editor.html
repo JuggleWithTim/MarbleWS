@@ -408,7 +408,7 @@
                 <h3>Connection Type
                     <span class="tooltip-container">
                         <span class="tooltip-icon">?</span>
-                        <span class="tooltip-text">Choose how objects are connected: Revolute (hinge joint), Rope (slack connection), Spring (elastic), or Distance (fixed length).</span>
+                        <span class="tooltip-text">Choose how objects are connected: Revolute (hinge joint), Rope (slack connection), Spring (elastic), Distance (fixed length), or Glue (rigid connection).</span>
                     </span>
                 </h3>
                 <div class="property-group">
@@ -418,8 +418,10 @@
                         <option value="rope">Rope</option>
                         <option value="spring">Spring</option>
                         <option value="distance">Distance</option>
+                        <option value="glue">Glue</option>
                     </select>
                 </div>
+                <button class="tool-button" id="removeConnections" style="margin-top: 10px;">Remove connections</button>
             </div>
             
             <div class="tool-section">
@@ -594,6 +596,19 @@
                             </span>
                         </label>
                         <input type="number" id="objectRotationB" value="0" min="-180" max="180" step="15">
+                    </div>
+                    <div class="property-group">
+                        <label>Rotation Point:
+                            <span class="tooltip-container">
+                                <span class="tooltip-icon">?</span>
+                                <span class="tooltip-text">Custom point to rotate around. Leave empty to rotate around center. Use 'Pick' button to click on canvas or enter coordinates manually.</span>
+                            </span>
+                        </label>
+                        <div style="display: flex; gap: 5px; align-items: center;">
+                            <input type="number" id="objectRotationPointX" value="0" step="1" style="flex: 1;" placeholder="Center">
+                            <input type="number" id="objectRotationPointY" value="0" step="1" style="flex: 1;" placeholder="Center">
+                            <button class="tool-button" id="pickRotationPoint" style="padding: 4px 8px; font-size: 0.8em;">Pick</button>
+                        </div>
                     </div>
                     <div class="checkbox-group">
                         <input type="checkbox" id="objectAdvancedRotation">

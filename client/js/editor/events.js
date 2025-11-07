@@ -107,7 +107,7 @@ export const events = {
             'objectFriction', 'objectRestitution', 'objectDensity', 'objectRotation', 'objectStatic',
             'objectSpawnpoint', 'objectPlayerspawn', 'objectEmotespawn', 'objectGoal', 'objectNextLevel', 'objectTeleporter', 'objectTeleporterTarget', 'objectSolid', 'objectZIndex',
             'objectActive', 'objectPointAX', 'objectPointAY', 'objectPointBX', 'objectPointBY', 'objectTimeToA', 'objectTimeFromA', 'objectSpeedToB', 'objectSpeedFromB',
-            'objectRotationA', 'objectRotationB', 'objectAdvancedRotation', 'objectRotationSpeedToB', 'objectRotationSpeedFromB'
+            'objectRotationA', 'objectRotationB', 'objectRotationPointX', 'objectRotationPointY', 'objectAdvancedRotation', 'objectRotationSpeedToB', 'objectRotationSpeedFromB'
         ];
 
         propertyInputs.forEach(id => {
@@ -135,6 +135,10 @@ export const events = {
         // Point selection event listeners
         document.getElementById('pickPointA').addEventListener('click', () => this.startPointSelection('pointA'));
         document.getElementById('pickPointB').addEventListener('click', () => this.startPointSelection('pointB'));
+        document.getElementById('pickRotationPoint').addEventListener('click', () => this.startPointSelection('rotationPoint'));
+
+        // Remove connections button
+        document.getElementById('removeConnections').addEventListener('click', () => this.removeObjectConnections());
 
         // JSON panel event listeners
         document.getElementById('toggleJsonPanel').addEventListener('click', () => this.toggleJsonPanel());

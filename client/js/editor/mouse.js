@@ -328,6 +328,42 @@ export const mouse = {
             }
         }
 
+        // For Glue connections, adjust points to be at the same world coordinates
+        if (connectionType === 'glue') {
+            // Use the attachment point from object A as the common connection point
+            const commonPoint = attachPointA;
+
+            // Calculate new relative points for both objects to this common point
+            pointA = {
+                x: commonPoint.x - objA.x,
+                y: commonPoint.y - objA.y
+            };
+            pointB = {
+                x: commonPoint.x - objB.x,
+                y: commonPoint.y - objB.y
+            };
+
+            // If objects have rotation, we need to apply inverse rotation to get local coordinates
+            if (objA.rotation && objA.rotation !== 0) {
+                const cos = Math.cos(-objA.rotation);
+                const sin = Math.sin(-objA.rotation);
+                const rotatedX = pointA.x * cos - pointA.y * sin;
+                const rotatedY = pointA.x * sin + pointA.y * cos;
+                pointA = { x: rotatedX, y: rotatedY };
+            }
+
+            if (objB.rotation && objB.rotation !== 0) {
+                const cos = Math.cos(-objB.rotation);
+                const sin = Math.sin(-objB.rotation);
+                const rotatedX = pointB.x * cos - pointB.y * sin;
+                const rotatedY = pointB.x * sin + pointB.y * cos;
+                pointB = { x: rotatedX, y: rotatedY };
+            }
+
+            // Both attachment points are now the same
+            attachPointB = commonPoint;
+        }
+
         // Calculate the actual distance between attachment points
         const length = Math.sqrt(Math.pow(attachPointB.x - attachPointA.x, 2) + Math.pow(attachPointB.y - attachPointA.y, 2));
 
@@ -366,6 +402,11 @@ export const mouse = {
                 connection.stiffness = 1;
                 connection.damping = 0.1;
                 break;
+            case 'glue':
+                // Glue - rope with length 1 (extremely rigid)
+                connection.stiffness = 0;
+                connection.damping = 0;
+                break;
         }
 
         // Initialize connections array if it doesn't exist
@@ -374,6 +415,10 @@ export const mouse = {
         }
 
         this.level.connections.push(connection);
+
+        // Update remove connections button visibility for both connected objects
+        this.updateRemoveConnectionsButtonVisibility();
+
         this.render();
         this.updateJsonDisplay();
         this.updateStatus(`Created ${connection.type} connection: ${objA.id} ↔ ${objB.id}`);
