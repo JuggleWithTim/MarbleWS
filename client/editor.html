@@ -597,6 +597,19 @@
                         </label>
                         <input type="number" id="objectRotationB" value="0" min="-180" max="180" step="15">
                     </div>
+                    <div class="property-group">
+                        <label>Rotation Point:
+                            <span class="tooltip-container">
+                                <span class="tooltip-icon">?</span>
+                                <span class="tooltip-text">Custom point to rotate around. Leave empty to rotate around center. Use 'Pick' button to click on canvas or enter coordinates manually.</span>
+                            </span>
+                        </label>
+                        <div style="display: flex; gap: 5px; align-items: center;">
+                            <input type="number" id="objectRotationPointX" value="0" step="1" style="flex: 1;" placeholder="Center">
+                            <input type="number" id="objectRotationPointY" value="0" step="1" style="flex: 1;" placeholder="Center">
+                            <button class="tool-button" id="pickRotationPoint" style="padding: 4px 8px; font-size: 0.8em;">Pick</button>
+                        </div>
+                    </div>
                     <div class="checkbox-group">
                         <input type="checkbox" id="objectAdvancedRotation">
                         <label for="objectAdvancedRotation">Advanced: Independent rotation timing

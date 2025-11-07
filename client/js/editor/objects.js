@@ -209,6 +209,8 @@ export const objects = {
                 document.getElementById('objectSpeedFromB').value = obj.speedFromB || 1;
                 document.getElementById('objectRotationA').value = obj.rotationA !== undefined ? Math.round((obj.rotationA || 0) * 180 / Math.PI) : Math.round((obj.rotation || 0) * 180 / Math.PI);
                 document.getElementById('objectRotationB').value = obj.rotationB !== undefined ? Math.round((obj.rotationB || 0) * 180 / Math.PI) : Math.round((obj.rotation || 0) * 180 / Math.PI);
+                document.getElementById('objectRotationPointX').value = obj.rotationPoint ? obj.rotationPoint.x : 0;
+                document.getElementById('objectRotationPointY').value = obj.rotationPoint ? obj.rotationPoint.y : 0;
                 document.getElementById('objectAdvancedRotation').checked = obj.advancedRotation || false;
                 document.getElementById('advancedRotationOptions').style.display = (obj.advancedRotation) ? 'block' : 'none';
                 document.getElementById('objectRotationSpeedToB').value = obj.rotationSpeedToB !== undefined ? obj.rotationSpeedToB : 90;
@@ -305,6 +307,14 @@ export const objects = {
             this.selectedObject.speedFromB = parseFloat(document.getElementById('objectSpeedFromB').value) || 1;
             this.selectedObject.rotationA = parseFloat(document.getElementById('objectRotationA').value) * Math.PI / 180; // Convert to radians
             this.selectedObject.rotationB = parseFloat(document.getElementById('objectRotationB').value) * Math.PI / 180; // Convert to radians
+            const rotationPointX = parseFloat(document.getElementById('objectRotationPointX').value) || 0;
+            const rotationPointY = parseFloat(document.getElementById('objectRotationPointY').value) || 0;
+            if (rotationPointX !== 0 || rotationPointY !== 0) {
+                this.selectedObject.rotationPoint = { x: rotationPointX, y: rotationPointY };
+            } else {
+                // Remove rotation point if set to center
+                if (this.selectedObject.rotationPoint) delete this.selectedObject.rotationPoint;
+            }
             this.selectedObject.advancedRotation = document.getElementById('objectAdvancedRotation').checked;
             if (this.selectedObject.advancedRotation) {
                 this.selectedObject.rotationSpeedToB = parseFloat(document.getElementById('objectRotationSpeedToB').value) || 90;
@@ -319,6 +329,7 @@ export const objects = {
             // Remove active properties if not active
             if (this.selectedObject.pointA) delete this.selectedObject.pointA;
             if (this.selectedObject.pointB) delete this.selectedObject.pointB;
+            if (this.selectedObject.rotationPoint) delete this.selectedObject.rotationPoint;
             if (this.selectedObject.timeToA) delete this.selectedObject.timeToA;
             if (this.selectedObject.timeFromA) delete this.selectedObject.timeFromA;
             if (this.selectedObject.speedToB) delete this.selectedObject.speedToB;
@@ -415,7 +426,11 @@ export const objects = {
         }
 
         this.pointSelectionMode = pointType;
-        this.updateStatus(`Click on canvas to set Point ${pointType === 'pointA' ? 'A' : 'B'}`);
+        let pointLabel = '';
+        if (pointType === 'pointA') pointLabel = 'A';
+        else if (pointType === 'pointB') pointLabel = 'B';
+        else if (pointType === 'rotationPoint') pointLabel = 'Rotation Point';
+        this.updateStatus(`Click on canvas to set Point ${pointLabel}`);
         this.render();
     },
 
@@ -435,6 +450,10 @@ export const objects = {
             this.selectedObject.pointB = { x: relativeX, y: relativeY };
             document.getElementById('objectPointBX').value = Math.round(relativeX);
             document.getElementById('objectPointBY').value = Math.round(relativeY);
+        } else if (this.pointSelectionMode === 'rotationPoint') {
+            this.selectedObject.rotationPoint = { x: relativeX, y: relativeY };
+            document.getElementById('objectRotationPointX').value = Math.round(relativeX);
+            document.getElementById('objectRotationPointY').value = Math.round(relativeY);
         }
 
         // Ensure active is set
@@ -442,7 +461,11 @@ export const objects = {
         document.getElementById('objectActive').checked = true;
         document.getElementById('activeOptionsContainer').style.display = 'block';
 
-        const pointLabel = this.pointSelectionMode === 'pointA' ? 'A' : 'B';
+        let pointLabel = '';
+        if (this.pointSelectionMode === 'pointA') pointLabel = 'A';
+        else if (this.pointSelectionMode === 'pointB') pointLabel = 'B';
+        else if (this.pointSelectionMode === 'rotationPoint') pointLabel = 'Rotation Point';
+
         this.pointSelectionMode = null;
         this.updateStatus(`Point ${pointLabel} set`);
         this.render();
