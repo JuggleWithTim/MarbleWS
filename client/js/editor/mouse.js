@@ -137,13 +137,18 @@ export const mouse = {
             const isAlreadySelected = this.selectedObjects.includes(clickedObject);
 
             if (isAlreadySelected) {
-                // Clicking on an already selected object - don't change selection, just set up dragging
-                this.isDragging = true;
-                // Store offsets from mouse position for dragging all selected objects
-                this.dragOffsets.clear();
-                this.selectedObjects.forEach(obj => {
-                    this.dragOffsets.set(obj, { x: obj.x - this.dragStart.x, y: obj.y - this.dragStart.y });
-                });
+                if (this.shiftKey) {
+                    // Shift+click on selected object - remove from selection
+                    this.toggleObjectSelection(clickedObject);
+                } else {
+                    // Regular click on selected object - set up dragging for entire selection
+                    this.isDragging = true;
+                    // Store offsets from mouse position for dragging all selected objects
+                    this.dragOffsets.clear();
+                    this.selectedObjects.forEach(obj => {
+                        this.dragOffsets.set(obj, { x: obj.x - this.dragStart.x, y: obj.y - this.dragStart.y });
+                    });
+                }
             } else {
                 // Clicking on an unselected object
                 if (this.shiftKey) {
