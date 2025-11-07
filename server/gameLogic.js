@@ -700,6 +700,23 @@ class GameLogic {
         });
         break;
 
+      case 'glue':
+        // Glue constraint - rope with extremely small maximum distance for rigid connection
+        constraint = Matter.Constraint.create({
+          bodyA: bodyA,
+          bodyB: bodyB,
+          pointA: pointA,
+          pointB: pointB,
+          length: 0, // Extremely small maximum distance (almost rigid)
+          stiffness: 0, // Rope stiffness (no active pulling)
+          render: {
+            visible: true,
+            lineWidth: 2,
+            strokeStyle: '#800080' // Purple color for glue
+          }
+        });
+        break;
+
       default:
         console.warn(`Unknown constraint type: ${connection.type}`);
         return;

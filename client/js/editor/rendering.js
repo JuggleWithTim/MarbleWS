@@ -444,6 +444,9 @@ export const rendering = {
             case 'distance':
                 this.ctx.strokeStyle = '#00ff00'; // Green for distance constraints
                 break;
+            case 'glue':
+                this.ctx.strokeStyle = '#800080'; // Purple for glue connections
+                break;
             default:
                 this.ctx.strokeStyle = '#ffffff'; // White for unknown types
         }
