@@ -73,9 +73,19 @@ export const mouse = {
             }
 
             // Handle dragging
-            if (this.isDragging && this.selectedObject) {
-                this.selectedObject.x = this.mousePos.x;
-                this.selectedObject.y = this.mousePos.y;
+            if (this.isDragging && this.selectedObjects.length > 0) {
+                // Move all selected objects together, maintaining their relative positions to the mouse
+                this.selectedObjects.forEach(obj => {
+                    const offset = this.dragOffsets.get(obj);
+                    obj.x = this.mousePos.x + offset.x;
+                    obj.y = this.mousePos.y + offset.y;
+                });
+                this.render();
+                return;
+            }
+
+            // Handle area selection rectangle
+            if (this.isAreaSelecting) {
                 this.render();
                 return;
             }
@@ -89,6 +99,14 @@ export const mouse = {
     },
 
     onMouseUp(e) {
+        // Handle area selection completion
+        if (this.isAreaSelecting) {
+            this.completeAreaSelection();
+            this.isAreaSelecting = false;
+            this.render();
+            return;
+        }
+
         this.isDragging = false;
         this.isResizing = false;
         this.resizeCorner = null;
@@ -100,25 +118,118 @@ export const mouse = {
     },
 
     handleSelect(x, y) {
-        // First check if clicking on any handle
-        const handle = this.getHandleAt(x, y);
-        if (handle) {
-            if (handle === 'rotation') {
-                this.startRotating(x, y);
-            } else {
-                this.startResizing(handle);
+        // First check if clicking on any handle (only if we have a single selected object for now)
+        if (this.selectedObjects.length === 1) {
+            const handle = this.getHandleAt(x, y);
+            if (handle) {
+                if (handle === 'rotation') {
+                    this.startRotating(x, y);
+                } else {
+                    this.startResizing(handle);
+                }
+                return;
             }
-            return;
         }
 
         const clickedObject = this.getObjectAt(x, y);
 
         if (clickedObject) {
-            this.selectObject(clickedObject);
-            this.isDragging = true;
+            const isAlreadySelected = this.selectedObjects.includes(clickedObject);
+
+            if (isAlreadySelected) {
+                // Clicking on an already selected object - don't change selection, just set up dragging
+                this.isDragging = true;
+                // Store offsets from mouse position for dragging all selected objects
+                this.dragOffsets.clear();
+                this.selectedObjects.forEach(obj => {
+                    this.dragOffsets.set(obj, { x: obj.x - this.dragStart.x, y: obj.y - this.dragStart.y });
+                });
+            } else {
+                // Clicking on an unselected object
+                if (this.shiftKey) {
+                    // Shift+click on unselected object - add to selection
+                    this.toggleObjectSelection(clickedObject);
+                } else {
+                    // Regular click on unselected object - replace selection
+                    this.selectObject(clickedObject);
+                }
+                // Set up dragging for the new selection
+                this.isDragging = true;
+                this.dragOffsets.clear();
+                this.selectedObjects.forEach(obj => {
+                    this.dragOffsets.set(obj, { x: obj.x - this.dragStart.x, y: obj.y - this.dragStart.y });
+                });
+            }
         } else {
-            this.selectObject(null);
+            // Start area selection if clicking on empty space
+            this.isAreaSelecting = true;
+            this.areaSelectStart = { x, y };
+            // Clear selection if not holding shift
+            if (!this.shiftKey) {
+                this.selectObjects([]);
+            }
         }
+    },
+
+    completeAreaSelection() {
+        const startX = Math.min(this.areaSelectStart.x, this.mousePos.x);
+        const startY = Math.min(this.areaSelectStart.y, this.mousePos.y);
+        const endX = Math.max(this.areaSelectStart.x, this.mousePos.x);
+        const endY = Math.max(this.areaSelectStart.y, this.mousePos.y);
+
+        const selectedObjects = [];
+
+        // Find all objects within the selection rectangle
+        this.level.objects.forEach(obj => {
+            if (this.isObjectInRectangle(obj, startX, startY, endX, endY)) {
+                selectedObjects.push(obj);
+            }
+        });
+
+        this.selectObjects(selectedObjects);
+        this.updateStatus(`Selected ${selectedObjects.length} object(s)`);
+    },
+
+    isObjectInRectangle(obj, rectX1, rectY1, rectX2, rectY2) {
+        if (obj.shape === 'rectangle') {
+            // Check if any corner of the rectangle is inside the selection rectangle
+            const corners = [
+                { x: obj.x - obj.width/2, y: obj.y - obj.height/2 },
+                { x: obj.x + obj.width/2, y: obj.y - obj.height/2 },
+                { x: obj.x - obj.width/2, y: obj.y + obj.height/2 },
+                { x: obj.x + obj.width/2, y: obj.y + obj.height/2 }
+            ];
+
+            // Apply rotation to corners if needed
+            if (obj.rotation && obj.rotation !== 0) {
+                const cos = Math.cos(obj.rotation);
+                const sin = Math.sin(obj.rotation);
+                corners.forEach(corner => {
+                    const dx = corner.x - obj.x;
+                    const dy = corner.y - obj.y;
+                    corner.x = obj.x + dx * cos - dy * sin;
+                    corner.y = obj.y + dx * sin + dy * cos;
+                });
+            }
+
+            return corners.some(corner =>
+                corner.x >= rectX1 && corner.x <= rectX2 &&
+                corner.y >= rectY1 && corner.y <= rectY2
+            );
+        } else if (obj.shape === 'circle') {
+            // For circles, check if the center is in the rectangle or if the circle intersects the rectangle
+            const centerInRect = obj.x >= rectX1 && obj.x <= rectX2 && obj.y >= rectY1 && obj.y <= rectY2;
+            if (centerInRect) return true;
+
+            // Check if circle intersects rectangle edges
+            const closestX = Math.max(rectX1, Math.min(obj.x, rectX2));
+            const closestY = Math.max(rectY1, Math.min(obj.y, rectY2));
+            const distance = Math.sqrt(Math.pow(obj.x - closestX, 2) + Math.pow(obj.y - closestY, 2));
+
+            return distance <= obj.radius;
+        }
+
+        return false;
     },
 
     handleConnect(x, y) {
@@ -214,9 +325,9 @@ export const mouse = {
     },
 
     getHandleAt(x, y) {
-        if (!this.selectedObject) return null;
+        if (this.selectedObjects.length !== 1) return null;
 
-        const obj = this.selectedObject;
+        const obj = this.selectedObjects[0];
         const handleSize = this.resizeHandleSize;
 
         // Check rotation handle first - need to account for object rotation

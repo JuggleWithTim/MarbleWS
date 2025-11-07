@@ -39,7 +39,7 @@ export const tools = {
         // Point selection mode takes priority
         if (this.pointSelectionMode) {
             cursor = 'crosshair';
-        } else if (this.currentTool === 'select' && this.selectedObject) {
+        } else if (this.currentTool === 'select' && this.selectedObjects.length > 0) {
             const handle = this.getHandleAt(this.mousePos.x, this.mousePos.y);
             if (handle) {
                 switch (handle) {
@@ -63,9 +63,9 @@ export const tools = {
                         break;
                 }
             } else {
-                // Check if mouse is over the object for moving
+                // Check if mouse is over a selected object for moving
                 const objectAtMouse = this.getObjectAt(this.mousePos.x, this.mousePos.y);
-                if (objectAtMouse === this.selectedObject) {
+                if (objectAtMouse && this.selectedObjects.includes(objectAtMouse)) {
                     cursor = 'move';
                 }
             }

@@ -130,12 +130,19 @@ export const objects = {
     },
 
     selectObject(obj) {
-        this.selectedObject = obj;
+        this.selectObjects(obj ? [obj] : []);
+    },
+
+    selectObjects(objects) {
+        this.selectedObjects = [...objects];
+        // Keep selectedObject for backward compatibility
+        this.selectedObject = objects.length === 1 ? objects[0] : null;
 
         // Update remove connections button visibility
         this.updateRemoveConnectionsButtonVisibility();
 
-        if (obj) {
+        if (objects.length === 1) {
+            const obj = objects[0];
             // Parse color and alpha from stored RGBA string or convert from hex
             let colorHex = obj.color;
             let alpha = 255; // default full opacity
@@ -218,12 +225,24 @@ export const objects = {
             }
 
             this.updateStatus(`Selected: ${obj.id}`);
+        } else if (objects.length > 1) {
+            this.updateStatus(`Selected ${objects.length} objects`);
         } else {
             this.updateStatus('No object selected');
         }
 
         this.updateObjectList();
         this.render();
+    },
+
+    toggleObjectSelection(obj) {
+        const index = this.selectedObjects.indexOf(obj);
+        if (index > -1) {
+            this.selectedObjects.splice(index, 1);
+        } else {
+            this.selectedObjects.push(obj);
+        }
+        this.selectObjects(this.selectedObjects); // Refresh UI
     },
 
     // Update alpha display percentage
@@ -236,13 +255,13 @@ export const objects = {
     },
 
     updateSelectedObject() {
-        if (!this.selectedObject) return;
+        if (this.selectedObjects.length === 0) return;
 
         // Get the new background image value
         const newBackgroundImage = document.getElementById('objectBackgroundImage').value;
 
         // Check if the background image has changed
-        if (newBackgroundImage !== this.selectedObject.backgroundImage) {
+        if (newBackgroundImage !== this.selectedObjects[0].backgroundImage) {
             // Load the new background image
             if (newBackgroundImage) {
                 loadObjectImage(newBackgroundImage, this.objectImages);
@@ -252,92 +271,107 @@ export const objects = {
         // Update properties from inputs
         const hexColor = document.getElementById('objectColor').value;
         const alpha = parseInt(document.getElementById('objectAlpha').value);
-        this.selectedObject.color = createRgba(hexColor, alpha);
+        const newColor = createRgba(hexColor, alpha);
 
-        this.selectedObject.backgroundImage = newBackgroundImage;
-        this.selectedObject.isStatic = document.getElementById('objectStatic').checked;
-        this.selectedObject.isSolid = document.getElementById('objectSolid').checked;
-        this.selectedObject.zIndex = parseInt(document.getElementById('objectZIndex').value);
-        this.selectedObject.friction = parseFloat(document.getElementById('objectFriction').value);
-        this.selectedObject.restitution = parseFloat(document.getElementById('objectRestitution').value);
-        this.selectedObject.density = parseFloat(document.getElementById('objectDensity').value);
-        this.selectedObject.rotation = parseFloat(document.getElementById('objectRotation').value) * Math.PI / 180; // Convert to radians
+        // Properties that can be applied to multiple objects
+        const sharedProperties = {
+            color: newColor,
+            backgroundImage: newBackgroundImage,
+            isStatic: document.getElementById('objectStatic').checked,
+            isSolid: document.getElementById('objectSolid').checked,
+            zIndex: parseInt(document.getElementById('objectZIndex').value),
+            friction: parseFloat(document.getElementById('objectFriction').value),
+            restitution: parseFloat(document.getElementById('objectRestitution').value),
+            density: parseFloat(document.getElementById('objectDensity').value)
+        };
 
-        if (this.selectedObject.shape === 'rectangle') {
-            this.selectedObject.width = parseInt(document.getElementById('objectWidth').value);
-            this.selectedObject.height = parseInt(document.getElementById('objectHeight').value);
-        } else if (this.selectedObject.shape === 'circle') {
-            this.selectedObject.radius = parseInt(document.getElementById('objectRadius').value);
-        }
+        // Apply shared properties to all selected objects
+        this.selectedObjects.forEach(obj => {
+            Object.assign(obj, sharedProperties);
+        });
 
-        // Update properties
-        this.selectedObject.properties = this.getSelectedProperties();
+        // For single object selection, also update object-specific properties
+        if (this.selectedObjects.length === 1) {
+            const obj = this.selectedObjects[0];
 
-        // Update nextLevel property for goal objects
-        const nextLevel = this.getNextLevel();
-        if (nextLevel) {
-            this.selectedObject.nextLevel = nextLevel;
-        } else if (this.selectedObject.nextLevel) {
-            delete this.selectedObject.nextLevel;
-        }
+            obj.rotation = parseFloat(document.getElementById('objectRotation').value) * Math.PI / 180; // Convert to radians
 
-        // Update teleporterTarget property for teleporter objects
-        const teleporterTarget = this.getTeleporterTarget();
-        if (teleporterTarget) {
-            this.selectedObject.teleporterTarget = teleporterTarget;
-        } else if (this.selectedObject.teleporterTarget) {
-            delete this.selectedObject.teleporterTarget;
-        }
-
-        // Update active properties
-        const isActive = document.getElementById('objectActive').checked;
-        if (isActive) {
-            this.selectedObject.active = true;
-            this.selectedObject.pointA = {
-                x: parseFloat(document.getElementById('objectPointAX').value) || 0,
-                y: parseFloat(document.getElementById('objectPointAY').value) || 0
-            };
-            this.selectedObject.pointB = {
-                x: parseFloat(document.getElementById('objectPointBX').value) || 0,
-                y: parseFloat(document.getElementById('objectPointBY').value) || 0
-            };
-            this.selectedObject.timeToA = parseFloat(document.getElementById('objectTimeToA').value) || 2;
-            this.selectedObject.timeFromA = parseFloat(document.getElementById('objectTimeFromA').value) || 2;
-            this.selectedObject.speedToB = parseFloat(document.getElementById('objectSpeedToB').value) || 1;
-            this.selectedObject.speedFromB = parseFloat(document.getElementById('objectSpeedFromB').value) || 1;
-            this.selectedObject.rotationA = parseFloat(document.getElementById('objectRotationA').value) * Math.PI / 180; // Convert to radians
-            this.selectedObject.rotationB = parseFloat(document.getElementById('objectRotationB').value) * Math.PI / 180; // Convert to radians
-            const rotationPointX = parseFloat(document.getElementById('objectRotationPointX').value) || 0;
-            const rotationPointY = parseFloat(document.getElementById('objectRotationPointY').value) || 0;
-            if (rotationPointX !== 0 || rotationPointY !== 0) {
-                this.selectedObject.rotationPoint = { x: rotationPointX, y: rotationPointY };
-            } else {
-                // Remove rotation point if set to center
-                if (this.selectedObject.rotationPoint) delete this.selectedObject.rotationPoint;
+            if (obj.shape === 'rectangle') {
+                obj.width = parseInt(document.getElementById('objectWidth').value);
+                obj.height = parseInt(document.getElementById('objectHeight').value);
+            } else if (obj.shape === 'circle') {
+                obj.radius = parseInt(document.getElementById('objectRadius').value);
             }
-            this.selectedObject.advancedRotation = document.getElementById('objectAdvancedRotation').checked;
-            if (this.selectedObject.advancedRotation) {
-                this.selectedObject.rotationSpeedToB = parseFloat(document.getElementById('objectRotationSpeedToB').value) || 90;
-                this.selectedObject.rotationSpeedFromB = parseFloat(document.getElementById('objectRotationSpeedFromB').value) || 90;
-            } else {
-                // Remove advanced rotation properties if not using advanced mode
-                if (this.selectedObject.rotationSpeedToB !== undefined) delete this.selectedObject.rotationSpeedToB;
-                if (this.selectedObject.rotationSpeedFromB !== undefined) delete this.selectedObject.rotationSpeedFromB;
+
+            // Update properties
+            obj.properties = this.getSelectedProperties();
+
+            // Update nextLevel property for goal objects
+            const nextLevel = this.getNextLevel();
+            if (nextLevel) {
+                obj.nextLevel = nextLevel;
+            } else if (obj.nextLevel) {
+                delete obj.nextLevel;
             }
-        } else {
-            this.selectedObject.active = false;
-            // Remove active properties if not active
-            if (this.selectedObject.pointA) delete this.selectedObject.pointA;
-            if (this.selectedObject.pointB) delete this.selectedObject.pointB;
-            if (this.selectedObject.rotationPoint) delete this.selectedObject.rotationPoint;
-            if (this.selectedObject.timeToA) delete this.selectedObject.timeToA;
-            if (this.selectedObject.timeFromA) delete this.selectedObject.timeFromA;
-            if (this.selectedObject.speedToB) delete this.selectedObject.speedToB;
-            if (this.selectedObject.speedFromB) delete this.selectedObject.speedFromB;
-            if (this.selectedObject.rotationA !== undefined) delete this.selectedObject.rotationA;
-            if (this.selectedObject.rotationB !== undefined) delete this.selectedObject.rotationB;
-            if (this.selectedObject.rotationSpeedToB !== undefined) delete this.selectedObject.rotationSpeedToB;
-            if (this.selectedObject.rotationSpeedFromB !== undefined) delete this.selectedObject.rotationSpeedFromB;
+
+            // Update teleporterTarget property for teleporter objects
+            const teleporterTarget = this.getTeleporterTarget();
+            if (teleporterTarget) {
+                obj.teleporterTarget = teleporterTarget;
+            } else if (obj.teleporterTarget) {
+                delete obj.teleporterTarget;
+            }
+
+            // Update active properties
+            const isActive = document.getElementById('objectActive').checked;
+            if (isActive) {
+                obj.active = true;
+                obj.pointA = {
+                    x: parseFloat(document.getElementById('objectPointAX').value) || 0,
+                    y: parseFloat(document.getElementById('objectPointAY').value) || 0
+                };
+                obj.pointB = {
+                    x: parseFloat(document.getElementById('objectPointBX').value) || 0,
+                    y: parseFloat(document.getElementById('objectPointBY').value) || 0
+                };
+                obj.timeToA = parseFloat(document.getElementById('objectTimeToA').value) || 2;
+                obj.timeFromA = parseFloat(document.getElementById('objectTimeFromA').value) || 2;
+                obj.speedToB = parseFloat(document.getElementById('objectSpeedToB').value) || 1;
+                obj.speedFromB = parseFloat(document.getElementById('objectSpeedFromB').value) || 1;
+                obj.rotationA = parseFloat(document.getElementById('objectRotationA').value) * Math.PI / 180; // Convert to radians
+                obj.rotationB = parseFloat(document.getElementById('objectRotationB').value) * Math.PI / 180; // Convert to radians
+                const rotationPointX = parseFloat(document.getElementById('objectRotationPointX').value) || 0;
+                const rotationPointY = parseFloat(document.getElementById('objectRotationPointY').value) || 0;
+                if (rotationPointX !== 0 || rotationPointY !== 0) {
+                    obj.rotationPoint = { x: rotationPointX, y: rotationPointY };
+                } else {
+                    // Remove rotation point if set to center
+                    if (obj.rotationPoint) delete obj.rotationPoint;
+                }
+                obj.advancedRotation = document.getElementById('objectAdvancedRotation').checked;
+                if (obj.advancedRotation) {
+                    obj.rotationSpeedToB = parseFloat(document.getElementById('objectRotationSpeedToB').value) || 90;
+                    obj.rotationSpeedFromB = parseFloat(document.getElementById('objectRotationSpeedFromB').value) || 90;
+                } else {
+                    // Remove advanced rotation properties if not using advanced mode
+                    if (obj.rotationSpeedToB !== undefined) delete obj.rotationSpeedToB;
+                    if (obj.rotationSpeedFromB !== undefined) delete obj.rotationSpeedFromB;
+                }
+            } else {
+                obj.active = false;
+                // Remove active properties if not active
+                if (obj.pointA) delete obj.pointA;
+                if (obj.pointB) delete obj.pointB;
+                if (obj.rotationPoint) delete obj.rotationPoint;
+                if (obj.timeToA) delete obj.timeToA;
+                if (obj.timeFromA) delete obj.timeFromA;
+                if (obj.speedToB) delete obj.speedToB;
+                if (obj.speedFromB) delete obj.speedFromB;
+                if (obj.rotationA !== undefined) delete obj.rotationA;
+                if (obj.rotationB !== undefined) delete obj.rotationB;
+                if (obj.rotationSpeedToB !== undefined) delete obj.rotationSpeedToB;
+                if (obj.rotationSpeedFromB !== undefined) delete obj.rotationSpeedFromB;
+            }
         }
 
         this.updateObjectList();
@@ -357,9 +391,13 @@ export const objects = {
                 );
             }
 
-            if (this.selectedObject === obj) {
-                this.selectObject(null);
+            // Remove from selected objects if it was selected
+            const selectedIndex = this.selectedObjects.indexOf(obj);
+            if (selectedIndex > -1) {
+                this.selectedObjects.splice(selectedIndex, 1);
+                this.selectObjects(this.selectedObjects); // Refresh selection
             }
+
             this.updateObjectList();
             this.render();
             this.updateJsonDisplay();
@@ -374,7 +412,7 @@ export const objects = {
         this.level.objects.forEach(obj => {
             const item = document.createElement('div');
             item.className = 'object-item';
-            if (obj === this.selectedObject) {
+            if (this.selectedObjects.includes(obj)) {
                 item.classList.add('selected');
             }
 

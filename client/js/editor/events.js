@@ -127,9 +127,15 @@ export const events = {
 
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Delete' && this.selectedObject) {
-                this.deleteObject(this.selectedObject);
+            this.shiftKey = e.shiftKey;
+            if (e.key === 'Delete' && this.selectedObjects.length > 0) {
+                // Delete all selected objects
+                this.selectedObjects.forEach(obj => this.deleteObject(obj));
             }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            this.shiftKey = e.shiftKey;
         });
 
         // Point selection event listeners

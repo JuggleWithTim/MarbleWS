@@ -55,9 +55,16 @@ export const rendering = {
                 this.drawObject(obj);
             });
 
-            // Highlight selected object
-            if (this.selectedObject) {
-                this.drawObjectOutline(this.selectedObject);
+            // Highlight selected objects
+            if (this.selectedObjects.length > 0) {
+                this.selectedObjects.forEach(obj => {
+                    this.drawObjectOutline(obj);
+                });
+            }
+
+            // Draw area selection rectangle
+            if (this.isAreaSelecting) {
+                this.drawAreaSelectionRectangle();
             }
 
             // Draw connections on top (always visible)
@@ -255,65 +262,71 @@ export const rendering = {
                 obj.height + 4
             );
 
-            // Draw resize handles
-            this.ctx.fillStyle = '#ff6b6b';
-            const handleSize = this.resizeHandleSize;
-            const corners = [
-                { x: obj.x - obj.width/2, y: obj.y - obj.height/2 },
-                { x: obj.x + obj.width/2, y: obj.y - obj.height/2 },
-                { x: obj.x - obj.width/2, y: obj.y + obj.height/2 },
-                { x: obj.x + obj.width/2, y: obj.y + obj.height/2 }
-            ];
+            // Only draw resize handles if this is the only selected object
+            if (this.selectedObjects.length === 1) {
+                this.ctx.fillStyle = '#ff6b6b';
+                const handleSize = this.resizeHandleSize;
+                const corners = [
+                    { x: obj.x - obj.width/2, y: obj.y - obj.height/2 },
+                    { x: obj.x + obj.width/2, y: obj.y - obj.height/2 },
+                    { x: obj.x - obj.width/2, y: obj.y + obj.height/2 },
+                    { x: obj.x + obj.width/2, y: obj.y + obj.height/2 }
+                ];
 
-            corners.forEach(corner => {
-                this.ctx.fillRect(
-                    corner.x - handleSize/2,
-                    corner.y - handleSize/2,
-                    handleSize,
-                    handleSize
-                );
-            });
+                corners.forEach(corner => {
+                    this.ctx.fillRect(
+                        corner.x - handleSize/2,
+                        corner.y - handleSize/2,
+                        handleSize,
+                        handleSize
+                    );
+                });
+            }
         } else if (obj.shape === 'circle') {
             this.ctx.beginPath();
             this.ctx.arc(obj.x, obj.y, obj.radius + 2, 0, Math.PI * 2);
             this.ctx.stroke();
 
-            // Draw resize handle for circle
+            // Only draw resize handle if this is the only selected object
+            if (this.selectedObjects.length === 1) {
+                this.ctx.fillStyle = '#ff6b6b';
+                const handleSize = this.resizeHandleSize;
+                const handleX = obj.x + obj.radius;
+                const handleY = obj.y;
+
+                this.ctx.fillRect(
+                    handleX - handleSize/2,
+                    handleY - handleSize/2,
+                    handleSize,
+                    handleSize
+                );
+            }
+        }
+
+        // Only draw rotation handle if this is the only selected object
+        if (this.selectedObjects.length === 1) {
             this.ctx.fillStyle = '#ff6b6b';
             const handleSize = this.resizeHandleSize;
-            const handleX = obj.x + obj.radius;
-            const handleY = obj.y;
+            const rotationHandleX = obj.x;
+            const rotationHandleY = obj.y - Math.max(obj.width || obj.radius * 2, obj.height || obj.radius * 2) / 2 - 30;
 
             this.ctx.fillRect(
-                handleX - handleSize/2,
-                handleY - handleSize/2,
+                rotationHandleX - handleSize/2,
+                rotationHandleY - handleSize/2,
                 handleSize,
                 handleSize
             );
+
+            // Draw line from object center to rotation handle
+            this.ctx.strokeStyle = '#ff6b6b';
+            this.ctx.lineWidth = 1;
+            this.ctx.setLineDash([3, 3]);
+            this.ctx.beginPath();
+            this.ctx.moveTo(obj.x, obj.y);
+            this.ctx.lineTo(rotationHandleX, rotationHandleY);
+            this.ctx.stroke();
+            this.ctx.setLineDash([]);
         }
-
-        // Draw rotation handle
-        this.ctx.fillStyle = '#ff6b6b';
-        const handleSize = this.resizeHandleSize;
-        const rotationHandleX = obj.x;
-        const rotationHandleY = obj.y - Math.max(obj.width || obj.radius * 2, obj.height || obj.radius * 2) / 2 - 30;
-
-        this.ctx.fillRect(
-            rotationHandleX - handleSize/2,
-            rotationHandleY - handleSize/2,
-            handleSize,
-            handleSize
-        );
-
-        // Draw line from object center to rotation handle
-        this.ctx.strokeStyle = '#ff6b6b';
-        this.ctx.lineWidth = 1;
-        this.ctx.setLineDash([3, 3]);
-        this.ctx.beginPath();
-        this.ctx.moveTo(obj.x, obj.y);
-        this.ctx.lineTo(rotationHandleX, rotationHandleY);
-        this.ctx.stroke();
-        this.ctx.setLineDash([]);
 
         // Draw active points if object is active
         if (obj.active) {
@@ -505,6 +518,25 @@ export const rendering = {
         this.ctx.font = '10px Arial';
         this.ctx.textAlign = 'center';
         this.ctx.fillText(connection.type.toUpperCase(), midX, midY - 5);
+
+        this.ctx.restore();
+    },
+
+    drawAreaSelectionRectangle() {
+        const startX = Math.min(this.areaSelectStart.x, this.mousePos.x);
+        const startY = Math.min(this.areaSelectStart.y, this.mousePos.y);
+        const width = Math.abs(this.mousePos.x - this.areaSelectStart.x);
+        const height = Math.abs(this.mousePos.y - this.areaSelectStart.y);
+
+        this.ctx.save();
+        this.ctx.strokeStyle = '#00ff00'; // Green for selection rectangle
+        this.ctx.lineWidth = 2;
+        this.ctx.setLineDash([5, 5]);
+        this.ctx.strokeRect(startX, startY, width, height);
+
+        // Fill with semi-transparent green
+        this.ctx.fillStyle = 'rgba(0, 255, 0, 0.1)';
+        this.ctx.fillRect(startX, startY, width, height);
 
         this.ctx.restore();
     }
