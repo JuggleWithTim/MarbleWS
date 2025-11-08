@@ -122,10 +122,23 @@
             padding: 10px 0;
         }
 
+        .levels-section {
+            margin-bottom: 40px;
+        }
+
+        .levels-section h3 {
+            color: #4ecdc4;
+            font-size: 1.4em;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid rgba(78, 205, 196, 0.3);
+        }
+
         .levels-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
             gap: 20px;
+            margin-bottom: 20px;
         }
 
         .level-card {
@@ -274,8 +287,17 @@
         </div>
 
         <div class="levels-container">
-            <div class="levels-grid" id="levelsGrid">
-                <!-- Levels will be loaded here -->
+            <div class="levels-section">
+                <h3>Production Levels</h3>
+                <div class="levels-grid" id="prodLevelsGrid"></div>
+            </div>
+            <div class="levels-section">
+                <h3>Development Levels</h3>
+                <div class="levels-grid" id="devLevelsGrid"></div>
+            </div>
+            <div class="levels-section">
+                <h3>Other Levels</h3>
+                <div class="levels-grid" id="otherLevelsGrid"></div>
             </div>
         </div>
 
@@ -387,37 +409,71 @@
                 const response = await fetch(`${basePath}/api/admin/levels`);
                 const levels = await response.json();
 
-                const levelsGrid = document.getElementById('levelsGrid');
-                levelsGrid.innerHTML = '';
+                // Clear all grids
+                const prodGrid = document.getElementById('prodLevelsGrid');
+                const devGrid = document.getElementById('devLevelsGrid');
+                const otherGrid = document.getElementById('otherLevelsGrid');
+                prodGrid.innerHTML = '';
+                devGrid.innerHTML = '';
+                otherGrid.innerHTML = '';
 
                 if (levels.length === 0) {
-                    levelsGrid.innerHTML = '<p>No levels found. Create some levels in the editor!</p>';
+                    otherGrid.innerHTML = '<p>No levels found. Create some levels in the editor!</p>';
                     return;
                 }
 
+                // Categorize levels
+                const categorizedLevels = {
+                    prod: [],
+                    dev: [],
+                    other: []
+                };
+
                 levels.forEach(level => {
-                    const levelCard = document.createElement('div');
-                    levelCard.className = 'level-card';
+                    const desc = (level.description || '').toLowerCase();
+                    if (desc.includes('prod')) {
+                        categorizedLevels.prod.push(level);
+                    } else if (desc.includes('dev')) {
+                        categorizedLevels.dev.push(level);
+                    } else {
+                        categorizedLevels.other.push(level);
+                    }
+                });
 
-                    const isCurrent = level.name === currentLevelName;
+                // Render levels in each category
+                Object.keys(categorizedLevels).forEach(category => {
+                    const grid = category === 'prod' ? prodGrid : category === 'dev' ? devGrid : otherGrid;
+                    const levelsInCategory = categorizedLevels[category];
 
-                    levelCard.innerHTML = `
-                        <div class="level-name">${level.name} ${isCurrent ? '(Current)' : ''}</div>
-                        <div class="level-info">
-                            Modified: ${new Date(level.modified).toLocaleString()}<br>
-                            Size: ${Math.round(level.size / 1024)} KB
-                        </div>
-                        <div class="level-actions">
-                            <button class="btn btn-primary" onclick="loadLevel('${level.name}')">
-                                ${isCurrent ? 'Reload' : 'Load'}
-                            </button>
-                            <button class="btn btn-danger" onclick="deleteLevel('${level.name}')">
-                                Delete
-                            </button>
-                        </div>
-                    `;
+                    if (levelsInCategory.length === 0) {
+                        grid.innerHTML = '<p class="empty-state">No levels in this category</p>';
+                    } else {
+                        levelsInCategory.forEach(level => {
+                            const levelCard = document.createElement('div');
+                            levelCard.className = 'level-card';
 
-                    levelsGrid.appendChild(levelCard);
+                            const isCurrent = level.name === currentLevelName;
+
+                            levelCard.innerHTML = `
+                                <div class="level-name">${level.name} ${isCurrent ? '(Current)' : ''}</div>
+                                <div class="level-info">
+                                    Description: ${level.description || 'None'}<br>
+                                    Modified: ${new Date(level.modified).toLocaleString()}<br>
+                                    Size: ${Math.round(level.size / 1024)} KB
+                                </div>
+                                <div class="level-actions">
+                                    <button class="btn btn-primary" onclick="loadLevel('${level.name}')">
+                                        ${isCurrent ? 'Reload' : 'Load'}
+                                    </button>
+                                    <button class="btn btn-danger" onclick="deleteLevel('${level.name}')">
+                                        Delete
+                                    </button>
+                                </div>
+                            `;
+
+                            grid.appendChild(levelCard);
+                        });
+                    }
                 });
             } catch (error) {
                 console.error('Failed to fetch levels:', error);

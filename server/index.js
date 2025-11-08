@@ -274,10 +274,21 @@ app.get('/api/admin/levels', basicAuth, (req, res) => {
       const levelName = file.replace('.json', '');
       const levelPath = path.join(levelsDir, file);
       const stats = fs.statSync(levelPath);
+
+      // Read level data to get description
+      let description = '';
+      try {
+        const levelData = JSON.parse(fs.readFileSync(levelPath, 'utf8'));
+        description = levelData.description || '';
+      } catch (error) {
+        console.warn(`Failed to read description for level ${levelName}:`, error.message);
+      }
+
       return {
         name: levelName,
         modified: stats.mtime,
-        size: stats.size
+        size: stats.size,
+        description: description
       };
     });
 
