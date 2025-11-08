@@ -125,7 +125,7 @@ class Renderer {
         this.ctx.restore();
     }
 
-    drawUFO(x, y, color = '#4ecdc4', beamActive = false, appearance = null) {
+    drawUFO(x, y, color = '#4ecdc4', beamActive = false, appearance = null, game = null) {
         const screenPos = this.worldToScreen(x, y);
         const size = 30 * this.camera.zoom;
 
@@ -169,12 +169,18 @@ class Renderer {
             const passengerImg = this.images.get(passengerUrl);
 
             if (passengerImg && passengerImg.complete) {
+                // Get custom dimensions from game data
+                const passengerData = game && game.passengerData ? game.passengerData[appearance.passenger] : null;
+                const passengerWidth = (passengerData && passengerData.width) ?
+                    passengerData.width * this.camera.zoom * 0.8 : size * 1.5;
+                const passengerHeight = (passengerData && passengerData.height) ?
+                    passengerData.height * this.camera.zoom * 0.8 : size * 1.5;
+
                 // Draw passenger image centered on top of UFO
                 // Position it slightly above the UFO center
-                const passengerSize = size * 1.5; // Make passenger slightly larger than UFO
                 this.ctx.drawImage(passengerImg,
-                    -passengerSize / 2, -passengerSize / 2 - size * 0.8,
-                    passengerSize, passengerSize);
+                    -passengerWidth / 2, -passengerHeight / 2 - size * 0.8,
+                    passengerWidth, passengerHeight);
             } else {
                 // Start loading the passenger image if not already loading
                 if (!passengerImg) {

@@ -335,7 +335,9 @@ class GameLogic {
     // Define passenger costs
     const passengerCosts = {
       'luminoCoffee.png': 75,
-      'Derp.png': 75
+      'Derp.png': 75,
+      'Nox.png': 75,
+      'Tim.png': 75
     };
 
     const cost = passengerCosts[passengerImage];
