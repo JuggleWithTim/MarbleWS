@@ -275,20 +275,28 @@ app.get('/api/admin/levels', basicAuth, (req, res) => {
       const levelPath = path.join(levelsDir, file);
       const stats = fs.statSync(levelPath);
 
-      // Read level data to get description
-      let description = '';
+      // Read full level data
+      let levelData = null;
       try {
-        const levelData = JSON.parse(fs.readFileSync(levelPath, 'utf8'));
-        description = levelData.description || '';
+        levelData = JSON.parse(fs.readFileSync(levelPath, 'utf8'));
       } catch (error) {
-        console.warn(`Failed to read description for level ${levelName}:`, error.message);
+        console.warn(`Failed to read level data for ${levelName}:`, error.message);
+        // Return basic info if parsing fails
+        return {
+          name: levelName,
+          modified: stats.mtime,
+          size: stats.size,
+          description: '',
+          objects: []
+        };
       }
 
       return {
         name: levelName,
         modified: stats.mtime,
         size: stats.size,
-        description: description
+        description: levelData.description || '',
+        objects: levelData.objects || []
       };
     });
 
