@@ -279,8 +279,8 @@ class Game {
                     await this.networking.connect();
                 }
 
-                // Now login with dev credentials
-                this.networking.login(userData.username, userData.userId);
+                // Now login with authentication token
+                this.networking.login(userData.token);
             } else {
                 const error = await response.json();
                 this.showError(error.error || 'Dev login failed');
@@ -291,10 +291,9 @@ class Game {
     }
 
     checkAutoLogin() {
-        // Check URL parameters for Twitch login callback
+        // Check URL parameters for authentication token
         const urlParams = new URLSearchParams(window.location.search);
-        const username = urlParams.get('username');
-        const userId = urlParams.get('userId');
+        const token = urlParams.get('token');
         const error = urlParams.get('error');
 
         if (error) {
@@ -302,10 +301,10 @@ class Game {
             return;
         }
 
-        if (username && userId) {
-            // Auto-login with Twitch credentials
+        if (token) {
+            // Auto-login with authentication token
             const performLogin = () => {
-                this.networking.login(username, userId);
+                this.networking.login(token);
                 // Clean up URL after login
                 window.history.replaceState({}, document.title, window.location.pathname);
             };
