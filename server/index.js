@@ -348,6 +348,7 @@ app.get('/api/admin/levels', basicAuth, (req, res) => {
         modified: stats.mtime,
         size: stats.size,
         description: levelData.description || '',
+        backgroundImage: levelData.backgroundImage || '',
         objects: levelData.objects || []
       };
     });
