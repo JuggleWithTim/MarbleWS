@@ -36,8 +36,10 @@ class Game {
         };
 
         this.passengerData = {
-            'luminoCoffee.png': { cost: 75, name: 'Lumino Coffee' },
-            'Derp.png': { cost: 75, name: 'Derp' }
+            'luminoCoffee.png': { cost: 75, name: 'Lilly', width: 50, height: 50 },
+            'Derp.png': { cost: 75, name: 'LuminousNova', width: 50, height: 50 },
+            'Nox.png': { cost: 75, name: 'Noxanimus', width: 50, height: 50 },
+            'Tim.png': { cost: 75, name: 'JuggleWithTim', width: 100, height: 60 }
         };
     }
 
@@ -112,7 +114,7 @@ class Game {
         this.canvas = document.getElementById('gameCanvas');
         
         if (this.canvas) {
-            this.renderer = new Renderer(this.canvas);
+            this.renderer = new Renderer(this.canvas, this);
             this.controls.setupCanvasControls(this.canvas, this);
         }
         
@@ -245,12 +247,6 @@ class Game {
                         }
                     }
                 });
-            } else {
-                // Auto-load level1.json if not in dev mode
-                if (!this.levelLoaded) {
-                    this.loadLevel('level1');
-                    this.levelLoaded = true;
-                }
             }
         } catch (error) {
             console.log('Could not check dev mode:', error);
@@ -588,7 +584,8 @@ class Game {
                         renderable.data.y,
                         color,
                         renderable.data.beamActive,
-                        renderable.data.ufoAppearance
+                        renderable.data.ufoAppearance,
+                        this
                     );
                     break;
             }
@@ -865,8 +862,15 @@ class Game {
             const storeItem = document.createElement('div');
             storeItem.className = 'store-item passenger-item' + (isUnlocked ? ' unlocked' : '');
 
+            const width = data.width || 60;
+            const height = data.height || 40;
+
             let itemHTML = `
-                <div class="store-preview" style="background-image: url('img/passenger/${imageName}')"></div>
+                <div class="store-preview" style="
+                    background-image: url('img/passenger/${imageName}');
+                    width: ${width}px;
+                    height: ${height}px;
+                "></div>
                 <div class="store-item-name">${data.name}</div>
                 <div class="store-price">${data.cost} coins</div>
             `;
@@ -979,9 +983,17 @@ class Game {
                 passengerItem.className = 'passenger-design-item' + (isSelected ? ' selected' : '');
                 passengerItem.setAttribute('data-passenger', imageName);
 
+                const passengerData = this.passengerData[imageName];
+                const width = passengerData.width || 60;
+                const height = passengerData.height || 40;
+
                 passengerItem.innerHTML = `
-                    <div class="passenger-preview" style="background-image: url('img/passenger/${imageName}')"></div>
-                    <span>${this.passengerData[imageName].name}</span>
+                    <div class="passenger-preview" style="
+                        background-image: url('img/passenger/${imageName}');
+                        width: ${width}px;
+                        height: ${height}px;
+                    "></div>
+                    <span>${passengerData.name}</span>
                 `;
 
                 // Add click event for unlocked items

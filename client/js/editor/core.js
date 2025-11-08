@@ -8,7 +8,7 @@ export class LevelEditorCore {
         this.canvas = null;
         this.ctx = null;
         this.currentTool = 'select';
-        this.selectedObject = null;
+        this.selectedObjects = [];
         this.isDragging = false;
         this.dragStart = { x: 0, y: 0 };
         this.mousePos = { x: 0, y: 0 };
@@ -53,6 +53,11 @@ export class LevelEditorCore {
 
         // Point selection state
         this.pointSelectionMode = null; // 'pointA' or 'pointB' or null
+
+        // Area selection state
+        this.isAreaSelecting = false;
+        this.areaSelectStart = { x: 0, y: 0 };
+        this.dragOffsets = new Map(); // Store original positions for multi-object dragging
     }
 
     async init() {
