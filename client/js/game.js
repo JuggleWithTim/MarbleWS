@@ -247,12 +247,6 @@ class Game {
                         }
                     }
                 });
-            } else {
-                // Auto-load level1.json if not in dev mode
-                if (!this.levelLoaded) {
-                    this.loadLevel('level1');
-                    this.levelLoaded = true;
-                }
             }
         } catch (error) {
             console.log('Could not check dev mode:', error);
