@@ -177,9 +177,9 @@ class Renderer {
                     passengerData.height * this.camera.zoom * 0.8 : size * 1.5;
 
                 // Draw passenger image centered on top of UFO
-                // Position it slightly above the UFO center
+                // Position it slightly above the UFO center (bottom-aligned for consistency)
                 this.ctx.drawImage(passengerImg,
-                    -passengerWidth / 2, -passengerHeight / 2 - size * 0.8,
+                    -passengerWidth / 2, -passengerHeight - size * 0.05,
                     passengerWidth, passengerHeight);
             } else {
                 // Start loading the passenger image if not already loading

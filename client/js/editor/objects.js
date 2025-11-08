@@ -622,5 +622,50 @@ export const objects = {
 
         this.render();
         this.updateJsonDisplay();
+    },
+
+    copyObjects() {
+        if (this.selectedObjects.length === 0) {
+            this.updateStatus('No objects selected to copy');
+            return;
+        }
+
+        // Deep clone the selected objects
+        this.clipboard = JSON.parse(JSON.stringify(this.selectedObjects));
+        this.updateStatus(`Copied ${this.selectedObjects.length} object(s)`);
+    },
+
+    pasteObjects() {
+        if (this.clipboard.length === 0) {
+            this.updateStatus('Clipboard is empty');
+            return;
+        }
+
+        const pastedObjects = [];
+
+        // Create new objects from clipboard with new IDs and offset positions
+        this.clipboard.forEach(copiedObj => {
+            const newObj = JSON.parse(JSON.stringify(copiedObj));
+
+            // Generate new unique ID
+            const baseName = newObj.shape === 'rectangle' ? 'rect' : 'circle';
+            newObj.id = generateUniqueObjectName(baseName, this.level.objects);
+
+            // Offset position slightly so pasted objects are visible
+            newObj.x += 20;
+            newObj.y += 20;
+
+            // Add to level
+            this.level.objects.push(newObj);
+            pastedObjects.push(newObj);
+        });
+
+        // Select the newly pasted objects
+        this.selectObjects(pastedObjects);
+
+        this.updateObjectList();
+        this.render();
+        this.updateJsonDisplay();
+        this.updateStatus(`Pasted ${pastedObjects.length} object(s)`);
     }
 };

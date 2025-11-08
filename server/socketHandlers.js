@@ -2,7 +2,7 @@
 const connectedSockets = new Map(); // Track connections per IP
 const MAX_CONNECTIONS_PER_IP = 10;
 
-function setupSocketHandlers(io, gameLogic) {
+function setupSocketHandlers(io, gameLogic, validTokens) {
   // Function to extract real IP from proxy headers
   function getClientIP(socket) {
     // First try Socket.IO's built-in proxy detection
@@ -103,17 +103,37 @@ function setupSocketHandlers(io, gameLogic) {
       resetIdleTimeout();
 
       // Input validation
-      if (typeof data !== 'object' || !data.username || !data.userId) {
+      if (typeof data !== 'object' || !data.token) {
         socket.emit('error', { message: 'Invalid login data' });
         return;
       }
 
-      const { username, userId } = data;
+      const { token } = data;
 
-      // Validate username and userId
+      // Validate token format
+      if (typeof token !== 'string' || token.length !== 64 || !/^[a-f0-9]+$/.test(token)) {
+        socket.emit('error', { message: 'Invalid authentication token' });
+        return;
+      }
+
+      // Check if token exists and is valid
+      const tokenData = validTokens.get(token);
+
+      if (!tokenData || tokenData.expires < Date.now()) {
+        // Clean up expired token
+        if (tokenData && tokenData.expires < Date.now()) {
+          validTokens.delete(token);
+        }
+        socket.emit('error', { message: 'Invalid or expired authentication token' });
+        return;
+      }
+
+      const { username, userId } = tokenData;
+
+      // Additional validation
       if (typeof username !== 'string' || username.length === 0 || username.length > 50 ||
           typeof userId !== 'string' || userId.length === 0 || userId.length > 100) {
-        socket.emit('error', { message: 'Invalid username or user ID' });
+        socket.emit('error', { message: 'Invalid user data' });
         return;
       }
 

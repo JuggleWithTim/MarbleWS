@@ -120,9 +120,9 @@ class Networking {
         });
     }
 
-    login(username, userId) {
+    login(token) {
         if (this.socket && this.connected) {
-            this.socket.emit('login', { username, userId });
+            this.socket.emit('login', { token });
         }
     }
 

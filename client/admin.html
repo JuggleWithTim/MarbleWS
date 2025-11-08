@@ -430,13 +430,45 @@
         const previewImageCache = new Map();
 
         // Render a level preview on a canvas
-        function renderLevelPreview(canvas, objects) {
+        function renderLevelPreview(canvas, objects, backgroundImage) {
             const ctx = canvas.getContext('2d');
             const canvasWidth = canvas.width;
             const canvasHeight = canvas.height;
 
             // Clear canvas
             ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+            // Draw background image if available
+            if (backgroundImage && backgroundImage.trim()) {
+                // Try to get the image from cache or load it
+                if (!previewImageCache.has(backgroundImage)) {
+                    // Create and cache the image
+                    const img = new Image();
+                    img.onload = () => {
+                        previewImageCache.set(backgroundImage, img);
+                        // Re-render the preview when image loads
+                        renderLevelPreview(canvas, objects, backgroundImage);
+                    };
+                    img.onerror = () => {
+                        previewImageCache.set(backgroundImage, null);
+                    };
+                    img.src = backgroundImage;
+                    previewImageCache.set(backgroundImage, 'loading');
+                }
+
+                const cachedImage = previewImageCache.get(backgroundImage);
+                if (cachedImage instanceof HTMLImageElement) {
+                    // Draw the background image stretched to fill canvas
+                    ctx.drawImage(cachedImage, 0, 0, canvasWidth, canvasHeight);
+                }
+            }
+
+            // If no background image, draw default background
+            if (!backgroundImage || !backgroundImage.trim() || !(previewImageCache.get(backgroundImage) instanceof HTMLImageElement)) {
+                // Draw background
+                ctx.fillStyle = 'rgba(26, 26, 46, 0.8)'; // Dark background like the game
+                ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+            }
 
             if (!objects || objects.length === 0) {
                 // Draw empty level indicator
@@ -482,10 +514,6 @@
             // Center the level in the canvas
             const offsetX = (canvasWidth - levelWidth * scale) / 2;
             const offsetY = (canvasHeight - levelHeight * scale) / 2;
-
-            // Draw background
-            ctx.fillStyle = 'rgba(26, 26, 46, 0.8)'; // Dark background like the game
-            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
             // Draw objects
             objects.forEach(obj => {
@@ -664,7 +692,7 @@
 
                             // Render level preview
                             const canvas = levelCard.querySelector('.preview-canvas');
-                            renderLevelPreview(canvas, level.objects);
+                            renderLevelPreview(canvas, level.objects, level.backgroundImage);
 
                             grid.appendChild(levelCard);
                         });

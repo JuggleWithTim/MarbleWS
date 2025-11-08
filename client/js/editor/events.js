@@ -131,6 +131,12 @@ export const events = {
             if (e.key === 'Delete' && this.selectedObjects.length > 0) {
                 // Delete all selected objects
                 this.selectedObjects.forEach(obj => this.deleteObject(obj));
+            } else if (e.ctrlKey && e.key === 'c' && this.selectedObjects.length > 0) {
+                // Copy selected objects
+                this.copyObjects();
+            } else if (e.ctrlKey && e.key === 'v' && this.clipboard.length > 0) {
+                // Paste objects from clipboard
+                this.pasteObjects();
             }
         });
 

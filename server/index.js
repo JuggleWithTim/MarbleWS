@@ -1,4 +1,5 @@
 const express = require('express');
+const session = require('express-session');
 const http = require('http');
 const socketIo = require('socket.io');
 const path = require('path');
@@ -6,10 +7,14 @@ const cors = require('cors');
 const axios = require('axios');
 const rateLimit = require('express-rate-limit');
 const { RateLimiterMemory } = require('rate-limiter-flexible');
+const crypto = require('crypto');
 require('dotenv').config();
 
 const app = express();
 const server = http.createServer(app);
+
+// In-memory token store (use Redis or database in production)
+const validTokens = new Map();
 
 // Trust proxy for correct IP detection behind nginx
 app.set('trust proxy', 1);
@@ -28,6 +33,18 @@ const io = socketIo(server, {
   },
   trustProxy: true
 });
+
+// Session configuration
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'marblews-session-secret-change-in-production',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.DEV_MODE !== 'true', // HTTPS only when not in dev mode
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
 
 // Middleware
 app.use(cors({ origin: allowedOrigins, credentials: true }));
@@ -89,7 +106,7 @@ if (fs.existsSync(defaultLevelPath)) {
 const twitchChat = new TwitchChat(gameLogic);
 
 // Setup Socket.io handlers
-setupSocketHandlers(io, gameLogic);
+setupSocketHandlers(io, gameLogic, validTokens);
 
 // Authenticated routes - must come BEFORE static middleware
 // Editor routes with authentication
@@ -146,18 +163,36 @@ app.post('/api/dev-login', (req, res) => {
   if (process.env.DEV_MODE !== 'true') {
     return res.status(403).json({ error: 'Dev mode not enabled' });
   }
-  
+
   const { username } = req.body;
   if (!username || username.trim().length === 0) {
     return res.status(400).json({ error: 'Username required' });
   }
-  
+
   // Generate a unique dev user ID
   const userId = 'dev_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-  
+
+  // Store user data in session
+  req.session.authenticated = true;
+  req.session.user = {
+    username: username.trim(),
+    userId: userId,
+    authType: 'dev'
+  };
+
+  // Generate a secure token for this session
+  const authToken = crypto.randomBytes(32).toString('hex');
+
+  // Store token with user data (expires in 24 hours)
+  validTokens.set(authToken, {
+    ...req.session.user,
+    expires: Date.now() + 24 * 60 * 60 * 1000
+  });
+
   res.json({
     username: username.trim(),
-    userId: userId
+    userId: userId,
+    token: authToken
   });
 });
 
@@ -196,8 +231,25 @@ app.get('/auth/twitch/callback', async (req, res) => {
 
     const user = userResponse.data.data[0];
 
-    // Redirect back to game with user info (using base path)
-    res.redirect(`${basePath}/?username=${user.display_name}&userId=${user.id}`);
+    // Store user data in session
+    req.session.authenticated = true;
+    req.session.user = {
+      username: user.display_name,
+      userId: user.id,
+      authType: 'twitch'
+    };
+
+    // Generate a secure token for this session
+    const authToken = crypto.randomBytes(32).toString('hex');
+
+    // Store token with user data (expires in 24 hours)
+    validTokens.set(authToken, {
+      ...req.session.user,
+      expires: Date.now() + 24 * 60 * 60 * 1000
+    });
+
+    // Redirect back to game with token
+    res.redirect(`${basePath}/?token=${authToken}`);
   } catch (error) {
     console.error('Twitch OAuth error:', error);
     res.redirect(`${basePath}/?error=auth_failed`);
@@ -296,6 +348,7 @@ app.get('/api/admin/levels', basicAuth, (req, res) => {
         modified: stats.mtime,
         size: stats.size,
         description: levelData.description || '',
+        backgroundImage: levelData.backgroundImage || '',
         objects: levelData.objects || []
       };
     });
@@ -369,6 +422,16 @@ app.put('/api/admin/config/twitch-channel', basicAuth, (req, res) => {
     res.status(500).json({ error: 'Failed to update channel configuration' });
   }
 });
+
+// Periodic cleanup of expired tokens
+setInterval(() => {
+  const now = Date.now();
+  for (const [token, data] of validTokens) {
+    if (data.expires < now) {
+      validTokens.delete(token);
+    }
+  }
+}, 60 * 1000); // Clean up every minute
 
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
