@@ -226,6 +226,21 @@ export const objects = {
 
             this.updateStatus(`Selected: ${obj.id}`);
         } else if (objects.length > 1) {
+            // For grouped selection, clear all inputs to avoid applying old values
+            document.getElementById('objectColor').value = '#888888';
+            document.getElementById('objectAlpha').value = 255;
+            this.updateAlphaDisplay(255);
+            document.getElementById('objectBackgroundImage').value = '';
+            document.getElementById('objectStatic').checked = false;
+            document.getElementById('objectSolid').checked = false;
+            document.getElementById('objectZIndex').value = '';
+            document.getElementById('objectFriction').value = '';
+            document.getElementById('objectRestitution').value = '';
+            document.getElementById('objectDensity').value = '';
+            document.getElementById('objectRotation').value = '';
+            document.getElementById('objectWidth').value = '';
+            document.getElementById('objectHeight').value = '';
+            document.getElementById('objectRadius').value = '';
             this.updateStatus(`Selected ${objects.length} objects`);
         } else {
             this.updateStatus('No object selected');
@@ -273,17 +288,64 @@ export const objects = {
         const alpha = parseInt(document.getElementById('objectAlpha').value);
         const newColor = createRgba(hexColor, alpha);
 
-        // Properties that can be applied to multiple objects
-        const sharedProperties = {
-            color: newColor,
-            backgroundImage: newBackgroundImage,
-            isStatic: document.getElementById('objectStatic').checked,
-            isSolid: document.getElementById('objectSolid').checked,
-            zIndex: parseInt(document.getElementById('objectZIndex').value),
-            friction: parseFloat(document.getElementById('objectFriction').value),
-            restitution: parseFloat(document.getElementById('objectRestitution').value),
-            density: parseFloat(document.getElementById('objectDensity').value)
-        };
+        // Properties that can be applied to multiple objects - only include if user has changed from cleared state
+        const sharedProperties = {};
+
+        const colorValue = document.getElementById('objectColor').value;
+        if (colorValue !== '#888888') {
+            sharedProperties.color = newColor;
+        }
+
+        if (newBackgroundImage.trim() !== '') {
+            sharedProperties.backgroundImage = newBackgroundImage;
+        }
+
+        if (document.getElementById('objectStatic').checked) {
+            sharedProperties.isStatic = true;
+        }
+
+        if (document.getElementById('objectSolid').checked) {
+            sharedProperties.isSolid = true;
+        }
+
+        const zIndexValue = parseInt(document.getElementById('objectZIndex').value);
+        if (!isNaN(zIndexValue)) {
+            sharedProperties.zIndex = zIndexValue;
+        }
+
+        const frictionValue = parseFloat(document.getElementById('objectFriction').value);
+        if (!isNaN(frictionValue)) {
+            sharedProperties.friction = frictionValue;
+        }
+
+        const restitutionValue = parseFloat(document.getElementById('objectRestitution').value);
+        if (!isNaN(restitutionValue)) {
+            sharedProperties.restitution = restitutionValue;
+        }
+
+        const densityValue = parseFloat(document.getElementById('objectDensity').value);
+        if (!isNaN(densityValue)) {
+            sharedProperties.density = densityValue;
+        }
+
+        const rotationValue = parseFloat(document.getElementById('objectRotation').value);
+        if (!isNaN(rotationValue)) {
+            sharedProperties.rotation = rotationValue * Math.PI / 180; // Convert to radians
+        }
+
+        // Only include shape-specific properties if they are valid numbers (i.e., user has entered values)
+        const widthValue = parseInt(document.getElementById('objectWidth').value);
+        const heightValue = parseInt(document.getElementById('objectHeight').value);
+        const radiusValue = parseInt(document.getElementById('objectRadius').value);
+        if (!isNaN(widthValue)) {
+            sharedProperties.width = widthValue;
+        }
+        if (!isNaN(heightValue)) {
+            sharedProperties.height = heightValue;
+        }
+        if (!isNaN(radiusValue)) {
+            sharedProperties.radius = radiusValue;
+        }
 
         // Apply shared properties to all selected objects
         this.selectedObjects.forEach(obj => {
