@@ -58,6 +58,9 @@ export class LevelEditorCore {
         this.isAreaSelecting = false;
         this.areaSelectStart = { x: 0, y: 0 };
         this.dragOffsets = new Map(); // Store original positions for multi-object dragging
+
+        // Clipboard for copy/paste functionality
+        this.clipboard = [];
     }
 
     async init() {
