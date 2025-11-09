@@ -292,7 +292,7 @@ export const objects = {
         const sharedProperties = {};
 
         const colorValue = document.getElementById('objectColor').value;
-        if (colorValue !== '#888888') {
+        if (this.selectedObjects.length === 1 || colorValue !== '#888888') {
             sharedProperties.color = newColor;
         }
 
@@ -429,6 +429,28 @@ export const objects = {
                 if (obj.rotationSpeedToB !== undefined) delete obj.rotationSpeedToB;
                 if (obj.rotationSpeedFromB !== undefined) delete obj.rotationSpeedFromB;
             }
+        }
+
+        // Update color and alpha inputs to reflect the current object color
+        if (this.selectedObjects.length === 1) {
+            const obj = this.selectedObjects[0];
+            let colorHex = obj.color;
+            let alpha = 255; // default
+
+            if (obj.color && obj.color.startsWith('rgba(')) {
+                const rgba = parseRgba(obj.color);
+                if (rgba) {
+                    colorHex = rgbToHex(rgba.r, rgba.g, rgba.b);
+                    alpha = Math.round(rgba.a * 255);
+                }
+            } else if (obj.color && obj.color.startsWith('#')) {
+                colorHex = obj.color;
+                alpha = 255;
+            }
+
+            document.getElementById('objectColor').value = colorHex;
+            document.getElementById('objectAlpha').value = alpha;
+            this.updateAlphaDisplay(alpha);
         }
 
         this.updateObjectList();
