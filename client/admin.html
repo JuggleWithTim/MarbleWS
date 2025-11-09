@@ -552,13 +552,13 @@
                         img.onload = () => {
                             previewImageCache.set(obj.backgroundImage, img);
                             // Re-render the preview when image loads
-                            renderLevelPreview(canvas, objects);
+                            renderLevelPreview(canvas, objects, backgroundImage);
                         };
                         img.onerror = (error) => {
                             console.warn('Failed to load object background image:', obj.backgroundImage, error);
                             previewImageCache.set(obj.backgroundImage, null);
                             // Re-render with fallback
-                            renderLevelPreview(canvas, objects);
+                            renderLevelPreview(canvas, objects, backgroundImage);
                         };
                         img.src = obj.backgroundImage;
                         previewImageCache.set(obj.backgroundImage, 'loading');
@@ -569,7 +569,7 @@
                                 console.warn('Timeout loading object background image:', obj.backgroundImage);
                                 img.src = ''; // Cancel the load
                                 previewImageCache.set(obj.backgroundImage, null);
-                                renderLevelPreview(canvas, objects);
+                                renderLevelPreview(canvas, objects, backgroundImage);
                             }
                         }, 5000); // 5 second timeout
                     }
