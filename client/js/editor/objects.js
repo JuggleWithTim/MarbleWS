@@ -283,16 +283,34 @@ export const objects = {
             }
         }
 
-        // Update properties from inputs
-        const hexColor = document.getElementById('objectColor').value;
-        const alpha = parseInt(document.getElementById('objectAlpha').value);
-        const newColor = createRgba(hexColor, alpha);
-
         // Properties that can be applied to multiple objects - only include if user has changed from cleared state
         const sharedProperties = {};
 
         const colorValue = document.getElementById('objectColor').value;
+        const alphaValue = parseInt(document.getElementById('objectAlpha').value);
+
+        // Handle alpha changes for multiple objects (preserve individual colors)
+        if (this.selectedObjects.length > 1 && alphaValue !== 255) {
+            this.selectedObjects.forEach(obj => {
+                if (obj.color && obj.color.startsWith('rgba(')) {
+                    const rgba = parseRgba(obj.color);
+                    if (rgba) {
+                        obj.color = `rgba(${rgba.r}, ${rgba.g}, ${rgba.b}, ${alphaValue / 255})`;
+                    }
+                } else if (obj.color && obj.color.startsWith('#')) {
+                    const rgb = hexToRgb(obj.color);
+                    if (rgb) {
+                        obj.color = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alphaValue / 255})`;
+                    }
+                }
+            });
+        }
+
+        // Handle color changes
         if (this.selectedObjects.length === 1 || colorValue !== '#888888') {
+            const hexColor = document.getElementById('objectColor').value;
+            const alpha = parseInt(document.getElementById('objectAlpha').value);
+            const newColor = createRgba(hexColor, alpha);
             sharedProperties.color = newColor;
         }
 
