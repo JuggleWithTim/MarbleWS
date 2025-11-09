@@ -1050,7 +1050,7 @@ class GameLogic {
         }
 
         // Save progress after XP gain (whether leveled up or not)
-        this.savePlayerData(player.userId, player.ufoAppearance, player.level, player.xp, player.coins);
+        this.savePlayerData(player.userId, player.ufoAppearance, player.level, player.xp, player.coins, player.unlockedUFOs, player.unlockedPassengers);
 
         if (leveledUp) {
           console.log(`Player ${player.username} progress saved after leveling up`);
