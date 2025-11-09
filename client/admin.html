@@ -444,16 +444,30 @@
                 if (!previewImageCache.has(backgroundImage)) {
                     // Create and cache the image
                     const img = new Image();
+                    img.crossOrigin = 'anonymous'; // Enable CORS for external images
                     img.onload = () => {
                         previewImageCache.set(backgroundImage, img);
                         // Re-render the preview when image loads
                         renderLevelPreview(canvas, objects, backgroundImage);
                     };
-                    img.onerror = () => {
+                    img.onerror = (error) => {
+                        console.warn('Failed to load level background image:', backgroundImage, error);
                         previewImageCache.set(backgroundImage, null);
+                        // Re-render with fallback
+                        renderLevelPreview(canvas, objects, backgroundImage);
                     };
                     img.src = backgroundImage;
                     previewImageCache.set(backgroundImage, 'loading');
+
+                    // Set a timeout to prevent hanging on slow loads
+                    setTimeout(() => {
+                        if (previewImageCache.get(backgroundImage) === 'loading') {
+                            console.warn('Timeout loading level background image:', backgroundImage);
+                            img.src = ''; // Cancel the load
+                            previewImageCache.set(backgroundImage, null);
+                            renderLevelPreview(canvas, objects, backgroundImage);
+                        }
+                    }, 5000); // 5 second timeout
                 }
 
                 const cachedImage = previewImageCache.get(backgroundImage);
@@ -534,17 +548,30 @@
                     if (!previewImageCache.has(obj.backgroundImage)) {
                         // Create and cache the image
                         const img = new Image();
-                        //img.crossOrigin = 'anonymous';    // Uncomment if images are from different origin and CORS is enabled
+                        img.crossOrigin = 'anonymous'; // Enable CORS for external images
                         img.onload = () => {
                             previewImageCache.set(obj.backgroundImage, img);
                             // Re-render the preview when image loads
-                            renderLevelPreview(canvas, objects);
+                            renderLevelPreview(canvas, objects, backgroundImage);
                         };
-                        img.onerror = () => {
+                        img.onerror = (error) => {
+                            console.warn('Failed to load object background image:', obj.backgroundImage, error);
                             previewImageCache.set(obj.backgroundImage, null);
+                            // Re-render with fallback
+                            renderLevelPreview(canvas, objects, backgroundImage);
                         };
                         img.src = obj.backgroundImage;
                         previewImageCache.set(obj.backgroundImage, 'loading');
+
+                        // Set a timeout to prevent hanging on slow loads
+                        setTimeout(() => {
+                            if (previewImageCache.get(obj.backgroundImage) === 'loading') {
+                                console.warn('Timeout loading object background image:', obj.backgroundImage);
+                                img.src = ''; // Cancel the load
+                                previewImageCache.set(obj.backgroundImage, null);
+                                renderLevelPreview(canvas, objects, backgroundImage);
+                            }
+                        }, 5000); // 5 second timeout
                     }
 
                     const cachedImage = previewImageCache.get(obj.backgroundImage);

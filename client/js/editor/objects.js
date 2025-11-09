@@ -231,8 +231,25 @@ export const objects = {
             document.getElementById('objectAlpha').value = 255;
             this.updateAlphaDisplay(255);
             document.getElementById('objectBackgroundImage').value = '';
-            document.getElementById('objectStatic').checked = false;
-            document.getElementById('objectSolid').checked = false;
+            // Handle Static checkbox - show common value or indeterminate if mixed
+            const staticValues = objects.map(obj => obj.isStatic);
+            const allSameStatic = staticValues.every(val => val === staticValues[0]);
+            if (allSameStatic) {
+                document.getElementById('objectStatic').checked = staticValues[0];
+                document.getElementById('objectStatic').indeterminate = false;
+            } else {
+                document.getElementById('objectStatic').indeterminate = true;
+            }
+
+            // Handle Solid checkbox - show common value or indeterminate if mixed
+            const solidValues = objects.map(obj => obj.isSolid !== false); // Default to true
+            const allSameSolid = solidValues.every(val => val === solidValues[0]);
+            if (allSameSolid) {
+                document.getElementById('objectSolid').checked = solidValues[0];
+                document.getElementById('objectSolid').indeterminate = false;
+            } else {
+                document.getElementById('objectSolid').indeterminate = true;
+            }
             document.getElementById('objectZIndex').value = '';
             document.getElementById('objectFriction').value = '';
             document.getElementById('objectRestitution').value = '';
@@ -283,16 +300,34 @@ export const objects = {
             }
         }
 
-        // Update properties from inputs
-        const hexColor = document.getElementById('objectColor').value;
-        const alpha = parseInt(document.getElementById('objectAlpha').value);
-        const newColor = createRgba(hexColor, alpha);
-
         // Properties that can be applied to multiple objects - only include if user has changed from cleared state
         const sharedProperties = {};
 
         const colorValue = document.getElementById('objectColor').value;
-        if (colorValue !== '#888888') {
+        const alphaValue = parseInt(document.getElementById('objectAlpha').value);
+
+        // Handle alpha changes for multiple objects (preserve individual colors)
+        if (this.selectedObjects.length > 1 && alphaValue !== 255) {
+            this.selectedObjects.forEach(obj => {
+                if (obj.color && obj.color.startsWith('rgba(')) {
+                    const rgba = parseRgba(obj.color);
+                    if (rgba) {
+                        obj.color = `rgba(${rgba.r}, ${rgba.g}, ${rgba.b}, ${alphaValue / 255})`;
+                    }
+                } else if (obj.color && obj.color.startsWith('#')) {
+                    const rgb = hexToRgb(obj.color);
+                    if (rgb) {
+                        obj.color = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alphaValue / 255})`;
+                    }
+                }
+            });
+        }
+
+        // Handle color changes
+        if (this.selectedObjects.length === 1 || colorValue !== '#888888') {
+            const hexColor = document.getElementById('objectColor').value;
+            const alpha = parseInt(document.getElementById('objectAlpha').value);
+            const newColor = createRgba(hexColor, alpha);
             sharedProperties.color = newColor;
         }
 
@@ -300,8 +335,12 @@ export const objects = {
             sharedProperties.backgroundImage = newBackgroundImage;
         }
 
-        sharedProperties.isStatic = document.getElementById('objectStatic').checked;
-        sharedProperties.isSolid = document.getElementById('objectSolid').checked;
+        if (!document.getElementById('objectStatic').indeterminate) {
+            sharedProperties.isStatic = document.getElementById('objectStatic').checked;
+        }
+        if (!document.getElementById('objectSolid').indeterminate) {
+            sharedProperties.isSolid = document.getElementById('objectSolid').checked;
+        }
 
         const zIndexValue = parseInt(document.getElementById('objectZIndex').value);
         if (!isNaN(zIndexValue)) {
@@ -429,6 +468,28 @@ export const objects = {
                 if (obj.rotationSpeedToB !== undefined) delete obj.rotationSpeedToB;
                 if (obj.rotationSpeedFromB !== undefined) delete obj.rotationSpeedFromB;
             }
+        }
+
+        // Update color and alpha inputs to reflect the current object color
+        if (this.selectedObjects.length === 1) {
+            const obj = this.selectedObjects[0];
+            let colorHex = obj.color;
+            let alpha = 255; // default
+
+            if (obj.color && obj.color.startsWith('rgba(')) {
+                const rgba = parseRgba(obj.color);
+                if (rgba) {
+                    colorHex = rgbToHex(rgba.r, rgba.g, rgba.b);
+                    alpha = Math.round(rgba.a * 255);
+                }
+            } else if (obj.color && obj.color.startsWith('#')) {
+                colorHex = obj.color;
+                alpha = 255;
+            }
+
+            document.getElementById('objectColor').value = colorHex;
+            document.getElementById('objectAlpha').value = alpha;
+            this.updateAlphaDisplay(alpha);
         }
 
         this.updateObjectList();
