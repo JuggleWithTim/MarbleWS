@@ -300,13 +300,8 @@ export const objects = {
             sharedProperties.backgroundImage = newBackgroundImage;
         }
 
-        if (document.getElementById('objectStatic').checked) {
-            sharedProperties.isStatic = true;
-        }
-
-        if (document.getElementById('objectSolid').checked) {
-            sharedProperties.isSolid = true;
-        }
+        sharedProperties.isStatic = document.getElementById('objectStatic').checked;
+        sharedProperties.isSolid = document.getElementById('objectSolid').checked;
 
         const zIndexValue = parseInt(document.getElementById('objectZIndex').value);
         if (!isNaN(zIndexValue)) {
