@@ -231,8 +231,25 @@ export const objects = {
             document.getElementById('objectAlpha').value = 255;
             this.updateAlphaDisplay(255);
             document.getElementById('objectBackgroundImage').value = '';
-            document.getElementById('objectStatic').checked = false;
-            document.getElementById('objectSolid').checked = false;
+            // Handle Static checkbox - show common value or indeterminate if mixed
+            const staticValues = objects.map(obj => obj.isStatic);
+            const allSameStatic = staticValues.every(val => val === staticValues[0]);
+            if (allSameStatic) {
+                document.getElementById('objectStatic').checked = staticValues[0];
+                document.getElementById('objectStatic').indeterminate = false;
+            } else {
+                document.getElementById('objectStatic').indeterminate = true;
+            }
+
+            // Handle Solid checkbox - show common value or indeterminate if mixed
+            const solidValues = objects.map(obj => obj.isSolid !== false); // Default to true
+            const allSameSolid = solidValues.every(val => val === solidValues[0]);
+            if (allSameSolid) {
+                document.getElementById('objectSolid').checked = solidValues[0];
+                document.getElementById('objectSolid').indeterminate = false;
+            } else {
+                document.getElementById('objectSolid').indeterminate = true;
+            }
             document.getElementById('objectZIndex').value = '';
             document.getElementById('objectFriction').value = '';
             document.getElementById('objectRestitution').value = '';
@@ -318,8 +335,12 @@ export const objects = {
             sharedProperties.backgroundImage = newBackgroundImage;
         }
 
-        sharedProperties.isStatic = document.getElementById('objectStatic').checked;
-        sharedProperties.isSolid = document.getElementById('objectSolid').checked;
+        if (!document.getElementById('objectStatic').indeterminate) {
+            sharedProperties.isStatic = document.getElementById('objectStatic').checked;
+        }
+        if (!document.getElementById('objectSolid').indeterminate) {
+            sharedProperties.isSolid = document.getElementById('objectSolid').checked;
+        }
 
         const zIndexValue = parseInt(document.getElementById('objectZIndex').value);
         if (!isNaN(zIndexValue)) {
