@@ -37,6 +37,7 @@ class Game {
 
         this.passengerData = {
             'luminoCoffee.png': { cost: 75, name: 'Lilly', width: 50, height: 50 },
+            'Missy.png': { cost: 75, name: 'Missy', width: 50, height: 50 },
             'Derp.png': { cost: 75, name: 'LuminousNova', width: 50, height: 50 },
             'Nox.png': { cost: 75, name: 'Noxanimus', width: 50, height: 50 },
             'Tim.png': { cost: 75, name: 'JuggleWithTim', width: 100, height: 60 }
