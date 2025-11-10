@@ -392,7 +392,7 @@ class Game {
         }
 
         if (xpFill) {
-            const xpPercent = (this.currentPlayer.xp / (this.currentPlayer.level * 1000)) * 100;
+            const xpPercent = this.currentPlayer.xpProgress || 0;
             xpFill.style.width = `${xpPercent}%`;
         }
     }

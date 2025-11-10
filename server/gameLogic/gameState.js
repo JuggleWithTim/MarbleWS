@@ -23,6 +23,7 @@ class GameState {
         beamTarget: player.beamTarget,
         xp: player.xp,
         level: player.level,
+        xpProgress: this.playerManager.getXPProgress(player.xp, player.level),
         coins: player.coins
       })),
       marbles: this.levelManager.marbles.map(marble => ({

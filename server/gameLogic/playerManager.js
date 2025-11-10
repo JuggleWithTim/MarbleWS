@@ -9,6 +9,29 @@ class PlayerManager {
     this.players = new Map();
   }
 
+  // Calculate level from total XP with progressive requirements
+  // Level 1: 0-999 XP, Level 2: 1000-2999 XP, Level 3: 3000-5999 XP, etc.
+  calculateLevelFromXP(totalXP) {
+    let level = 1;
+    let requiredXP = 0;
+
+    while (requiredXP + level * 1000 <= totalXP) {
+      requiredXP += level * 1000;
+      level++;
+    }
+
+    return level;
+  }
+
+  // Get XP progress percentage within current level (0-100)
+  getXPProgress(totalXP, level) {
+    const xpForPreviousLevels = (level - 1) * level * 1000 / 2;
+    const xpInCurrentLevel = totalXP - xpForPreviousLevels;
+    const xpNeededForNextLevel = level * 1000;
+
+    return Math.min((xpInCurrentLevel / xpNeededForNextLevel) * 100, 100);
+  }
+
   addPlayer(socketId, username, userId) {
     // Find spawn position - prioritize playerspawn, then fall back to spawnpoint
     let spawnX = 960;
@@ -418,14 +441,17 @@ class PlayerManager {
 
   awardXPAndCoinsForWin() {
     this.players.forEach(player => {
+      const oldLevel = player.level;
       player.xp += 100;
       player.coins += 5;
+
+      // Calculate new level based on total XP
+      const newLevel = this.calculateLevelFromXP(player.xp);
       let leveledUp = false;
-      if (player.xp >= player.level * 1000) {
-        const oldLevel = player.level;
-        player.level++;
-        player.xp = 0;
-        // Award coins for leveling up: level × 100
+
+      if (newLevel > oldLevel) {
+        player.level = newLevel;
+        // Award coins for leveling up: old level × 100
         const coinReward = oldLevel * 100;
         player.coins += coinReward;
         console.log(`Player ${player.username} leveled up to ${player.level} and gained ${coinReward} coins!`);
