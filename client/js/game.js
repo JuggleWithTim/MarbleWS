@@ -123,6 +123,9 @@ class Game {
         // Setup wardrobe and store controls
         this.setupWardrobeControls();
 
+        // Setup toplist controls
+        this.setupToplistControls();
+
         // Setup beam controls
         this.controls.on('beamActivate', () => {
             this.activateBeam(true);
@@ -797,6 +800,112 @@ class Game {
         });
 
         // Note: Individual click handlers are now added to each UFO item in showWardrobeModal
+    }
+
+    setupToplistControls() {
+        // Setup Toplist controls
+        const toplistDiv = document.getElementById('toplist');
+        const toplistModal = document.getElementById('toplistModal');
+        const closeBtn = toplistModal.querySelector('.close');
+
+        if (!toplistDiv || !toplistModal || !closeBtn) {
+            console.warn('Toplist controls not found');
+            return;
+        }
+
+        // Show toplist modal when clicking the toplist area
+        toplistDiv.addEventListener('click', () => {
+            this.showToplistModal();
+        });
+
+        // Close modal
+        closeBtn.addEventListener('click', () => {
+            toplistModal.style.display = 'none';
+        });
+
+        // Close modal when clicking outside
+        window.addEventListener('click', (event) => {
+            if (event.target === toplistModal) {
+                toplistModal.style.display = 'none';
+            }
+        });
+
+        // Fetch and display top players on game start
+        this.updateTopPlayers();
+    }
+
+    async updateTopPlayers() {
+        try {
+            const response = await fetch(`${this.networking.BASE_PATH}/api/toplist`);
+            const players = await response.json();
+
+            // Update top 3 display
+            this.updateTopPlayersDisplay(players.slice(0, 3));
+
+            // Update full toplist modal if it's open
+            const toplistModal = document.getElementById('toplistModal');
+            if (toplistModal && toplistModal.style.display === 'flex') {
+                this.updateToplistModal(players);
+            }
+        } catch (error) {
+            console.error('Failed to fetch toplist:', error);
+        }
+    }
+
+    updateTopPlayersDisplay(topPlayers) {
+        const topPlayersDiv = document.getElementById('topPlayers');
+        if (!topPlayersDiv) return;
+
+        topPlayersDiv.innerHTML = '';
+
+        topPlayers.forEach((player, index) => {
+            const playerDiv = document.createElement('div');
+            playerDiv.className = 'top-player';
+            playerDiv.innerHTML = `
+                <span class="rank">#${index + 1}</span>
+                <span class="name">${player.username}</span>
+                <span class="level">Lv.${player.level}</span>
+            `;
+            topPlayersDiv.appendChild(playerDiv);
+        });
+    }
+
+    async showToplistModal() {
+        const toplistModal = document.getElementById('toplistModal');
+
+        // Fetch latest toplist data
+        const response = await fetch(`${this.networking.BASE_PATH}/api/toplist`);
+        const players = await response.json();
+
+        // Update modal content
+        this.updateToplistModal(players);
+
+        // Show modal
+        toplistModal.style.display = 'flex';
+    }
+
+    updateToplistModal(players) {
+        const toplistContent = document.getElementById('toplistContent');
+        if (!toplistContent) return;
+
+        toplistContent.innerHTML = '';
+
+        if (players.length === 0) {
+            toplistContent.innerHTML = '<p>No players found.</p>';
+            return;
+        }
+
+        players.forEach((player, index) => {
+            const playerDiv = document.createElement('div');
+            playerDiv.className = 'toplist-item';
+            playerDiv.innerHTML = `
+                <span class="rank">#${index + 1}</span>
+                <span class="name">${player.username}</span>
+                <span class="level">Level ${player.level}</span>
+                <span class="xp">${player.xp} XP</span>
+            `;
+            toplistContent.appendChild(playerDiv);
+        });
     }
 
     async showStoreModal() {

@@ -292,6 +292,26 @@ app.get('/api/current-level', (req, res) => {
   }
 });
 
+app.get('/api/toplist', (req, res) => {
+  const db = gameLogic.playerManager.db;
+  const sql = `
+    SELECT username, level, xp
+    FROM players
+    ORDER BY xp DESC
+    LIMIT 50
+  `;
+
+  db.all(sql, [], (err, rows) => {
+    if (err) {
+      console.error('Failed to fetch toplist:', err);
+      res.status(500).json({ error: 'Failed to fetch toplist' });
+      return;
+    }
+
+    res.json(rows);
+  });
+});
+
 app.post('/api/levels/:levelName', basicAuth, (req, res) => {
   const fs = require('fs');
   const levelsDir = path.join(__dirname, '../levels');
