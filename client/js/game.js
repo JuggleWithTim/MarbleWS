@@ -30,7 +30,6 @@ class Game {
 
         // UFO and passenger data
         this.ufoData = {
-            'CustomUFO1.png': { cost: 50, name: 'TestUFO 1' },
             'ufoderp.png': { cost: 75, name: 'Derpcraft' },
             'Fez.png': { cost: 100, name: 'Fez' }
         };
