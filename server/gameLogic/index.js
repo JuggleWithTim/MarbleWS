@@ -108,6 +108,11 @@ class GameLogic {
   get currentLevel() {
     return this.levelManager.currentLevel;
   }
+
+  // Expose players for backward compatibility
+  get players() {
+    return this.playerManager.players;
+  }
 }
 
 module.exports = GameLogic;
