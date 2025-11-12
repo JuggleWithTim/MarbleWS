@@ -1,4 +1,5 @@
 const Matter = require('matter-js');
+const sqlite3 = require('sqlite3').verbose();
 const fs = require('fs');
 const path = require('path');
 const { generateColorFromSeed } = require('./utils');
@@ -7,6 +8,40 @@ class PlayerManager {
   constructor(eventEmitter) {
     this.eventEmitter = eventEmitter;
     this.players = new Map();
+
+    // Initialize SQLite database
+    this.db = new sqlite3.Database(path.join(process.cwd(), 'players.db'), (err) => {
+      if (err) {
+        console.error('Failed to open database:', err.message);
+      } else {
+        console.log('Connected to SQLite database.');
+        this.initDatabase();
+      }
+    });
+  }
+
+  initDatabase() {
+    const sql = `
+      CREATE TABLE IF NOT EXISTS players (
+        userId TEXT PRIMARY KEY,
+        username TEXT,
+        ufoAppearance TEXT,
+        level INTEGER DEFAULT 1,
+        xp INTEGER DEFAULT 0,
+        coins INTEGER DEFAULT 100,
+        unlockedUFOs TEXT,
+        unlockedPassengers TEXT,
+        lastUpdated TEXT
+      )
+    `;
+
+    this.db.run(sql, (err) => {
+      if (err) {
+        console.error('Failed to create table:', err.message);
+      } else {
+        console.log('Players table ready.');
+      }
+    });
   }
 
   // Calculate level from total XP with progressive requirements
@@ -32,7 +67,7 @@ class PlayerManager {
     return Math.min((xpInCurrentLevel / xpNeededForNextLevel) * 100, 100);
   }
 
-  addPlayer(socketId, username, userId) {
+  async addPlayer(socketId, username, userId) {
     // Find spawn position - prioritize playerspawn, then fall back to spawnpoint
     let spawnX = 960;
     let spawnY = 540;
@@ -72,7 +107,7 @@ class PlayerManager {
     Matter.World.add(this.world, ufoBody);
 
     // Load saved appearance and progress data
-    const savedData = this.loadPlayerData(userId);
+    const savedData = await this.loadPlayerData(userId);
     const color = savedData.ufoAppearance.type === 'default' ? savedData.ufoAppearance.color : generateColorFromSeed(userId);
 
     const player = {
@@ -225,7 +260,7 @@ class PlayerManager {
       player.color = appearance.color;
 
       // Save appearance and progress to persistent storage
-      this.savePlayerData(player.userId, appearance, player.level, player.xp, player.coins, player.unlockedUFOs, player.unlockedPassengers);
+      this.savePlayerData(player.userId, appearance, player.level, player.xp, player.coins, player.unlockedUFOs, player.unlockedPassengers, player.username);
 
       console.log(`Player ${player.username} updated appearance:`, appearance);
     }
@@ -262,7 +297,7 @@ class PlayerManager {
     player.unlockedUFOs.push(ufoImage);
 
     // Save updated data
-    this.savePlayerData(player.userId, player.ufoAppearance, player.level, player.xp, player.coins, player.unlockedUFOs, player.unlockedPassengers);
+    this.savePlayerData(player.userId, player.ufoAppearance, player.level, player.xp, player.coins, player.unlockedUFOs, player.unlockedPassengers, player.username);
 
     console.log(`Player ${player.username} unlocked UFO ${ufoImage} for ${cost} coins`);
 
@@ -308,7 +343,7 @@ class PlayerManager {
     player.unlockedPassengers.push(passengerImage);
 
     // Save updated data
-    this.savePlayerData(player.userId, player.ufoAppearance, player.level, player.xp, player.coins, player.unlockedUFOs, player.unlockedPassengers);
+    this.savePlayerData(player.userId, player.ufoAppearance, player.level, player.xp, player.coins, player.unlockedUFOs, player.unlockedPassengers, player.username);
 
     console.log(`Player ${player.username} unlocked passenger ${passengerImage} for ${cost} coins`);
 
@@ -321,52 +356,54 @@ class PlayerManager {
     };
   }
 
-  savePlayerData(userId, appearance, level = 1, xp = 0, coins = 100, unlockedUFOs = [], unlockedPassengers = []) {
-    try {
-      // Create players directory if it doesn't exist
-      const playersDir = path.join(process.cwd(), 'players');
-      if (!fs.existsSync(playersDir)) {
-        fs.mkdirSync(playersDir, { recursive: true });
-      }
+  savePlayerData(userId, appearance, level = 1, xp = 0, coins = 100, unlockedUFOs = [], unlockedPassengers = [], username = null) {
+    return new Promise((resolve, reject) => {
+      const sql = `
+        INSERT OR REPLACE INTO players (userId, username, ufoAppearance, level, xp, coins, unlockedUFOs, unlockedPassengers, lastUpdated)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
 
-      // Save appearance data to a JSON file named after the userId
-      const appearanceFile = path.join(playersDir, `${userId}.json`);
-      fs.writeFileSync(appearanceFile, JSON.stringify({
+      const params = [
         userId,
-        ufoAppearance: appearance,
+        username,
+        JSON.stringify(appearance),
         level,
         xp,
         coins,
-        unlockedUFOs,
-        unlockedPassengers,
-        lastUpdated: new Date().toISOString()
-      }, null, 2));
+        JSON.stringify(unlockedUFOs),
+        JSON.stringify(unlockedPassengers),
+        new Date().toISOString()
+      ];
 
-      console.log(`Saved player data for user ${userId}`);
-    } catch (error) {
-      console.error('Failed to save player data:', error);
-    }
+      this.db.run(sql, params, function(err) {
+        if (err) {
+          console.error('Failed to save player data:', err);
+          reject(err);
+        } else {
+          console.log(`Saved player data for user ${userId}`);
+          resolve();
+        }
+      });
+    });
   }
 
-  addCoinsToPlayer(userId, amount, reason = 'unknown') {
+  async addCoinsToPlayer(userId, amount, reason = 'unknown') {
     try {
-      // Check if player data exists
-      const playersDir = path.join(process.cwd(), 'players');
-      const playerFile = path.join(playersDir, `${userId}.json`);
+      // Load player data
+      const playerData = await this.loadPlayerData(userId);
 
-      if (!fs.existsSync(playerFile)) {
+      // Check if player exists (if all fields are default, assume doesn't exist)
+      if (playerData.level === 1 && playerData.xp === 0 && playerData.coins === 100 &&
+          playerData.unlockedUFOs.length === 0 && playerData.unlockedPassengers.length === 0) {
         console.log(`Player ${userId} does not exist, skipping coin addition from ${reason}`);
         return { success: false, reason: 'player_not_found' };
       }
 
-      // Load player data
-      const playerData = this.loadPlayerData(userId);
-
       // Add coins
       playerData.coins += amount;
 
-      // Save to disk
-      this.savePlayerData(
+      // Save to database
+      await this.savePlayerData(
         userId,
         playerData.ufoAppearance,
         playerData.level,
@@ -405,26 +442,38 @@ class PlayerManager {
   }
 
   loadPlayerData(userId) {
-    try {
-      const playersDir = path.join(process.cwd(), 'players');
-      const appearanceFile = path.join(playersDir, `${userId}.json`);
+    return new Promise((resolve) => {
+      const sql = 'SELECT * FROM players WHERE userId = ?';
 
-      if (fs.existsSync(appearanceFile)) {
-        const data = JSON.parse(fs.readFileSync(appearanceFile, 'utf8'));
-        return {
-          ufoAppearance: data.ufoAppearance,
-          level: data.level || 1,
-          xp: data.xp || 0,
-          coins: data.coins || 100,
-          unlockedUFOs: data.unlockedUFOs || [],
-          unlockedPassengers: data.unlockedPassengers || []
-        };
-      }
-    } catch (error) {
-      console.error('Failed to load player data:', error);
-    }
+      this.db.get(sql, [userId], (err, row) => {
+        if (err) {
+          console.error('Failed to load player data:', err);
+          resolve(this.getDefaultPlayerData(userId));
+          return;
+        }
 
-    // Return default data if loading fails
+        if (row) {
+          try {
+            resolve({
+              ufoAppearance: JSON.parse(row.ufoAppearance),
+              level: row.level || 1,
+              xp: row.xp || 0,
+              coins: row.coins || 100,
+              unlockedUFOs: JSON.parse(row.unlockedUFOs) || [],
+              unlockedPassengers: JSON.parse(row.unlockedPassengers) || []
+            });
+          } catch (parseError) {
+            console.error('Failed to parse player data:', parseError);
+            resolve(this.getDefaultPlayerData(userId));
+          }
+        } else {
+          resolve(this.getDefaultPlayerData(userId));
+        }
+      });
+    });
+  }
+
+  getDefaultPlayerData(userId) {
     return {
       ufoAppearance: {
         type: 'default',
@@ -467,7 +516,7 @@ class PlayerManager {
       }
 
       // Save progress after XP gain (whether leveled up or not)
-      this.savePlayerData(player.userId, player.ufoAppearance, player.level, player.xp, player.coins, player.unlockedUFOs, player.unlockedPassengers);
+      this.savePlayerData(player.userId, player.ufoAppearance, player.level, player.xp, player.coins, player.unlockedUFOs, player.unlockedPassengers, player.username);
 
       if (leveledUp) {
         console.log(`Player ${player.username} progress saved after leveling up`);

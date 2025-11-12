@@ -99,7 +99,7 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
     };
 
     // Handle player login (requires authentication check)
-    socket.on('login', (data) => {
+    socket.on('login', async (data) => {
       resetIdleTimeout();
 
       // Input validation
@@ -137,7 +137,7 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
         return;
       }
 
-      const player = gameLogic.addPlayer(socket.id, username.trim(), userId.trim());
+      const player = await gameLogic.addPlayer(socket.id, username.trim(), userId.trim());
 
       socket.emit('loginSuccess', player);
       socket.broadcast.emit('playerJoined', player);
