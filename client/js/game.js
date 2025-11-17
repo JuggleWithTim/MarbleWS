@@ -832,6 +832,11 @@ class Game {
 
         // Fetch and display top players on game start
         this.updateTopPlayers();
+
+        // Update top players every minute
+        setInterval(() => {
+            this.updateTopPlayers();
+        }, 60000); // 60 seconds
     }
 
     async updateTopPlayers() {
