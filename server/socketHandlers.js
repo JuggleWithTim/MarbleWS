@@ -99,7 +99,7 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
     };
 
     // Handle player login (requires authentication check)
-    socket.on('login', (data) => {
+    socket.on('login', async (data) => {
       resetIdleTimeout();
 
       // Input validation
@@ -137,7 +137,26 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
         return;
       }
 
-      const player = gameLogic.addPlayer(socket.id, username.trim(), userId.trim());
+      // Check for existing session and force logout if found
+      const existingPlayer = Array.from(gameLogic.players.values())
+        .find(p => p.userId === userId.trim());
+
+      if (existingPlayer) {
+        // Find and disconnect the existing socket
+        const existingSocketId = existingPlayer.id;
+        const existingSocket = io.sockets.sockets.get(existingSocketId);
+
+        if (existingSocket) {
+          console.log(`Forcing logout of existing session for user ${username} (${userId})`);
+          existingSocket.emit('error', { message: 'Logged in from another location' });
+          existingSocket.disconnect(true);
+        }
+
+        // Remove the player from the game
+        gameLogic.removePlayer(existingSocketId);
+      }
+
+      const player = await gameLogic.addPlayer(socket.id, username.trim(), userId.trim());
 
       socket.emit('loginSuccess', player);
       socket.broadcast.emit('playerJoined', player);
@@ -332,6 +351,25 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
 
       // Attempt to unlock the passenger
       const result = gameLogic.unlockPassenger(socket.id, passengerImage);
+
+      // Send result back to client
+      socket.emit('unlockResult', result);
+    });
+
+    // Handle hat unlock purchases
+    socket.on('unlockHat', (data) => {
+      resetIdleTimeout();
+
+      // Input validation
+      if (typeof data !== 'object' || typeof data.hatImage !== 'string') {
+        socket.emit('unlockResult', { success: false, message: 'Invalid request' });
+        return;
+      }
+
+      const { hatImage } = data;
+
+      // Attempt to unlock the hat
+      const result = gameLogic.unlockHat(socket.id, hatImage);
 
       // Send result back to client
       socket.emit('unlockResult', result);

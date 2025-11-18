@@ -180,6 +180,12 @@ class Networking {
         }
     }
 
+    unlockHat(hatImage) {
+        if (this.socket && this.connected) {
+            this.socket.emit('unlockHat', { hatImage });
+        }
+    }
+
     // Event system
     on(event, callback) {
         if (!this.callbacks[event]) {

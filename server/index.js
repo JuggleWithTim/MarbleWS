@@ -141,6 +141,9 @@ app.get('/', (req, res) => {
 });
 
 // Static middleware - comes AFTER authenticated routes
+const basePath = process.env.BASE_PATH || '';
+// More specific routes must come before general ones
+app.use(`${basePath}/shared`, express.static(path.join(__dirname, '../shared')));
 app.use(express.static(path.join(__dirname, '../client')));
 
 // Client config endpoint (safe, no secrets)
@@ -149,6 +152,12 @@ app.get('/api/client-config', (req, res) => {
     devMode: process.env.DEV_MODE === 'true',
     basePath: process.env.BASE_PATH || ''
   });
+});
+
+// Game configuration endpoint
+app.get('/api/game-config', (req, res) => {
+  const gameConfig = require('../shared/gameConfig.js');
+  res.json(gameConfig);
 });
 
 // Legacy config endpoint (keeping for backward compatibility)
@@ -292,6 +301,26 @@ app.get('/api/current-level', (req, res) => {
   }
 });
 
+app.get('/api/toplist', (req, res) => {
+  const db = gameLogic.playerManager.db;
+  const sql = `
+    SELECT username, level, xp
+    FROM players
+    ORDER BY xp DESC
+    LIMIT 50
+  `;
+
+  db.all(sql, [], (err, rows) => {
+    if (err) {
+      console.error('Failed to fetch toplist:', err);
+      res.status(500).json({ error: 'Failed to fetch toplist' });
+      return;
+    }
+
+    res.json(rows);
+  });
+});
+
 app.post('/api/levels/:levelName', basicAuth, (req, res) => {
   const fs = require('fs');
   const levelsDir = path.join(__dirname, '../levels');
@@ -376,6 +405,136 @@ app.delete('/api/admin/levels/:levelName', basicAuth, (req, res) => {
   } else {
     res.status(404).json({ error: 'Level not found' });
   }
+});
+
+// Admin player management endpoints
+app.get('/api/admin/players', basicAuth, (req, res) => {
+  const db = gameLogic.playerManager.db;
+  const sql = `
+    SELECT userId, username, level, xp, coins, lastUpdated
+    FROM players
+    ORDER BY xp DESC
+  `;
+
+  db.all(sql, [], (err, rows) => {
+    if (err) {
+      console.error('Failed to fetch players:', err);
+      res.status(500).json({ error: 'Failed to fetch players' });
+      return;
+    }
+
+    res.json(rows);
+  });
+});
+
+app.get('/api/admin/players/:userId', basicAuth, (req, res) => {
+  const db = gameLogic.playerManager.db;
+  const sql = 'SELECT * FROM players WHERE userId = ?';
+
+  db.get(sql, [req.params.userId], (err, row) => {
+    if (err) {
+      console.error('Failed to fetch player:', err);
+      res.status(500).json({ error: 'Failed to fetch player' });
+      return;
+    }
+
+    if (!row) {
+      res.status(404).json({ error: 'Player not found' });
+      return;
+    }
+
+    try {
+      const playerData = {
+        userId: row.userId,
+        username: row.username,
+        level: row.level || 1,
+        xp: row.xp || 0,
+        coins: row.coins || 100,
+        ufoAppearance: JSON.parse(row.ufoAppearance),
+        unlockedUFOs: JSON.parse(row.unlockedUFOs) || [],
+        unlockedPassengers: JSON.parse(row.unlockedPassengers) || [],
+        lastUpdated: row.lastUpdated
+      };
+      res.json(playerData);
+    } catch (parseError) {
+      console.error('Failed to parse player data:', parseError);
+      res.status(500).json({ error: 'Failed to parse player data' });
+    }
+  });
+});
+
+app.put('/api/admin/players/:userId', basicAuth, (req, res) => {
+  const { level, xp, coins } = req.body;
+  const userId = req.params.userId;
+
+  // Validate input
+  if (typeof level !== 'number' || level < 1 || level > 1000) {
+    return res.status(400).json({ error: 'Level must be a number between 1 and 1000' });
+  }
+  if (typeof xp !== 'number' || xp < 0 || xp > 10000000) {
+    return res.status(400).json({ error: 'XP must be a number between 0 and 10,000,000' });
+  }
+  if (typeof coins !== 'number' || coins < 0 || coins > 1000000) {
+    return res.status(400).json({ error: 'Coins must be a number between 0 and 1,000,000' });
+  }
+
+  const db = gameLogic.playerManager.db;
+
+  // First get current player data
+  const selectSql = 'SELECT * FROM players WHERE userId = ?';
+  db.get(selectSql, [userId], (err, row) => {
+    if (err) {
+      console.error('Failed to fetch player for update:', err);
+      return res.status(500).json({ error: 'Failed to fetch player' });
+    }
+
+    if (!row) {
+      return res.status(404).json({ error: 'Player not found' });
+    }
+
+    try {
+      // Parse existing data
+      const ufoAppearance = JSON.parse(row.ufoAppearance);
+      const unlockedUFOs = JSON.parse(row.unlockedUFOs) || [];
+      const unlockedPassengers = JSON.parse(row.unlockedPassengers) || [];
+
+      // Update player data
+      const updateSql = `
+        UPDATE players
+        SET level = ?, xp = ?, coins = ?, lastUpdated = ?
+        WHERE userId = ?
+      `;
+
+      db.run(updateSql, [level, xp, coins, new Date().toISOString(), userId], function(err) {
+        if (err) {
+          console.error('Failed to update player:', err);
+          return res.status(500).json({ error: 'Failed to update player' });
+        }
+
+        // If player is online, update their in-memory state
+        const onlinePlayer = Array.from(gameLogic.playerManager.players.values())
+          .find(p => p.userId === userId);
+
+        if (onlinePlayer) {
+          onlinePlayer.level = level;
+          onlinePlayer.xp = xp;
+          onlinePlayer.coins = coins;
+          console.log(`Updated online player ${onlinePlayer.username}'s data`);
+        }
+
+        res.json({
+          success: true,
+          userId,
+          level,
+          xp,
+          coins
+        });
+      });
+    } catch (parseError) {
+      console.error('Failed to parse existing player data:', parseError);
+      res.status(500).json({ error: 'Failed to parse existing player data' });
+    }
+  });
 });
 
 // Admin Twitch configuration endpoints

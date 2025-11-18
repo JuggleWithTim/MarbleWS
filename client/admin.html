@@ -117,9 +117,10 @@
         }
 
         .levels-container {
-            max-height: 70vh;
+            max-height: 65vh;
             overflow-y: auto;
             padding: 10px 0;
+            margin-bottom: 50px;
         }
 
         .levels-section {
@@ -282,6 +283,183 @@
             color: #ffffff;
             opacity: 0.7;
         }
+
+        .players-section {
+            margin-bottom: 70px;
+        }
+
+        .players-section h3 {
+            color: #4ecdc4;
+            font-size: 1.4em;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid rgba(78, 205, 196, 0.3);
+        }
+
+        .players-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+        }
+
+        .player-card {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .player-card:hover {
+            border-color: #4ecdc4;
+            box-shadow: 0 0 10px rgba(78, 205, 196, 0.2);
+        }
+
+        .player-name {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #4ecdc4;
+            margin-bottom: 8px;
+        }
+
+        .player-info {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-bottom: 10px;
+        }
+
+        .player-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85em;
+            opacity: 0.7;
+        }
+
+        /* Player Edit Modal */
+        .player-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .player-modal-content {
+            background: rgba(26, 26, 46, 0.95);
+            margin: 5% auto;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            position: relative;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .player-modal .close {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .player-modal .close:hover {
+            color: #4ecdc4;
+        }
+
+        .player-modal h2 {
+            color: #4ecdc4;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(78, 205, 196, 0.3);
+        }
+
+        .player-details {
+            margin-bottom: 20px;
+        }
+
+        .player-detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .player-detail-label {
+            font-weight: bold;
+            color: #ffffff;
+            opacity: 0.8;
+        }
+
+        .player-detail-value {
+            color: #4ecdc4;
+        }
+
+        .edit-form {
+            margin-top: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #ffffff;
+            font-weight: bold;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 0.9em;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #4ecdc4;
+            box-shadow: 0 0 5px rgba(78, 205, 196, 0.3);
+        }
+
+        .form-group input:invalid {
+            border-color: #ff6b6b;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 25px;
+        }
+
+        .modal-actions .btn {
+            min-width: 80px;
+        }
     </style>
 </head>
 <body>
@@ -322,9 +500,48 @@
                 <h3>Other Levels</h3>
                 <div class="levels-grid" id="otherLevelsGrid"></div>
             </div>
+
+            <div class="players-section">
+                <h3>Player Management</h3>
+                <div class="players-grid" id="playersGrid"></div>
+            </div>
         </div>
 
         <div id="statusMessage"></div>
+    </div>
+
+    <!-- Player Edit Modal -->
+    <div id="playerModal" class="player-modal">
+        <div class="player-modal-content">
+            <span class="close" onclick="closePlayerModal()">&times;</span>
+            <h2>Edit Player</h2>
+
+            <div id="playerDetails" class="player-details">
+                <!-- Player details will be populated here -->
+            </div>
+
+            <form id="playerEditForm" class="edit-form">
+                <div class="form-group">
+                    <label for="editLevel">Level:</label>
+                    <input type="number" id="editLevel" min="1" max="1000" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="editXP">XP:</label>
+                    <input type="number" id="editXP" min="0" max="10000000" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="editCoins">Coins:</label>
+                    <input type="number" id="editCoins" min="0" max="1000000" required>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-danger" onclick="closePlayerModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <script>
@@ -811,12 +1028,149 @@
             }, 5000);
         }
 
+        // Fetch and display players
+        async function fetchPlayers() {
+            try {
+                const response = await fetch(`${basePath}/api/admin/players`);
+                if (!response.ok) {
+                    console.error('Failed to fetch players:', response.status, response.statusText);
+                    showStatus('Failed to load players', 'error');
+                    return;
+                }
+                const players = await response.json();
+
+                const playersGrid = document.getElementById('playersGrid');
+                playersGrid.innerHTML = '';
+
+                if (players.length === 0) {
+                    playersGrid.innerHTML = '<p class="empty-state">No players found.</p>';
+                    return;
+                }
+
+                players.forEach(player => {
+                    const playerCard = document.createElement('div');
+                    playerCard.className = 'player-card';
+                    playerCard.onclick = () => openPlayerModal(player.userId);
+
+                    playerCard.innerHTML = `
+                        <div class="player-name">${player.username}</div>
+                        <div class="player-info">User ID: ${player.userId}</div>
+                        <div class="player-stats">
+                            <span>Level ${player.level}</span>
+                            <span>${player.xp} XP</span>
+                            <span>${player.coins} coins</span>
+                        </div>
+                    `;
+
+                    playersGrid.appendChild(playerCard);
+                });
+            } catch (error) {
+                console.error('Failed to fetch players:', error);
+                showStatus('Failed to load players', 'error');
+            }
+        }
+
+        // Open player edit modal
+        async function openPlayerModal(userId) {
+            try {
+                const response = await fetch(`${basePath}/api/admin/players/${userId}`);
+                const player = await response.json();
+
+                // Populate player details
+                const detailsDiv = document.getElementById('playerDetails');
+                detailsDiv.innerHTML = `
+                    <div class="player-detail-row">
+                        <span class="player-detail-label">Username:</span>
+                        <span class="player-detail-value">${player.username}</span>
+                    </div>
+                    <div class="player-detail-row">
+                        <span class="player-detail-label">User ID:</span>
+                        <span class="player-detail-value">${player.userId}</span>
+                    </div>
+                    <div class="player-detail-row">
+                        <span class="player-detail-label">UFOs Unlocked:</span>
+                        <span class="player-detail-value">${player.unlockedUFOs.length}</span>
+                    </div>
+                    <div class="player-detail-row">
+                        <span class="player-detail-label">Passengers Unlocked:</span>
+                        <span class="player-detail-value">${player.unlockedPassengers.length}</span>
+                    </div>
+                    <div class="player-detail-row">
+                        <span class="player-detail-label">Last Updated:</span>
+                        <span class="player-detail-value">${new Date(player.lastUpdated).toLocaleString()}</span>
+                    </div>
+                `;
+
+                // Populate form fields
+                document.getElementById('editLevel').value = player.level;
+                document.getElementById('editXP').value = player.xp;
+                document.getElementById('editCoins').value = player.coins;
+
+                // Store current player ID for form submission
+                document.getElementById('playerEditForm').dataset.userId = userId;
+
+                // Show modal
+                document.getElementById('playerModal').style.display = 'flex';
+            } catch (error) {
+                console.error('Failed to fetch player details:', error);
+                showStatus('Failed to load player details', 'error');
+            }
+        }
+
+        // Close player edit modal
+        function closePlayerModal() {
+            document.getElementById('playerModal').style.display = 'none';
+            document.getElementById('playerEditForm').reset();
+        }
+
+        // Handle player edit form submission
+        document.getElementById('playerEditForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const userId = e.target.dataset.userId;
+            const level = parseInt(document.getElementById('editLevel').value);
+            const xp = parseInt(document.getElementById('editXP').value);
+            const coins = parseInt(document.getElementById('editCoins').value);
+
+            try {
+                const response = await fetch(`${basePath}/api/admin/players/${userId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ level, xp, coins })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    showStatus(`Player "${result.userId}" updated successfully`, 'success');
+                    closePlayerModal();
+                    fetchPlayers(); // Refresh the player list
+                } else {
+                    const error = await response.json();
+                    showStatus(error.error || 'Failed to update player', 'error');
+                }
+            } catch (error) {
+                console.error('Failed to update player:', error);
+                showStatus('Failed to update player', 'error');
+            }
+        });
+
+        // Close modal when clicking outside
+        window.addEventListener('click', (event) => {
+            const modal = document.getElementById('playerModal');
+            if (event.target === modal) {
+                closePlayerModal();
+            }
+        });
+
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
             await loadConfig();
             fetchCurrentLevel();
             fetchTwitchChannel();
             fetchLevels();
+            fetchPlayers();
         });
     </script>
 </body>

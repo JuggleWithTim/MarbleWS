@@ -28,20 +28,11 @@ class Game {
         // Track if a level has been loaded to prevent double-loading
         this.levelLoaded = false;
 
-        // UFO and passenger data
-        this.ufoData = {
-            'CustomUFO1.png': { cost: 50, name: 'TestUFO 1' },
-            'ufoderp.png': { cost: 75, name: 'Derpcraft' },
-            'Fez.png': { cost: 100, name: 'Fez' }
-        };
-
-        this.passengerData = {
-            'luminoCoffee.png': { cost: 75, name: 'Lilly', width: 50, height: 50 },
-            'Missy.png': { cost: 75, name: 'Missy', width: 50, height: 50 },
-            'Derp.png': { cost: 75, name: 'LuminousNova', width: 50, height: 50 },
-            'Nox.png': { cost: 75, name: 'Noxanimus', width: 50, height: 50 },
-            'Tim.png': { cost: 75, name: 'JuggleWithTim', width: 100, height: 60 }
-        };
+        // Game configuration (loaded via API)
+        this.gameConfig = null;
+        this.ufoData = null;
+        this.passengerData = null;
+        this.hatData = null;
     }
 
     // Linear interpolation function
@@ -96,7 +87,10 @@ class Game {
     }
 
     async init() {
-        // Load client configuration first
+        // Load game configuration first
+        await this.loadGameConfig();
+
+        // Load client configuration
         await this.networking.loadConfig();
 
         this.setupUI();
@@ -106,6 +100,29 @@ class Game {
 
         // Start game loop
         this.gameLoop();
+    }
+
+    async loadGameConfig() {
+        try {
+            // Use relative path like networking.js does - nginx will proxy based on current location
+            const response = await fetch('api/game-config');
+            this.gameConfig = await response.json();
+            this.ufoData = this.gameConfig.ufoData;
+            this.passengerData = this.gameConfig.passengerData;
+            this.hatData = this.gameConfig.hatData;
+            console.log('Game configuration loaded successfully');
+        } catch (error) {
+            console.error('Failed to load game configuration:', error);
+            // Set fallback defaults
+            this.gameConfig = {
+                ufoData: {},
+                passengerData: {},
+                hatData: {}
+            };
+            this.ufoData = {};
+            this.passengerData = {};
+            this.hatData = {};
+        }
     }
 
     setupUI() {
@@ -123,6 +140,9 @@ class Game {
 
         // Setup wardrobe and store controls
         this.setupWardrobeControls();
+
+        // Setup toplist controls
+        this.setupToplistControls();
 
         // Setup beam controls
         this.controls.on('beamActivate', () => {
@@ -392,7 +412,7 @@ class Game {
         }
 
         if (xpFill) {
-            const xpPercent = (this.currentPlayer.xp / (this.currentPlayer.level * 1000)) * 100;
+            const xpPercent = this.currentPlayer.xpProgress || 0;
             xpFill.style.width = `${xpPercent}%`;
         }
     }
@@ -800,20 +820,134 @@ class Game {
         // Note: Individual click handlers are now added to each UFO item in showWardrobeModal
     }
 
+    setupToplistControls() {
+        // Setup Toplist controls
+        const toplistDiv = document.getElementById('toplist');
+        const toplistModal = document.getElementById('toplistModal');
+        const closeBtn = toplistModal.querySelector('.close');
+
+        if (!toplistDiv || !toplistModal || !closeBtn) {
+            console.warn('Toplist controls not found');
+            return;
+        }
+
+        // Show toplist modal when clicking the toplist area
+        toplistDiv.addEventListener('click', () => {
+            this.showToplistModal();
+        });
+
+        // Close modal
+        closeBtn.addEventListener('click', () => {
+            toplistModal.style.display = 'none';
+        });
+
+        // Close modal when clicking outside
+        window.addEventListener('click', (event) => {
+            if (event.target === toplistModal) {
+                toplistModal.style.display = 'none';
+            }
+        });
+
+        // Fetch and display top players on game start
+        this.updateTopPlayers();
+
+        // Update top players every minute
+        setInterval(() => {
+            this.updateTopPlayers();
+        }, 60000); // 60 seconds
+    }
+
+    async updateTopPlayers() {
+        try {
+            const response = await fetch(`${this.networking.BASE_PATH}/api/toplist`);
+            const players = await response.json();
+
+            // Update top 3 display
+            this.updateTopPlayersDisplay(players.slice(0, 3));
+
+            // Update full toplist modal if it's open
+            const toplistModal = document.getElementById('toplistModal');
+            if (toplistModal && toplistModal.style.display === 'flex') {
+                this.updateToplistModal(players);
+            }
+        } catch (error) {
+            console.error('Failed to fetch toplist:', error);
+        }
+    }
+
+    updateTopPlayersDisplay(topPlayers) {
+        const topPlayersDiv = document.getElementById('topPlayers');
+        if (!topPlayersDiv) return;
+
+        topPlayersDiv.innerHTML = '';
+
+        topPlayers.forEach((player, index) => {
+            const playerDiv = document.createElement('div');
+            playerDiv.className = 'top-player';
+            playerDiv.innerHTML = `
+                <span class="rank">#${index + 1}</span>
+                <span class="name">${player.username}</span>
+                <span class="level">Lv.${player.level}</span>
+            `;
+            topPlayersDiv.appendChild(playerDiv);
+        });
+    }
+
+    async showToplistModal() {
+        const toplistModal = document.getElementById('toplistModal');
+
+        // Fetch latest toplist data
+        const response = await fetch(`${this.networking.BASE_PATH}/api/toplist`);
+        const players = await response.json();
+
+        // Update modal content
+        this.updateToplistModal(players);
+
+        // Show modal
+        toplistModal.style.display = 'flex';
+    }
+
+    updateToplistModal(players) {
+        const toplistContent = document.getElementById('toplistContent');
+        if (!toplistContent) return;
+
+        toplistContent.innerHTML = '';
+
+        if (players.length === 0) {
+            toplistContent.innerHTML = '<p>No players found.</p>';
+            return;
+        }
+
+        players.forEach((player, index) => {
+            const playerDiv = document.createElement('div');
+            playerDiv.className = 'toplist-item';
+            playerDiv.innerHTML = `
+                <span class="rank">#${index + 1}</span>
+                <span class="name">${player.username}</span>
+                <span class="level">Level ${player.level}</span>
+                <span class="xp">${player.xp} XP</span>
+            `;
+            toplistContent.appendChild(playerDiv);
+        });
+    }
+
     async showStoreModal() {
         const storeModal = document.getElementById('storeModal');
         const ufoStoreItemsList = document.getElementById('ufoStoreItemsList');
         const passengerStoreItemsList = document.getElementById('passengerStoreItemsList');
+        const hatStoreItemsList = document.getElementById('hatStoreItemsList');
 
         if (!this.currentPlayer || !ufoStoreItemsList || !passengerStoreItemsList) return;
 
         // Clear existing items
         ufoStoreItemsList.innerHTML = '';
         passengerStoreItemsList.innerHTML = '';
+        if (hatStoreItemsList) hatStoreItemsList.innerHTML = '';
 
-        // Get player's unlocked UFOs and passengers
+        // Get player's unlocked UFOs, passengers, and hats
         const unlockedUFOs = this.currentPlayer.unlockedUFOs || [];
         const unlockedPassengers = this.currentPlayer.unlockedPassengers || [];
+        const unlockedHats = this.currentPlayer.unlockedHats || [];
 
         // Add UFO store items
         Object.entries(this.ufoData).forEach(([imageName, data]) => {
@@ -902,6 +1036,55 @@ class Game {
             passengerStoreItemsList.appendChild(storeItem);
         });
 
+        // Add hat store items
+        if (hatStoreItemsList) {
+            Object.entries(this.hatData).forEach(([imageName, data]) => {
+                const isUnlocked = unlockedHats.includes(imageName);
+
+                const storeItem = document.createElement('div');
+                storeItem.className = 'store-item hat-item' + (isUnlocked ? ' unlocked' : '');
+
+                const width = data.width || 40;
+                const height = data.height || 40;
+
+                let itemHTML = `
+                    <div class="store-preview" style="
+                        background-image: url('img/hat/${imageName}');
+                        width: ${width}px;
+                        height: ${height}px;
+                    "></div>
+                    <div class="store-item-name">${data.name}</div>
+                    <div class="store-price">${data.cost} coins</div>
+                `;
+
+                if (isUnlocked) {
+                    itemHTML += `<div class="store-owned">OWNED</div>`;
+                } else {
+                    const canAfford = this.currentPlayer.coins >= data.cost;
+                    itemHTML += `
+                        <button class="store-buy-btn ${canAfford ? '' : 'disabled'}" data-hat="${imageName}" ${canAfford ? '' : 'disabled'}>
+                            ${canAfford ? 'Buy' : 'Not enough coins'}
+                        </button>
+                    `;
+                }
+
+                storeItem.innerHTML = itemHTML;
+
+                // Add click handler for purchase button
+                if (!isUnlocked) {
+                    const buyBtn = storeItem.querySelector('.store-buy-btn');
+                    if (buyBtn && !buyBtn.disabled) {
+                        buyBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            this.purchaseHat(imageName, data.cost);
+                        });
+                    }
+                }
+
+                hatStoreItemsList.appendChild(storeItem);
+            });
+        }
+
         storeModal.style.display = 'flex';
     }
 
@@ -910,6 +1093,7 @@ class Game {
         const colorPicker = document.getElementById('ufoColorPicker');
         const designsList = document.getElementById('ufoDesignsList');
         const passengerDesignsList = document.getElementById('passengerDesignsList');
+        const hatDesignsList = document.getElementById('hatDesignsList');
 
         if (!this.currentPlayer) return;
 
@@ -920,10 +1104,12 @@ class Game {
         // Clear existing designs
         designsList.innerHTML = '';
         passengerDesignsList.innerHTML = '';
+        if (hatDesignsList) hatDesignsList.innerHTML = '';
 
-        // Get player's unlocked UFOs and passengers (initialize as empty array if not present)
+        // Get player's unlocked UFOs, passengers, and hats (initialize as empty array if not present)
         const unlockedUFOs = this.currentPlayer.unlockedUFOs || [];
         const unlockedPassengers = this.currentPlayer.unlockedPassengers || [];
+        const unlockedHats = this.currentPlayer.unlockedHats || [];
 
         // Add default UFO option (always available)
         const defaultItem = document.createElement('div');
@@ -1002,6 +1188,50 @@ class Game {
             }
         });
 
+        // Add no hat option (always available)
+        if (hatDesignsList) {
+            const noHatItem = document.createElement('div');
+            noHatItem.className = 'hat-design-item' + (!currentAppearance.hat ? ' selected' : '');
+            noHatItem.setAttribute('data-hat', 'none');
+            noHatItem.innerHTML = `
+                <div class="hat-preview no-hat"></div>
+                <span>No Hat</span>
+            `;
+            noHatItem.addEventListener('click', () => this.selectHatDesign(noHatItem));
+            hatDesignsList.appendChild(noHatItem);
+
+            // Add only unlocked hat images
+            const hatImages = Object.keys(this.hatData);
+
+            hatImages.forEach(imageName => {
+                const isUnlocked = unlockedHats.includes(imageName);
+                const isSelected = currentAppearance.hat === imageName;
+
+                if (isUnlocked) {
+                    const hatItem = document.createElement('div');
+                    hatItem.className = 'hat-design-item' + (isSelected ? ' selected' : '');
+                    hatItem.setAttribute('data-hat', imageName);
+
+                    const hatData = this.hatData[imageName];
+                    const width = hatData.width || 40;
+                    const height = hatData.height || 40;
+
+                    hatItem.innerHTML = `
+                        <div class="hat-preview" style="
+                            background-image: url('img/hat/${imageName}');
+                            width: ${width}px;
+                            height: ${height}px;
+                        "></div>
+                        <span>${hatData.name}</span>
+                    `;
+
+                    // Add click event for unlocked items
+                    hatItem.addEventListener('click', () => this.selectHatDesign(hatItem));
+                    hatDesignsList.appendChild(hatItem);
+                }
+            });
+        }
+
         wardrobeModal.style.display = 'flex';
     }
 
@@ -1023,6 +1253,18 @@ class Game {
         });
         // Add selected class to clicked item
         passengerItem.classList.add('selected');
+    }
+
+    selectHatDesign(hatItem) {
+        // Remove selected class from all items
+        const hatDesignsList = document.getElementById('hatDesignsList');
+        if (hatDesignsList) {
+            hatDesignsList.querySelectorAll('.hat-design-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            // Add selected class to clicked item
+            hatItem.classList.add('selected');
+        }
     }
 
     purchaseUFO(ufoImage, cost) {
@@ -1051,6 +1293,19 @@ class Game {
         this.networking.unlockPassenger(passengerImage);
     }
 
+    purchaseHat(hatImage, cost) {
+        if (!this.currentPlayer) return;
+
+        // Check if player has enough coins
+        if (this.currentPlayer.coins < cost) {
+            this.showError('Not enough coins to purchase this hat!');
+            return;
+        }
+
+        // Send unlock request to server
+        this.networking.unlockHat(hatImage);
+    }
+
     handleUnlockResult(result) {
         if (result.success) {
             // Update local player data
@@ -1061,6 +1316,9 @@ class Game {
                 }
                 if (result.unlockedPassengers) {
                     this.currentPlayer.unlockedPassengers = result.unlockedPassengers;
+                }
+                if (result.unlockedHats) {
+                    this.currentPlayer.unlockedHats = result.unlockedHats;
                 }
                 this.updatePlayerInfo();
             }
@@ -1073,6 +1331,9 @@ class Game {
                 }
                 if (result.unlockedPassengers) {
                     this.networking.currentPlayer.unlockedPassengers = result.unlockedPassengers;
+                }
+                if (result.unlockedHats) {
+                    this.networking.currentPlayer.unlockedHats = result.unlockedHats;
                 }
             }
 
@@ -1088,10 +1349,20 @@ class Game {
             }
 
             // Show success message
-            const itemName = result.passengerImage ?
-                result.passengerImage.replace('.png', '') :
-                result.ufoImage.replace('.png', '');
-            const itemType = result.passengerImage ? 'passenger' : 'UFO';
+            let itemName = '';
+            let itemType = '';
+
+            if (result.hatImage) {
+                itemName = result.hatImage.replace('.png', '');
+                itemType = 'hat';
+            } else if (result.passengerImage) {
+                itemName = result.passengerImage.replace('.png', '');
+                itemType = 'passenger';
+            } else if (result.ufoImage) {
+                itemName = result.ufoImage.replace('.png', '');
+                itemType = 'UFO';
+            }
+
             this.showError(`Successfully unlocked ${itemName} ${itemType} for ${result.cost} coins!`);
         } else {
             // Show error message
@@ -1103,6 +1374,7 @@ class Game {
         const colorPicker = document.getElementById('ufoColorPicker');
         const selectedDesign = document.querySelector('#ufoDesignsList .ufo-design-item.selected');
         const selectedPassenger = document.querySelector('#passengerDesignsList .passenger-design-item.selected');
+        const selectedHat = document.querySelector('#hatDesignsList .hat-design-item.selected');
 
         if (!selectedDesign) return;
 
@@ -1121,6 +1393,14 @@ class Game {
             const passengerValue = selectedPassenger.getAttribute('data-passenger');
             if (passengerValue && passengerValue !== 'none') {
                 appearance.passenger = passengerValue;
+            }
+        }
+
+        // Add hat selection if one is selected (not "none")
+        if (selectedHat) {
+            const hatValue = selectedHat.getAttribute('data-hat');
+            if (hatValue && hatValue !== 'none') {
+                appearance.hat = hatValue;
             }
         }
 

@@ -14,13 +14,16 @@ export const objects = {
             loadObjectImage(backgroundImage, this.objectImages);
         }
 
+        const widthValue = parseInt(document.getElementById('objectWidth').value);
+        const heightValue = parseInt(document.getElementById('objectHeight').value);
+
         const obj = {
             id: generateUniqueObjectName('rect', this.level.objects),
             shape: 'rectangle',
             x: x,
             y: y,
-            width: parseInt(document.getElementById('objectWidth').value),
-            height: parseInt(document.getElementById('objectHeight').value),
+            width: isNaN(widthValue) ? DEFAULT_OBJECT_PROPERTIES.width : widthValue,
+            height: isNaN(heightValue) ? DEFAULT_OBJECT_PROPERTIES.height : heightValue,
             rotation: parseFloat(document.getElementById('objectRotation').value) * Math.PI / 180, // Convert to radians
             color: createRgba(hexColor, alpha),
             backgroundImage: backgroundImage,
@@ -63,12 +66,14 @@ export const objects = {
             loadObjectImage(backgroundImage, this.objectImages);
         }
 
+        const radiusValue = parseInt(document.getElementById('objectRadius').value);
+
         const obj = {
             id: generateUniqueObjectName('circle', this.level.objects),
             shape: 'circle',
             x: x,
             y: y,
-            radius: parseInt(document.getElementById('objectRadius').value),
+            radius: isNaN(radiusValue) ? DEFAULT_OBJECT_PROPERTIES.radius : radiusValue,
             rotation: parseFloat(document.getElementById('objectRotation').value) * Math.PI / 180, // Convert to radians
             color: createRgba(hexColor, alpha),
             backgroundImage: backgroundImage,
@@ -166,7 +171,9 @@ export const objects = {
 
             document.getElementById('objectBackgroundImage').value = obj.backgroundImage || '';
             document.getElementById('objectStatic').checked = obj.isStatic;
+            document.getElementById('objectStatic').indeterminate = false;
             document.getElementById('objectSolid').checked = obj.isSolid !== false; // Default to true if not specified
+            document.getElementById('objectSolid').indeterminate = false;
             document.getElementById('objectZIndex').value = obj.zIndex || 0;
             document.getElementById('objectFriction').value = obj.friction;
             document.getElementById('objectRestitution').value = obj.restitution;
