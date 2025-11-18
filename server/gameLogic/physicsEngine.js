@@ -327,13 +327,14 @@ class PhysicsEngine {
     // Get marble radius from properties
     const marbleRadius = this.levelManager.marbleProperties ? this.levelManager.marbleProperties.radius : 30;
 
-    // Check if any marble reached any goal
+    // Check if any marble reached any goal (with cooldown)
     for (const goal of goals) {
-      // Check if goal is on cooldown
+      // Check if goal is on cooldown for marbles
       const cooldownKey = goal.id;
       const lastWin = this.goalCooldowns.get(cooldownKey);
-      if (lastWin && (now - lastWin) < 5000) { // 5 second cooldown
-        continue; // Skip this goal, it's on cooldown
+      if (lastWin && (now - lastWin) < 5000) { // 5 second cooldown for marbles
+        // Still check emotes even if goal is on cooldown for marbles
+        continue; // Skip marble check for this goal, but emotes can still trigger
       }
 
       for (const marble of this.levelManager.marbles) {
@@ -378,7 +379,7 @@ class PhysicsEngine {
         }
 
         if (collision) {
-          // Set cooldown to prevent rapid repeated triggering
+          // Set cooldown to prevent rapid repeated triggering for marbles
           this.goalCooldowns.set(cooldownKey, now);
 
           // Clean up old cooldowns (keep only recent ones)
@@ -395,8 +396,10 @@ class PhysicsEngine {
           return { win: true };
         }
       }
+    }
 
-      // Check if any emote reached any goal
+    // Check if any emote reached any goal (no cooldown for emotes)
+    for (const goal of goals) {
       for (const emote of this.levelManager.emotes) {
         const emoteX = emote.body.position.x;
         const emoteY = emote.body.position.y;
@@ -440,16 +443,6 @@ class PhysicsEngine {
         }
 
         if (collision) {
-          // Set cooldown to prevent rapid repeated triggering
-          this.goalCooldowns.set(cooldownKey, now);
-
-          // Clean up old cooldowns (keep only recent ones)
-          for (const [key, timestamp] of this.goalCooldowns.entries()) {
-            if (now - timestamp > 10000) { // Remove cooldowns older than 10 seconds
-              this.goalCooldowns.delete(key);
-            }
-          }
-
           // Award XP and coins to players who interacted with this emote
           const interactedPlayers = Array.from(emote.interactedPlayers);
           if (interactedPlayers.length > 0) {
