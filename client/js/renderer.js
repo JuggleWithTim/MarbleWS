@@ -189,6 +189,34 @@ class Renderer {
             }
         }
 
+        // Draw hat on top of passenger (or UFO if no passenger) if one is selected
+        if (appearance && appearance.hat) {
+            const hatUrl = `img/hat/${appearance.hat}`;
+            const hatImg = this.images.get(hatUrl);
+
+            if (hatImg && hatImg.complete) {
+                // Get custom dimensions from game data
+                const hatData = game && game.hatData ? game.hatData[appearance.hat] : null;
+                const hatWidth = (hatData && hatData.width) ?
+                    hatData.width * this.camera.zoom * 0.8 : size * 1.2;
+                const hatHeight = (hatData && hatData.height) ?
+                    hatData.height * this.camera.zoom * 0.8 : size * 1.2;
+
+                // Position hat above passenger or UFO
+                const baseY = (appearance.passenger) ? -size * 1.5 - size * 0.05 : -size * 0.6;
+
+                // Draw hat image centered above passenger/UFO
+                this.ctx.drawImage(hatImg,
+                    -hatWidth / 2, baseY - hatHeight + (15 * this.camera.zoom),
+                    hatWidth, hatHeight);
+            } else {
+                // Start loading the hat image if not already loading
+                if (!hatImg) {
+                    this.loadImage(hatUrl);
+                }
+            }
+        }
+
         this.ctx.restore();
     }
 
@@ -392,7 +420,8 @@ class Renderer {
     }
 
     drawPlayerName(x, y, name, color = '#ffffff') {
-        const screenPos = this.worldToScreen(x, y - 50);
+        // const screenPos = this.worldToScreen(x, y - 50); //Renders name above UFO
+        const screenPos = this.worldToScreen(x, y + 35); // Renders name below UFO
         
         this.ctx.fillStyle = color;
         this.ctx.font = '14px Arial';

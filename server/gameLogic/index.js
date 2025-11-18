@@ -77,6 +77,10 @@ class GameLogic {
     return this.playerManager.unlockPassenger(socketId, passengerImage);
   }
 
+  unlockHat(socketId, hatImage) {
+    return this.playerManager.unlockHat(socketId, hatImage);
+  }
+
   addCoinsToPlayer(userId, amount, reason = 'unknown') {
     return this.playerManager.addCoinsToPlayer(userId, amount, reason);
   }

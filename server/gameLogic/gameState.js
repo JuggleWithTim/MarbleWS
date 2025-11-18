@@ -17,6 +17,7 @@ class GameState {
         ufoAppearance: player.ufoAppearance,
         unlockedUFOs: player.unlockedUFOs,
         unlockedPassengers: player.unlockedPassengers,
+        unlockedHats: player.unlockedHats,
         x: player.x,
         y: player.y,
         beamActive: player.beamActive,

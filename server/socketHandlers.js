@@ -355,6 +355,25 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
       // Send result back to client
       socket.emit('unlockResult', result);
     });
+
+    // Handle hat unlock purchases
+    socket.on('unlockHat', (data) => {
+      resetIdleTimeout();
+
+      // Input validation
+      if (typeof data !== 'object' || typeof data.hatImage !== 'string') {
+        socket.emit('unlockResult', { success: false, message: 'Invalid request' });
+        return;
+      }
+
+      const { hatImage } = data;
+
+      // Attempt to unlock the hat
+      const result = gameLogic.unlockHat(socket.id, hatImage);
+
+      // Send result back to client
+      socket.emit('unlockResult', result);
+    });
   });
 
   // Broadcast game state updates periodically
