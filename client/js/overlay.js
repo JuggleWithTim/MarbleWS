@@ -27,19 +27,8 @@ class TransparentRenderer extends Renderer {
     const renderer = new TransparentRenderer(canvas);
     const networking = new Networking();
 
-    // Shared data for proper rendering (matches game.js)
-    const gameData = {
-        passengerData: {
-            'luminoCoffee.png': { cost: 75, name: 'Lilly', width: 50, height: 50 },
-            'Missy.png': { cost: 75, name: 'Missy', width: 50, height: 50 },
-            'Derp.png': { cost: 75, name: 'LuminousNova', width: 50, height: 50 },
-            'Nox.png': { cost: 75, name: 'Noxanimus', width: 50, height: 50 },
-            'Tim.png': { cost: 75, name: 'JuggleWithTim', width: 100, height: 60 }
-        },
-        hatData: {
-            'santahatpixel.png': { cost: 50, name: 'Santa Hat', width: 60, height: 50 }
-        }
-    };
+    // Load shared game configuration (loaded via script tag)
+    const gameData = window.gameConfig;
 
     // Interpolation system
     const interpolatedObjects = new Map();

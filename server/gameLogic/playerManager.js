@@ -3,6 +3,7 @@ const sqlite3 = require('sqlite3').verbose();
 const fs = require('fs');
 const path = require('path');
 const { generateColorFromSeed } = require('./utils');
+const gameConfig = require('../../shared/gameConfig.js');
 
 class PlayerManager {
   constructor(eventEmitter) {
@@ -279,16 +280,13 @@ class PlayerManager {
     const player = this.players.get(socketId);
     if (!player) return { success: false, message: 'Player not found' };
 
-    // Define UFO costs
-    const ufoCosts = {
-      'ufoderp.png': 75,
-      'Fez.png': 100
-    };
-
-    const cost = ufoCosts[ufoImage];
-    if (!cost) {
+    // Get UFO cost from shared config
+    const ufoData = gameConfig.ufoData[ufoImage];
+    if (!ufoData || !ufoData.cost) {
       return { success: false, message: 'Invalid UFO image' };
     }
+
+    const cost = ufoData.cost;
 
     // Check if already unlocked
     if (player.unlockedUFOs.includes(ufoImage)) {
@@ -322,19 +320,13 @@ class PlayerManager {
     const player = this.players.get(socketId);
     if (!player) return { success: false, message: 'Player not found' };
 
-    // Define passenger costs
-    const passengerCosts = {
-      'luminoCoffee.png': 75,
-      'Missy.png': 75,
-      'Derp.png': 75,
-      'Nox.png': 75,
-      'Tim.png': 75
-    };
-
-    const cost = passengerCosts[passengerImage];
-    if (!cost) {
+    // Get passenger cost from shared config
+    const passengerData = gameConfig.passengerData[passengerImage];
+    if (!passengerData || !passengerData.cost) {
       return { success: false, message: 'Invalid passenger image' };
     }
+
+    const cost = passengerData.cost;
 
     // Check if already unlocked
     if (player.unlockedPassengers.includes(passengerImage)) {
@@ -368,15 +360,13 @@ class PlayerManager {
     const player = this.players.get(socketId);
     if (!player) return { success: false, message: 'Player not found' };
 
-    // Define hat costs
-    const hatCosts = {
-      'santahatpixel.png': 50
-    };
-
-    const cost = hatCosts[hatImage];
-    if (!cost) {
+    // Get hat cost from shared config
+    const hatData = gameConfig.hatData[hatImage];
+    if (!hatData || !hatData.cost) {
       return { success: false, message: 'Invalid hat image' };
     }
+
+    const cost = hatData.cost;
 
     // Check if already unlocked
     if (player.unlockedHats.includes(hatImage)) {

@@ -28,23 +28,11 @@ class Game {
         // Track if a level has been loaded to prevent double-loading
         this.levelLoaded = false;
 
-        // UFO and passenger data
-        this.ufoData = {
-            'ufoderp.png': { cost: 75, name: 'Derpcraft' },
-            'Fez.png': { cost: 100, name: 'Fez' }
-        };
-
-        this.passengerData = {
-            'luminoCoffee.png': { cost: 75, name: 'Lilly', width: 50, height: 50 },
-            'Missy.png': { cost: 75, name: 'Missy', width: 50, height: 50 },
-            'Derp.png': { cost: 75, name: 'LuminousNova', width: 50, height: 50 },
-            'Nox.png': { cost: 75, name: 'Noxanimus', width: 50, height: 50 },
-            'Tim.png': { cost: 75, name: 'JuggleWithTim', width: 100, height: 60 }
-        };
-
-        this.hatData = {
-            'santahatpixel.png': { cost: 50, name: 'Santa Hat', width: 60, height: 50 }
-        };
+        // Load shared game configuration (loaded via script tag)
+        this.gameConfig = window.gameConfig;
+        this.ufoData = this.gameConfig.ufoData;
+        this.passengerData = this.gameConfig.passengerData;
+        this.hatData = this.gameConfig.hatData;
     }
 
     // Linear interpolation function
