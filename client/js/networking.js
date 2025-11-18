@@ -114,6 +114,10 @@ class Networking {
             this.emit('playerReceivedCheer', data);
         });
 
+        this.socket.on('emoteInGoal', (data) => {
+            this.emit('emoteInGoal', data);
+        });
+
         this.socket.on('error', (error) => {
             console.error('Server error:', error);
             this.emit('error', error);

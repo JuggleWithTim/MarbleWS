@@ -568,6 +568,43 @@ class PlayerManager {
     });
   }
 
+  awardXPAndCoinsForEmote(playerIds, xpAmount = 50, coinAmount = 10) {
+    playerIds.forEach(playerId => {
+      const player = Array.from(this.players.values()).find(p => p.id === playerId);
+      if (!player) return;
+
+      const oldLevel = player.level;
+      player.xp += xpAmount;
+      player.coins += coinAmount;
+
+      // Calculate new level based on total XP
+      const newLevel = this.calculateLevelFromXP(player.xp);
+      let leveledUp = false;
+
+      if (newLevel > oldLevel) {
+        player.level = newLevel;
+        // Award coins for leveling up: old level × 100
+        const coinReward = oldLevel * 100;
+        player.coins += coinReward;
+        console.log(`Player ${player.username} leveled up to ${player.level} and gained ${coinReward} coins from emote!`);
+        leveledUp = true;
+
+        // Emit level up event for splash screen
+        this.eventEmitter.emit('playerLeveledUp', {
+          playerId: player.id,
+          username: player.username,
+          newLevel: player.level,
+          coinReward: coinReward
+        });
+      }
+
+      // Save progress after XP gain (whether leveled up or not)
+      this.savePlayerData(player.userId, player.ufoAppearance, player.level, player.xp, player.coins, player.unlockedUFOs, player.unlockedPassengers, player.unlockedHats, player.username);
+
+      console.log(`Player ${player.username} gained ${xpAmount} XP and ${coinAmount} coins from emote goal!`);
+    });
+  }
+
   // Set references to external dependencies
   setWorld(world) {
     this.world = world;

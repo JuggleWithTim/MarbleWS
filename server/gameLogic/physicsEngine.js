@@ -22,6 +22,9 @@ class PhysicsEngine {
     // Update continuous beam effects
     this.updateBeamEffects();
 
+    // Check for player-emote collisions
+    this.checkPlayerEmoteCollisions();
+
     // Update player positions from physics bodies
     this.playerManager.players.forEach(player => {
       player.x = player.body.position.x;
@@ -278,9 +281,36 @@ class PhysicsEngine {
               obj.body.render.strokeStyle = '#4ecdc4';
               obj.body.render.lineWidth = 2;
             }
+
+            // Track emote interactions
+            if (obj.type === 'emote') {
+              obj.interactedPlayers.add(player.id);
+            }
           }
         });
       }
+    });
+  }
+
+  // Check for collisions between players and emotes
+  checkPlayerEmoteCollisions() {
+    this.playerManager.players.forEach(player => {
+      this.levelManager.emotes.forEach(emote => {
+        const playerX = player.x;
+        const playerY = player.y;
+        const emoteX = emote.body.position.x;
+        const emoteY = emote.body.position.y;
+
+        // Simple distance-based collision (player radius ~25, emote radius ~20)
+        const distance = Math.sqrt(
+          Math.pow(playerX - emoteX, 2) +
+          Math.pow(playerY - emoteY, 2)
+        );
+
+        if (distance <= 45) { // Touching distance
+          emote.interactedPlayers.add(player.id);
+        }
+      });
     });
   }
 
@@ -363,6 +393,80 @@ class PhysicsEngine {
             return { win: true, nextLevel: goal.nextLevel };
           }
           return { win: true };
+        }
+      }
+
+      // Check if any emote reached any goal
+      for (const emote of this.levelManager.emotes) {
+        const emoteX = emote.body.position.x;
+        const emoteY = emote.body.position.y;
+        // Use current goal position if goal is moving
+        const goalX = goal.body ? goal.body.position.x : goal.x;
+        const goalY = goal.body ? goal.body.position.y : goal.y;
+        let collision = false;
+
+        if (goal.shape === 'circle') {
+          // Circle-circle collision
+          const goalRadius = goal.radius || 50; // Default radius if not specified
+          const emoteRadius = 20; // Emote radius
+          const distance = Math.sqrt(
+            Math.pow(emoteX - goalX, 2) +
+            Math.pow(emoteY - goalY, 2)
+          );
+          collision = distance <= (emoteRadius + goalRadius);
+        } else if (goal.shape === 'rectangle') {
+          // Circle-rectangle collision
+          const halfWidth = (goal.width || 100) / 2;
+          const halfHeight = (goal.height || 100) / 2;
+
+          // Find the closest point on the rectangle to the emote center
+          const closestX = Math.max(goalX - halfWidth, Math.min(emoteX, goalX + halfWidth));
+          const closestY = Math.max(goalY - halfHeight, Math.min(emoteY, goalY + halfHeight));
+
+          // Calculate distance from emote center to closest point
+          const distance = Math.sqrt(
+            Math.pow(emoteX - closestX, 2) +
+            Math.pow(emoteY - closestY, 2)
+          );
+
+          collision = distance <= 20; // Emote radius
+        } else {
+          // Fallback to distance-based check for unknown shapes
+          const distance = Math.sqrt(
+            Math.pow(emoteX - goalX, 2) +
+            Math.pow(emoteY - goalY, 2)
+          );
+          collision = distance < 50; // Keep old behavior as fallback
+        }
+
+        if (collision) {
+          // Set cooldown to prevent rapid repeated triggering
+          this.goalCooldowns.set(cooldownKey, now);
+
+          // Clean up old cooldowns (keep only recent ones)
+          for (const [key, timestamp] of this.goalCooldowns.entries()) {
+            if (now - timestamp > 10000) { // Remove cooldowns older than 10 seconds
+              this.goalCooldowns.delete(key);
+            }
+          }
+
+          // Award XP and coins to players who interacted with this emote
+          const interactedPlayers = Array.from(emote.interactedPlayers);
+          if (interactedPlayers.length > 0) {
+            this.eventEmitter.emit('emoteGoalReached', {
+              emote,
+              interactedPlayers,
+              goalX,
+              goalY
+            });
+          }
+
+          // Remove the emote from the world
+          Matter.World.remove(this.world, emote.body);
+          this.levelManager.emotes = this.levelManager.emotes.filter(e => e.id !== emote.id);
+
+          // Do not trigger level progression for emotes
+          return { win: false };
         }
       }
     }

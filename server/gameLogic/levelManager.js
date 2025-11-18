@@ -329,7 +329,8 @@ class LevelManager {
         body: emote,
         type: 'emote',
         name: emoteName,
-        url: emoteUrl
+        url: emoteUrl,
+        interactedPlayers: new Set()
       });
     }
   }

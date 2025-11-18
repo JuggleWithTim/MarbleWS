@@ -9,9 +9,10 @@ class Renderer {
         };
         this.images = new Map();
         this.loadedImages = new Set();
+        this.goalParticles = []; // Active goal celebration particles
     }clear() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        
+
         // Draw background
         const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
         gradient.addColorStop(0, '#1a1a2e');
@@ -87,19 +88,19 @@ class Renderer {
 
     drawRectangle(x, y, width, height, color, angle = 0) {
         const screenPos = this.worldToScreen(x, y);
-        
+
         this.ctx.save();
         this.ctx.translate(screenPos.x, screenPos.y);
         this.ctx.rotate(angle);
         this.ctx.fillStyle = color;
-        this.ctx.fillRect(-width/2 * this.camera.zoom, -height/2 * this.camera.zoom, 
+        this.ctx.fillRect(-width/2 * this.camera.zoom, -height/2 * this.camera.zoom,
                          width * this.camera.zoom, height * this.camera.zoom);
         this.ctx.restore();
     }
 
     drawCircle(x, y, radius, color, angle = 0) {
         const screenPos = this.worldToScreen(x, y);
-        
+
         this.ctx.save();
         this.ctx.translate(screenPos.x, screenPos.y);
         this.ctx.rotate(angle);
@@ -115,11 +116,11 @@ class Renderer {
         if (!img) return;
 
         const screenPos = this.worldToScreen(x, y);
-        
+
         this.ctx.save();
         this.ctx.translate(screenPos.x, screenPos.y);
         this.ctx.rotate(angle);
-        this.ctx.drawImage(img, 
+        this.ctx.drawImage(img,
             -width/2 * this.camera.zoom, -height/2 * this.camera.zoom,
             width * this.camera.zoom, height * this.camera.zoom);
         this.ctx.restore();
@@ -331,7 +332,7 @@ class Renderer {
 
         const screenPos = this.worldToScreen(x, y);
         const size = 64;
-        
+
         this.ctx.save();
         this.ctx.translate(screenPos.x, screenPos.y);
         this.ctx.rotate(angle);
@@ -402,14 +403,14 @@ class Renderer {
         // Draw special property indicators
         if (obj.properties) {
             const screenPos = this.worldToScreen(obj.x, obj.y);
-            
+
             if (obj.properties.includes('spawnpoint')) {
                 this.ctx.fillStyle = '#00ff00';
                 this.ctx.font = '12px Arial';
                 this.ctx.textAlign = 'center';
                 this.ctx.fillText('SPAWN', screenPos.x, screenPos.y - 20);
             }
-            
+
             if (obj.properties.includes('goal')) {
                 this.ctx.fillStyle = '#ffff00';
                 this.ctx.font = '12px Arial';
@@ -422,7 +423,7 @@ class Renderer {
     drawPlayerName(x, y, name, color = '#ffffff') {
         // const screenPos = this.worldToScreen(x, y - 50); //Renders name above UFO
         const screenPos = this.worldToScreen(x, y + 35); // Renders name below UFO
-        
+
         this.ctx.fillStyle = color;
         this.ctx.font = '14px Arial';
         this.ctx.textAlign = 'center';
@@ -436,10 +437,10 @@ class Renderer {
         this.ctx.fillStyle = '#ffffff';
         this.ctx.font = '12px monospace';
         this.ctx.textAlign = 'left';
-        
+
         let y = 20;
         const lineHeight = 15;
-        
+
         this.ctx.fillText(`Players: ${gameState.players.length}`, 10, y);
         y += lineHeight;
         this.ctx.fillText(`Marbles: ${gameState.marbles.length}`, 10, y);
@@ -449,5 +450,61 @@ class Renderer {
         this.ctx.fillText(`Objects: ${gameState.levelObjects.length}`, 10, y);
         y += lineHeight;
         this.ctx.fillText(`Camera: ${Math.round(this.camera.x)}, ${Math.round(this.camera.y)}`, 10, y);
+    }
+
+    // Trigger goal celebration particles
+    triggerGoalParticles(x, y) {
+        // Create 20 sparkling particles around the goal
+        for (let i = 0; i < 20; i++) {
+            const angle = (i / 20) * Math.PI * 2;
+            const distance = 30 + Math.random() * 40; // Random distance from goal
+            const speed = 50 + Math.random() * 100; // Random speed
+            const lifetime = 1 + Math.random() * 2; // 1-3 seconds
+
+            this.goalParticles.push({
+                x: x + Math.cos(angle) * distance,
+                y: y + Math.sin(angle) * distance,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                life: lifetime,
+                maxLife: lifetime,
+                color: `hsl(${Math.random() * 60 + 30}, 100%, 70%)` // Yellow to orange hues
+            });
+        }
+    }
+
+    // Update and draw goal particles
+    updateGoalParticles(deltaTime) {
+        // Update particles
+        this.goalParticles = this.goalParticles.filter(particle => {
+            particle.x += particle.vx * deltaTime;
+            particle.y += particle.vy * deltaTime;
+            particle.vy += 200 * deltaTime; // Gravity
+            particle.life -= deltaTime;
+
+            return particle.life > 0;
+        });
+
+        // Draw particles
+        this.goalParticles.forEach(particle => {
+            const screenPos = this.worldToScreen(particle.x, particle.y);
+            const alpha = particle.life / particle.maxLife;
+            const size = (5 + particle.life * 10) * this.camera.zoom;
+
+            this.ctx.save();
+            this.ctx.globalAlpha = alpha;
+            this.ctx.fillStyle = particle.color;
+            this.ctx.beginPath();
+            this.ctx.arc(screenPos.x, screenPos.y, size, 0, Math.PI * 2);
+            this.ctx.fill();
+
+            // Add sparkle effect
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.beginPath();
+            this.ctx.arc(screenPos.x, screenPos.y, size * 0.3, 0, Math.PI * 2);
+            this.ctx.fill();
+
+            this.ctx.restore();
+        });
     }
 }

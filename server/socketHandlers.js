@@ -59,6 +59,21 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
     io.to(cheerData.playerId).emit('playerReceivedCheer', cheerData);
   });
 
+  // Listen for emote goal reached events from gameLogic
+  gameLogic.on('emoteGoalReached', (emoteData) => {
+    const { emote, interactedPlayers, goalX, goalY } = emoteData;
+
+    // Award XP and coins to interacting players
+    gameLogic.playerManager.awardXPAndCoinsForEmote(interactedPlayers);
+
+    // Broadcast particle effect to all clients
+    io.emit('emoteInGoal', {
+      goalX,
+      goalY,
+      emoteName: emote.name
+    });
+  });
+
   io.on('connection', (socket) => {
     // Get real client IP address from proxy headers
     const clientIP = getClientIP(socket);
