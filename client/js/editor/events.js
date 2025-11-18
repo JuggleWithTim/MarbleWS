@@ -77,6 +77,23 @@ export const events = {
             this.level.marble.density = parseFloat(e.target.value);
         });
 
+        // Emote property inputs
+        document.getElementById('emoteRadius').addEventListener('input', (e) => {
+            this.level.emote.radius = parseInt(e.target.value);
+        });
+
+        document.getElementById('emoteFriction').addEventListener('input', (e) => {
+            this.level.emote.friction = parseFloat(e.target.value);
+        });
+
+        document.getElementById('emoteRestitution').addEventListener('input', (e) => {
+            this.level.emote.restitution = parseFloat(e.target.value);
+        });
+
+        document.getElementById('emoteDensity').addEventListener('input', (e) => {
+            this.level.emote.density = parseFloat(e.target.value);
+        });
+
         // Show/hide nextLevel field when goal checkbox is toggled
         document.getElementById('objectGoal').addEventListener('change', (e) => {
             document.getElementById('nextLevelContainer').style.display =

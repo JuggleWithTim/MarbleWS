@@ -122,6 +122,17 @@ export class LevelEditorCore {
             level.world.gravity = level.world.gravity || DEFAULT_LEVEL.world.gravity;
         }
 
+        // Ensure emote properties exist
+        if (!level.emote) {
+            level.emote = { ...DEFAULT_LEVEL.emote };
+        } else {
+            // Ensure all emote properties exist with defaults
+            level.emote.radius = level.emote.radius || DEFAULT_LEVEL.emote.radius;
+            level.emote.friction = level.emote.friction || DEFAULT_LEVEL.emote.friction;
+            level.emote.restitution = level.emote.restitution || DEFAULT_LEVEL.emote.restitution;
+            level.emote.density = level.emote.density || DEFAULT_LEVEL.emote.density;
+        }
+
         // Ensure arrays exist
         level.objects = level.objects || [];
         level.connections = level.connections || [];
