@@ -30,7 +30,8 @@ class TransparentRenderer extends Renderer {
     // Load shared game configuration via API
     let gameData;
     try {
-        const response = await fetch('/api/game-config');
+        // Use relative path like networking.js does - nginx will proxy based on current location
+        const response = await fetch('api/game-config');
         gameData = await response.json();
         console.log('Overlay configuration loaded successfully');
     } catch (error) {

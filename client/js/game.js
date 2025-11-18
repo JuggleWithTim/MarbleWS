@@ -104,7 +104,8 @@ class Game {
 
     async loadGameConfig() {
         try {
-            const response = await fetch(`${window.location.origin}/api/game-config`);
+            // Use relative path like networking.js does - nginx will proxy based on current location
+            const response = await fetch('api/game-config');
             this.gameConfig = await response.json();
             this.ufoData = this.gameConfig.ufoData;
             this.passengerData = this.gameConfig.passengerData;
