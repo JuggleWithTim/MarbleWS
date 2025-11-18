@@ -22,13 +22,21 @@ class TransparentRenderer extends Renderer {
     }
 }
 
-(function() {
+(async function() {
     const canvas = document.getElementById('overlayCanvas');
     const renderer = new TransparentRenderer(canvas);
     const networking = new Networking();
 
-    // Load shared game configuration (loaded via script tag)
-    const gameData = window.gameConfig;
+    // Load shared game configuration via API
+    let gameData;
+    try {
+        const response = await fetch('/api/game-config');
+        gameData = await response.json();
+        console.log('Overlay configuration loaded successfully');
+    } catch (error) {
+        console.error('Failed to load overlay configuration:', error);
+        gameData = { ufoData: {}, passengerData: {}, hatData: {} };
+    }
 
     // Interpolation system
     const interpolatedObjects = new Map();

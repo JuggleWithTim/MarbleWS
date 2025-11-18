@@ -154,6 +154,12 @@ app.get('/api/client-config', (req, res) => {
   });
 });
 
+// Game configuration endpoint
+app.get('/api/game-config', (req, res) => {
+  const gameConfig = require('../shared/gameConfig.js');
+  res.json(gameConfig);
+});
+
 // Legacy config endpoint (keeping for backward compatibility)
 app.get('/api/config', (req, res) => {
   res.json({

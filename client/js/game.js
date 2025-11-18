@@ -28,11 +28,11 @@ class Game {
         // Track if a level has been loaded to prevent double-loading
         this.levelLoaded = false;
 
-        // Load shared game configuration (loaded via script tag)
-        this.gameConfig = window.gameConfig;
-        this.ufoData = this.gameConfig.ufoData;
-        this.passengerData = this.gameConfig.passengerData;
-        this.hatData = this.gameConfig.hatData;
+        // Game configuration (loaded via API)
+        this.gameConfig = null;
+        this.ufoData = null;
+        this.passengerData = null;
+        this.hatData = null;
     }
 
     // Linear interpolation function
@@ -87,7 +87,10 @@ class Game {
     }
 
     async init() {
-        // Load client configuration first
+        // Load game configuration first
+        await this.loadGameConfig();
+
+        // Load client configuration
         await this.networking.loadConfig();
 
         this.setupUI();
@@ -97,6 +100,28 @@ class Game {
 
         // Start game loop
         this.gameLoop();
+    }
+
+    async loadGameConfig() {
+        try {
+            const response = await fetch(`${window.location.origin}/api/game-config`);
+            this.gameConfig = await response.json();
+            this.ufoData = this.gameConfig.ufoData;
+            this.passengerData = this.gameConfig.passengerData;
+            this.hatData = this.gameConfig.hatData;
+            console.log('Game configuration loaded successfully');
+        } catch (error) {
+            console.error('Failed to load game configuration:', error);
+            // Set fallback defaults
+            this.gameConfig = {
+                ufoData: {},
+                passengerData: {},
+                hatData: {}
+            };
+            this.ufoData = {};
+            this.passengerData = {};
+            this.hatData = {};
+        }
     }
 
     setupUI() {
