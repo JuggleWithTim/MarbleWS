@@ -141,8 +141,9 @@ app.get('/', (req, res) => {
 });
 
 // Static middleware - comes AFTER authenticated routes
+const basePath = process.env.BASE_PATH || '';
 app.use(express.static(path.join(__dirname, '../client')));
-app.use('/shared', express.static(path.join(__dirname, '../shared')));
+app.use(`${basePath}/shared`, express.static(path.join(__dirname, '../shared')));
 
 // Client config endpoint (safe, no secrets)
 app.get('/api/client-config', (req, res) => {
