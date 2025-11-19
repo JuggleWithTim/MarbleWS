@@ -401,9 +401,8 @@ class Renderer {
         }
 
         // Draw special property indicators
-        if (obj.properties) {
+        /*if (obj.properties) {
             const screenPos = this.worldToScreen(obj.x, obj.y);
-
             if (obj.properties.includes('spawnpoint')) {
                 this.ctx.fillStyle = '#00ff00';
                 this.ctx.font = '12px Arial';
@@ -417,7 +416,7 @@ class Renderer {
                 this.ctx.textAlign = 'center';
                 this.ctx.fillText('GOAL', screenPos.x, screenPos.y - 20);
             }
-        }
+        }*/
     }
 
     drawPlayerName(x, y, name, color = '#ffffff') {
