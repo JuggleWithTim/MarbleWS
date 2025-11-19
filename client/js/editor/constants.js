@@ -19,7 +19,8 @@ export const DEFAULT_LEVEL = {
         radius: 20,
         friction: 0.3,
         restitution: 0.7,
-        density: 0.001
+        density: 0.001,
+        spawnAll: false
     },
     objects: [],
     connections: []

@@ -94,6 +94,10 @@ export const events = {
             this.level.emote.density = parseFloat(e.target.value);
         });
 
+        document.getElementById('emoteSpawnAll').addEventListener('change', (e) => {
+            this.level.emote.spawnAll = e.target.checked;
+        });
+
         // Show/hide nextLevel field when goal checkbox is toggled
         document.getElementById('objectGoal').addEventListener('change', (e) => {
             document.getElementById('nextLevelContainer').style.display =

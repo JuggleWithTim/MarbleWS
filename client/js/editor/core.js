@@ -131,6 +131,7 @@ export class LevelEditorCore {
             level.emote.friction = level.emote.friction || DEFAULT_LEVEL.emote.friction;
             level.emote.restitution = level.emote.restitution || DEFAULT_LEVEL.emote.restitution;
             level.emote.density = level.emote.density || DEFAULT_LEVEL.emote.density;
+            level.emote.spawnAll = level.emote.spawnAll !== undefined ? level.emote.spawnAll : DEFAULT_LEVEL.emote.spawnAll;
         }
 
         // Ensure arrays exist
