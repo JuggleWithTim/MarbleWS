@@ -51,20 +51,20 @@ class TwitchChat {
 
     // Check for emotes in the message
     if (context.emotes) {
-      const now = Date.now();
-      if (now - this.lastEmoteSpawn < this.emoteSpawnCooldown) {
-        return; // Cooldown active
-      }
-
       // Parse emotes from the message
       const emotes = this.parseEmotes(msg, context.emotes);
-      
-      if (emotes.length > 0) {
-        // Spawn the first emote found
-        const emote = emotes[0];
+
+      // Spawn all emotes found (cooldown commented out for testing)
+      // const now = Date.now();
+      // if (now - this.lastEmoteSpawn < 100) {
+      //   return; // Cooldown active
+      // }
+
+      for (const emote of emotes) {
         await this.spawnEmoteInGame(emote.id, emote.name);
-        this.lastEmoteSpawn = now;
       }
+
+      // this.lastEmoteSpawn = now;
     }
   }
 
