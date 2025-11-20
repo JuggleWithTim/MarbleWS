@@ -16,7 +16,7 @@ class LevelManager {
       density: 0.004
     };
     this.emoteProperties = {
-      radius: 20,
+      radius: 25,
       friction: 0.3,
       restitution: 0.7,
       density: 0.001
@@ -61,7 +61,7 @@ class LevelManager {
       density: 0.004
     };
     this.emoteProperties = levelData.emote || {
-      radius: 20,
+      radius: 25,
       friction: 0.3,
       restitution: 0.7,
       density: 0.001
@@ -323,7 +323,7 @@ class LevelManager {
 
       // Use emote properties from level data, with defaults
       const properties = this.emoteProperties || {
-        radius: 20,
+        radius: 25,
         friction: 0.3,
         restitution: 0.7,
         density: 0.001

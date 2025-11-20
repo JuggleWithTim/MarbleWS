@@ -294,6 +294,10 @@ class PhysicsEngine {
 
   // Check for collisions between players and emotes
   checkPlayerEmoteCollisions() {
+    const playerRadius = 25;
+    const emoteRadius = this.levelManager.emoteProperties ? this.levelManager.emoteProperties.radius : 25; // Emote radius from level config
+    const collisionDistance = playerRadius + emoteRadius + 1; // Add extra pixel for reliability
+
     this.playerManager.players.forEach(player => {
       this.levelManager.emotes.forEach(emote => {
         const playerX = player.x;
@@ -301,13 +305,13 @@ class PhysicsEngine {
         const emoteX = emote.body.position.x;
         const emoteY = emote.body.position.y;
 
-        // Simple distance-based collision (player radius ~25, emote radius ~20)
+        // Simple distance-based collision
         const distance = Math.sqrt(
           Math.pow(playerX - emoteX, 2) +
           Math.pow(playerY - emoteY, 2)
         );
 
-        if (distance <= 45) { // Touching distance
+        if (distance <= collisionDistance) { // Dynamic touching distance based on actual sizes
           emote.interactedPlayers.add(player.id);
         }
       });
@@ -399,6 +403,8 @@ class PhysicsEngine {
     }
 
     // Check if any emote reached any goal (no cooldown for emotes)
+    const emoteRadius = this.levelManager.emoteProperties ? this.levelManager.emoteProperties.radius : 25; // Emote radius from level config
+
     for (const goal of goals) {
       for (const emote of this.levelManager.emotes) {
         const emoteX = emote.body.position.x;
@@ -411,7 +417,6 @@ class PhysicsEngine {
         if (goal.shape === 'circle') {
           // Circle-circle collision
           const goalRadius = goal.radius || 50; // Default radius if not specified
-          const emoteRadius = 20; // Emote radius
           const distance = Math.sqrt(
             Math.pow(emoteX - goalX, 2) +
             Math.pow(emoteY - goalY, 2)
@@ -432,7 +437,7 @@ class PhysicsEngine {
             Math.pow(emoteY - closestY, 2)
           );
 
-          collision = distance <= 20; // Emote radius
+          collision = distance <= emoteRadius; // Dynamic emote radius
         } else {
           // Fallback to distance-based check for unknown shapes
           const distance = Math.sqrt(
