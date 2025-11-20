@@ -804,6 +804,60 @@
             </div>
 
             <div class="tool-section">
+                <h3>Emote Properties
+                    <span class="tooltip-container">
+                        <span class="tooltip-icon">?</span>
+                        <span class="tooltip-text">Physics properties that affect emote behavior in this level.</span>
+                    </span>
+                </h3>
+                <div class="property-group">
+                    <label>Radius:
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Size of emotes in pixels. (Currently only effects hitbox, not visual size)</span>
+                        </span>
+                    </label>
+                    <input type="number" id="emoteRadius" value="25" min="5" max="50" step="1">
+                </div>
+                <div class="property-group">
+                    <label>Friction:
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">How much emotes resist sliding. Higher values = more friction.</span>
+                        </span>
+                    </label>
+                    <input type="number" id="emoteFriction" value="0.3" min="0" max="2" step="0.1">
+                </div>
+                <div class="property-group">
+                    <label>Restitution:
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">How bouncy emotes are when they collide with objects.</span>
+                        </span>
+                    </label>
+                    <input type="number" id="emoteRestitution" value="0.7" min="0" max="2" step="0.1">
+                </div>
+                <div class="property-group">
+                    <label>Density:
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">How heavy emotes feel. Affects physics interactions with other objects.</span>
+                        </span>
+                    </label>
+                    <input type="number" id="emoteDensity" value="0.001" min="0.0001" max="0.1" step="0.0001">
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="emoteSpawnAll">
+                    <label for="emoteSpawnAll">Spawn All
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">When checked, all emotes in a Twitch chat message will be spawned. When unchecked, only the first emote is spawned.</span>
+                        </span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="tool-section">
                 <h3>World Physics
                     <span class="tooltip-container">
                         <span class="tooltip-icon">?</span>

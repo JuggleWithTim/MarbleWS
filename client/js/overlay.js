@@ -42,6 +42,9 @@ class TransparentRenderer extends Renderer {
     // Interpolation system
     const interpolatedObjects = new Map();
 
+    // Delta time tracking for particle animations
+    let lastUpdateTime = performance.now();
+
     function lerp(start, end, progress) {
         return start + (end - start) * progress;
     }
@@ -135,7 +138,7 @@ class TransparentRenderer extends Renderer {
     }
 
     // Set camera to show the full board (centered, 1920x1080)
-    function renderGameState(gameState) {
+    function renderGameState(gameState, deltaTime = 0) {
         // Draw level background (remove to keep transparent overlay)
         renderer.drawBackground(gameState.backgroundImage);
         renderer.setCamera(960, 540, 1);
@@ -269,6 +272,9 @@ class TransparentRenderer extends Renderer {
                 }
             });
         }
+
+        // Update and draw goal particles
+        renderer.updateGoalParticles(deltaTime);
     }
 
     // Initialize overlay
@@ -285,6 +291,11 @@ class TransparentRenderer extends Renderer {
             renderGameState(gameState);
         });
 
+        // Listen for emote goal events to trigger particle effects
+        networking.on('emoteInGoal', (data) => {
+            renderer.triggerGoalParticles(data.goalX, data.goalY);
+        });
+
         // Send keepalive every 10 minutes to prevent idle timeout
         setInterval(() => {
             if (networking.isConnected()) {
@@ -297,9 +308,13 @@ class TransparentRenderer extends Renderer {
 
     // Animation loop to keep canvas updated (in case of async image loads)
     function animationLoop() {
+        const currentTime = performance.now();
+        const deltaTime = (currentTime - lastUpdateTime) / 1000;
+        lastUpdateTime = currentTime;
+
         const gameState = networking.getGameState();
         if (gameState) {
-            renderGameState(gameState);
+            renderGameState(gameState, deltaTime);
         }
         requestAnimationFrame(animationLoop);
     }

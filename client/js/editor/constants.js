@@ -15,6 +15,13 @@ export const DEFAULT_LEVEL = {
         restitution: 0.7,
         density: 0.004
     },
+    emote: {
+        radius: 25,
+        friction: 0.3,
+        restitution: 0.7,
+        density: 0.001,
+        spawnAll: false
+    },
     objects: [],
     connections: []
 };

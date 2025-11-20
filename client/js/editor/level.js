@@ -52,6 +52,13 @@ export const level = {
                 document.getElementById('marbleRestitution').value = this.level.marble.restitution;
                 document.getElementById('marbleDensity').value = this.level.marble.density;
 
+                // Update emote property inputs
+                document.getElementById('emoteRadius').value = this.level.emote.radius;
+                document.getElementById('emoteFriction').value = this.level.emote.friction;
+                document.getElementById('emoteRestitution').value = this.level.emote.restitution;
+                document.getElementById('emoteDensity').value = this.level.emote.density;
+                document.getElementById('emoteSpawnAll').checked = this.level.emote.spawnAll || false;
+
                 document.getElementById('levelName').value = this.level.name;
                 document.getElementById('levelDescription').value = this.level.description;
 

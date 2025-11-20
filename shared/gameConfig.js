@@ -20,7 +20,10 @@ const gameConfig = {
   // Hat customization data
   hatData: {
     'santahatpixel.png': { cost: 50, name: 'Santa Hat', width: 60, height: 50 }
-  }
+  },
+
+  // Emote reward data
+  emoteReward: { xp: 50, coins: 10 }
 };
 
 // Client-side global variable (only in browser)

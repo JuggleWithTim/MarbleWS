@@ -22,6 +22,9 @@ class PhysicsEngine {
     // Update continuous beam effects
     this.updateBeamEffects();
 
+    // Check for player-emote collisions
+    this.checkPlayerEmoteCollisions();
+
     // Update player positions from physics bodies
     this.playerManager.players.forEach(player => {
       player.x = player.body.position.x;
@@ -278,9 +281,40 @@ class PhysicsEngine {
               obj.body.render.strokeStyle = '#4ecdc4';
               obj.body.render.lineWidth = 2;
             }
+
+            // Track emote interactions
+            if (obj.type === 'emote') {
+              obj.interactedPlayers.add(player.id);
+            }
           }
         });
       }
+    });
+  }
+
+  // Check for collisions between players and emotes
+  checkPlayerEmoteCollisions() {
+    const playerRadius = 25;
+    const emoteRadius = this.levelManager.emoteProperties ? this.levelManager.emoteProperties.radius : 25; // Emote radius from level config
+    const collisionDistance = playerRadius + emoteRadius + 1; // Add extra pixel for reliability
+
+    this.playerManager.players.forEach(player => {
+      this.levelManager.emotes.forEach(emote => {
+        const playerX = player.x;
+        const playerY = player.y;
+        const emoteX = emote.body.position.x;
+        const emoteY = emote.body.position.y;
+
+        // Simple distance-based collision
+        const distance = Math.sqrt(
+          Math.pow(playerX - emoteX, 2) +
+          Math.pow(playerY - emoteY, 2)
+        );
+
+        if (distance <= collisionDistance) { // Dynamic touching distance based on actual sizes
+          emote.interactedPlayers.add(player.id);
+        }
+      });
     });
   }
 
@@ -297,13 +331,14 @@ class PhysicsEngine {
     // Get marble radius from properties
     const marbleRadius = this.levelManager.marbleProperties ? this.levelManager.marbleProperties.radius : 30;
 
-    // Check if any marble reached any goal
+    // Check if any marble reached any goal (with cooldown)
     for (const goal of goals) {
-      // Check if goal is on cooldown
+      // Check if goal is on cooldown for marbles
       const cooldownKey = goal.id;
       const lastWin = this.goalCooldowns.get(cooldownKey);
-      if (lastWin && (now - lastWin) < 5000) { // 5 second cooldown
-        continue; // Skip this goal, it's on cooldown
+      if (lastWin && (now - lastWin) < 5000) { // 5 second cooldown for marbles
+        // Still check emotes even if goal is on cooldown for marbles
+        continue; // Skip marble check for this goal, but emotes can still trigger
       }
 
       for (const marble of this.levelManager.marbles) {
@@ -348,7 +383,7 @@ class PhysicsEngine {
         }
 
         if (collision) {
-          // Set cooldown to prevent rapid repeated triggering
+          // Set cooldown to prevent rapid repeated triggering for marbles
           this.goalCooldowns.set(cooldownKey, now);
 
           // Clean up old cooldowns (keep only recent ones)
@@ -363,6 +398,73 @@ class PhysicsEngine {
             return { win: true, nextLevel: goal.nextLevel };
           }
           return { win: true };
+        }
+      }
+    }
+
+    // Check if any emote reached any goal (no cooldown for emotes)
+    const emoteRadius = this.levelManager.emoteProperties ? this.levelManager.emoteProperties.radius : 25; // Emote radius from level config
+
+    for (const goal of goals) {
+      for (const emote of this.levelManager.emotes) {
+        const emoteX = emote.body.position.x;
+        const emoteY = emote.body.position.y;
+        // Use current goal position if goal is moving
+        const goalX = goal.body ? goal.body.position.x : goal.x;
+        const goalY = goal.body ? goal.body.position.y : goal.y;
+        let collision = false;
+
+        if (goal.shape === 'circle') {
+          // Circle-circle collision
+          const goalRadius = goal.radius || 50; // Default radius if not specified
+          const distance = Math.sqrt(
+            Math.pow(emoteX - goalX, 2) +
+            Math.pow(emoteY - goalY, 2)
+          );
+          collision = distance <= (emoteRadius + goalRadius);
+        } else if (goal.shape === 'rectangle') {
+          // Circle-rectangle collision
+          const halfWidth = (goal.width || 100) / 2;
+          const halfHeight = (goal.height || 100) / 2;
+
+          // Find the closest point on the rectangle to the emote center
+          const closestX = Math.max(goalX - halfWidth, Math.min(emoteX, goalX + halfWidth));
+          const closestY = Math.max(goalY - halfHeight, Math.min(emoteY, goalY + halfHeight));
+
+          // Calculate distance from emote center to closest point
+          const distance = Math.sqrt(
+            Math.pow(emoteX - closestX, 2) +
+            Math.pow(emoteY - closestY, 2)
+          );
+
+          collision = distance <= emoteRadius; // Dynamic emote radius
+        } else {
+          // Fallback to distance-based check for unknown shapes
+          const distance = Math.sqrt(
+            Math.pow(emoteX - goalX, 2) +
+            Math.pow(emoteY - goalY, 2)
+          );
+          collision = distance < 50; // Keep old behavior as fallback
+        }
+
+        if (collision) {
+          // Award XP and coins to players who interacted with this emote
+          const interactedPlayers = Array.from(emote.interactedPlayers);
+          if (interactedPlayers.length > 0) {
+            this.eventEmitter.emit('emoteGoalReached', {
+              emote,
+              interactedPlayers,
+              goalX,
+              goalY
+            });
+          }
+
+          // Remove the emote from the world
+          Matter.World.remove(this.world, emote.body);
+          this.levelManager.emotes = this.levelManager.emotes.filter(e => e.id !== emote.id);
+
+          // Do not trigger level progression for emotes
+          return { win: false };
         }
       }
     }

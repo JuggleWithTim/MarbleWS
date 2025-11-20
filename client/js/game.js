@@ -206,6 +206,10 @@ class Game {
             this.showCheerSplash(data);
         });
 
+        this.networking.on('emoteInGoal', (data) => {
+            this.triggerGoalParticles(data.goalX, data.goalY);
+        });
+
         // Add unlock result handler
         this.networking.socket.on('unlockResult', (result) => {
             this.handleUnlockResult(result);
@@ -434,10 +438,10 @@ class Game {
         const currentTime = performance.now();
         const deltaTime = (currentTime - this.lastUpdateTime) / 1000;
         this.lastUpdateTime = currentTime;
-        
+
         this.update(deltaTime);
-        this.render();
-        
+        this.render(deltaTime);
+
         requestAnimationFrame(() => this.gameLoop());
     }
 
@@ -493,12 +497,18 @@ class Game {
 
     handleBeamTarget(canvasX, canvasY) {
         if (!this.renderer) return;
-        
+
         const worldPos = this.renderer.screenToWorld(canvasX, canvasY);
         this.networking.sendBeamInteraction(worldPos.x, worldPos.y);
     }
 
-    render() {if (!this.renderer || !this.gameState) return;
+    triggerGoalParticles(x, y) {
+        if (this.renderer) {
+            this.renderer.triggerGoalParticles(x, y);
+        }
+    }
+
+    render(deltaTime) {if (!this.renderer || !this.gameState) return;
 
         // Draw level background if provided, else gradient fallback
         this.renderer.drawBackground(this.gameState.backgroundImage);
@@ -622,6 +632,9 @@ class Game {
                 this.renderer.drawPlayerName(player.x, player.y, player.username, color);
             }
         });
+
+        // Update and draw goal particles
+        this.renderer.updateGoalParticles(deltaTime);
 
         // Debug info (optional)
         // this.renderer.drawDebugInfo(this.gameState);

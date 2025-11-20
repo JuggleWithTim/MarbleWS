@@ -15,6 +15,12 @@ class LevelManager {
       restitution: 0.7,
       density: 0.004
     };
+    this.emoteProperties = {
+      radius: 25,
+      friction: 0.3,
+      restitution: 0.7,
+      density: 0.001
+    };
   }
 
   loadLevel(levelData) {
@@ -53,6 +59,12 @@ class LevelManager {
       friction: 0.000005,
       restitution: 0.7,
       density: 0.004
+    };
+    this.emoteProperties = levelData.emote || {
+      radius: 25,
+      friction: 0.3,
+      restitution: 0.7,
+      density: 0.001
     };
 
     // Update world gravity from level data
@@ -308,16 +320,26 @@ class LevelManager {
       // Use current position if spawnpoint is moving
       const spawnX = spawnLocation.body ? spawnLocation.body.position.x : spawnLocation.x;
       const spawnY = spawnLocation.body ? spawnLocation.body.position.y : spawnLocation.y;
+
+      // Use emote properties from level data, with defaults
+      const properties = this.emoteProperties || {
+        radius: 25,
+        friction: 0.3,
+        restitution: 0.7,
+        density: 0.001
+      };
+
       const emote = Matter.Bodies.circle(
         spawnX + Math.random() * 100 - 50,
         spawnY - 50,
-        20,
+        properties.radius,
         {
-          friction: 0.3,
-          restitution: 0.7,
+          friction: properties.friction,
+          restitution: properties.restitution,
+          density: properties.density,
           render: {
             sprite: {
-          texture: emoteUrl
+              texture: emoteUrl
             }
           }
         }
@@ -329,7 +351,8 @@ class LevelManager {
         body: emote,
         type: 'emote',
         name: emoteName,
-        url: emoteUrl
+        url: emoteUrl,
+        interactedPlayers: new Set()
       });
     }
   }
