@@ -177,10 +177,16 @@ class Renderer {
                 const passengerHeight = (passengerData && passengerData.height) ?
                     passengerData.height * this.camera.zoom * 0.8 : size * 1.5;
 
-                // Draw passenger image centered on top of UFO
+                // Get configurable offsets from game data
+                const passengerOffsetX = (passengerData && passengerData.offsetX !== undefined) ?
+                    passengerData.offsetX * this.camera.zoom : 0;
+                const passengerOffsetY = (passengerData && passengerData.offsetY !== undefined) ?
+                    passengerData.offsetY * this.camera.zoom : 0;
+
+                // Draw passenger image with configurable offsets
                 // Position it slightly above the UFO center (bottom-aligned for consistency)
                 this.ctx.drawImage(passengerImg,
-                    -passengerWidth / 2, -passengerHeight - size * 0.05,
+                    -passengerWidth / 2 + passengerOffsetX, -passengerHeight - size * 0.05 + passengerOffsetY,
                     passengerWidth, passengerHeight);
             } else {
                 // Start loading the passenger image if not already loading
@@ -203,12 +209,18 @@ class Renderer {
                 const hatHeight = (hatData && hatData.height) ?
                     hatData.height * this.camera.zoom * 0.8 : size * 1.2;
 
+                // Get configurable offsets from game data
+                const hatOffsetX = (hatData && hatData.offsetX !== undefined) ?
+                    hatData.offsetX * this.camera.zoom : 0;
+                const hatOffsetY = (hatData && hatData.offsetY !== undefined) ?
+                    hatData.offsetY * this.camera.zoom : 0;
+
                 // Position hat above passenger or UFO
                 const baseY = (appearance.passenger) ? -size * 1.5 - size * 0.05 : -size * 0.6;
 
-                // Draw hat image centered above passenger/UFO
+                // Draw hat image with configurable offsets
                 this.ctx.drawImage(hatImg,
-                    -hatWidth / 2, baseY - hatHeight + (15 * this.camera.zoom),
+                    -hatWidth / 2 + hatOffsetX, baseY - hatHeight + (15 * this.camera.zoom) + hatOffsetY,
                     hatWidth, hatHeight);
             } else {
                 // Start loading the hat image if not already loading
