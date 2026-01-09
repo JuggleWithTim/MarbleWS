@@ -27,9 +27,12 @@ Welcome to the MarbleWS Level Editor! This guide will teach you how to create, e
 2. Open your browser and navigate to: `http://localhost:3000/editor`
 
 ### Prerequisites
-- At least one **spawnpoint** (where marbles appear)
-- At least one **goal** (where marbles need to reach)
 - Level name (required for saving)
+- Optional special objects:
+  - **Spawnpoint**: If present, marble spawns here; if absent, no marble spawns
+  - **Goal**: If present, marble can complete level; if absent, level cannot be completed
+  - **Playerspawn**: If present, players spawn here; if absent, players spawn at center
+  - **Emotespawn**: If present, emotes spawn here; if absent, no emotes spawn
 
 ## Editor Interface Overview
 
@@ -134,9 +137,9 @@ Marbles are the main object players interact with in each level. Customize them 
 
 ## Special Object Types
 
-### Core Types (Required)
-- **Spawnpoint**: Where marbles and emotes appear
-- **Goal**: Where marbles need to reach to complete the level
+### Special Object Types
+- **Spawnpoint**: Where marbles appear
+- **Goal**: Where marbles reach to complete level
 
 ### Special Types
 - **Playerspawn**: Where players start their UFOs
@@ -215,12 +218,6 @@ Marbles are the main object players interact with in each level. Customize them 
 ### Test Button Workflow
 Not functional. Just load the level in game to test it. Load using the DEV_MODE enabled button in game or through the admin panel.
 
-### Validation Requirements
-Level must have:
-- ✅ At least one spawnpoint
-- ✅ At least one goal
-- ❌ Invalid: Will show error and prevent saving
-
 ## JSON Structure Reference
 
 ```json
@@ -286,7 +283,7 @@ Level must have:
 ## Troubleshooting
 
 ### Common Issues
-- **Can't Save**: Ensure level has spawnpoint and goal
+- **Can't Save**: Ensure level has a name
 - **Goal Not Reacting**: Ensure the object is not solid.
 Ensure that a next level is defined and that the level exists.
 If the goal is a circle, only define size using Radius. If it's a rectangle, only define size using Width and Height.

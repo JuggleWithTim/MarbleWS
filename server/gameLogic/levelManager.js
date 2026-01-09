@@ -304,17 +304,10 @@ class LevelManager {
   }
 
   spawnEmote(emoteUrl, emoteName) {
-    // Find emotespawn first, then fall back to spawnpoint
-    let spawnLocation = this.levelObjects.find(obj =>
+    // Find emotespawn - emotes only spawn from dedicated emote spawners
+    const spawnLocation = this.levelObjects.find(obj =>
       obj.properties && obj.properties.includes('emotespawn')
     );
-
-    if (!spawnLocation) {
-      // Fall back to spawnpoint
-      spawnLocation = this.levelObjects.find(obj =>
-        obj.properties && obj.properties.includes('spawnpoint')
-      );
-    }
 
     if (spawnLocation) {
       // Use current position if spawnpoint is moving

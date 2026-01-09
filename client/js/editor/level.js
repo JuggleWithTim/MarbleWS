@@ -103,20 +103,6 @@ export const level = {
             return;
         }
 
-        // Validate level
-        const hasSpawn = this.level.objects.some(obj => obj.properties.includes('spawnpoint'));
-        const hasGoal = this.level.objects.some(obj => obj.properties.includes('goal'));
-
-        if (!hasSpawn) {
-            alert('Level must have at least one spawnpoint!');
-            return;
-        }
-
-        if (!hasGoal) {
-            alert('Level must have at least one goal!');
-            return;
-        }
-
         // Recalculate connection lengths to account for any rotations
         recalculateConnectionLengths(this.level);
         this.updateJsonDisplay();
