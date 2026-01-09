@@ -136,9 +136,9 @@ class PhysicsEngine {
       const pos = player.body.position;
       if (pos.x < worldBounds.minX || pos.x > worldBounds.maxX ||
           pos.y < worldBounds.minY || pos.y > worldBounds.maxY) {
-        // Find respawn location - prioritize playerspawn, then fall back to spawnpoint
-        let respawnX = 400;
-        let respawnY = 200;
+        // Find respawn location - prioritize playerspawn, then fall back to spawnpoint, then center
+        let respawnX = 960; // Center of canvas
+        let respawnY = 540; // Center of canvas
 
         // First try playerspawn
         let respawnLocation = this.levelManager.levelObjects.find(obj =>
@@ -158,7 +158,7 @@ class PhysicsEngine {
           respawnY = respawnLocation.body ? respawnLocation.body.position.y : respawnLocation.y;
         }
 
-        // Respawn UFO at spawn location or safe location
+        // Respawn UFO at spawn location or center of canvas
         Matter.Body.setPosition(player.body, { x: respawnX, y: respawnY });
         Matter.Body.setVelocity(player.body, { x: 0, y: 0 });
         player.x = respawnX;
