@@ -11,7 +11,7 @@ class ColorRushMode extends BaseGameMode {
     this.resultsStartTime = 0;
 
     // Game configuration
-    this.resultsDuration = 60000; // 60 seconds for results
+    this.resultsDuration = 10000; // 10 seconds period between rounds to show results
     this.safeColorChangeInterval = 5000; // 5 seconds between color changes
     this.initialGracePeriod = 8000; // 8 seconds initial grace period
     this.minGracePeriod = 2000; // 2 seconds minimum grace period
@@ -126,15 +126,11 @@ class ColorRushMode extends BaseGameMode {
   }
 
   updateActiveState(currentTime, deltaTime) {
-    // Only check player positions after grace period ends
+    // Check if grace period has ended
     if (currentTime >= this.gracePeriodEndTime) {
+      // Grace period ended - kill players not in safe section and start new grace period
       this.checkPlayerPositions();
-    }
-
-    // Change safe color periodically
-    if (currentTime - this.lastColorChange >= this.safeColorChangeInterval) {
-      this.changeSafeSection();
-      this.lastColorChange = currentTime;
+      this.startNewGracePeriod();
     }
   }
 
@@ -151,12 +147,21 @@ class ColorRushMode extends BaseGameMode {
     this.lastColorChange = currentTime;
     this.currentRound++;
 
+    // Choose random initial safe section for this round
+    this.safeSectionId = Math.floor(Math.random() * this.sections.length);
+
     // Initialize grace period for first safe section
     this.currentGracePeriod = this.initialGracePeriod;
     this.gracePeriodEndTime = currentTime + this.currentGracePeriod;
     this.nextGracePeriod = this.currentGracePeriod;
 
-    // Move waiting players to alive
+    // Revive all connected players for the new round
+    // Get all players from the player manager
+    for (const [playerId, player] of this.playerManager.players) {
+      this.alivePlayers.add(playerId);
+    }
+
+    // Move waiting players to alive (in case any were waiting)
     for (const playerId of this.waitingPlayers) {
       this.alivePlayers.add(playerId);
     }
@@ -165,7 +170,7 @@ class ColorRushMode extends BaseGameMode {
     // Reset dead players for new round
     this.deadPlayers.clear();
 
-    console.log(`Round ${this.currentRound} started with ${this.alivePlayers.size} players. Initial grace period: ${this.currentGracePeriod}ms`);
+    console.log(`Round ${this.currentRound} started with ${this.alivePlayers.size} players. Initial safe section: ${this.getSectionName(this.safeSectionId)}, grace period: ${this.currentGracePeriod}ms`);
 
     // Emit round start event
     this.eventEmitter.emit('colorRushRoundStart', {
@@ -216,16 +221,9 @@ class ColorRushMode extends BaseGameMode {
     });
   }
 
-  changeSafeSection() {
-    // Calculate next grace period (decaying over time)
-    this.nextGracePeriod = Math.max(this.minGracePeriod, this.nextGracePeriod * this.gracePeriodDecay);
-    const gracePeriod = Math.round(this.nextGracePeriod);
-
-    // Set grace period for this change
-    this.currentGracePeriod = gracePeriod;
-    this.gracePeriodEndTime = Date.now() + gracePeriod;
-
-    // Randomly select a new safe section (different from current)
+  startNewGracePeriod() {
+    // Change to a new safe section
+    const oldSafeSection = this.safeSectionId;
     let newSafeSection;
     do {
       newSafeSection = Math.floor(Math.random() * this.sections.length);
@@ -233,13 +231,18 @@ class ColorRushMode extends BaseGameMode {
 
     this.safeSectionId = newSafeSection;
 
-    console.log(`Safe section changed to ${this.getSectionName(this.safeSectionId)}. Grace period: ${gracePeriod}ms`);
+    // Calculate next grace period (decaying over time)
+    this.nextGracePeriod = Math.max(this.minGracePeriod, this.nextGracePeriod * this.gracePeriodDecay);
+    this.currentGracePeriod = Math.round(this.nextGracePeriod);
+    this.gracePeriodEndTime = Date.now() + this.currentGracePeriod;
+
+    console.log(`New safe section: ${this.getSectionName(this.safeSectionId)}. Grace period: ${this.currentGracePeriod}ms`);
 
     // Emit safe section change event
     this.eventEmitter.emit('colorRushSafeSectionChange', {
       safeSection: this.safeSectionId,
       color: this.sections[this.safeSectionId].color,
-      gracePeriod: gracePeriod
+      gracePeriod: this.currentGracePeriod
     });
   }
 

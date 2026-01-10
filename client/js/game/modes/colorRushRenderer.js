@@ -25,7 +25,7 @@ class ColorRushRenderer {
         this.resultsData = [];
         this.showResults = false;
         this.resultsStartTime = 0;
-        this.resultsDuration = 60000; // 60 seconds
+        this.resultsDuration = 10000; // 10 seconds
 
         // Grace period properties
         this.currentGracePeriod = 0;
