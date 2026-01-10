@@ -199,8 +199,15 @@ class ColorRushMode extends BaseGameMode {
   }
 
   startNextRound(currentTime) {
-    // Preserve surviving players for next round
-    // They remain in alivePlayers from the previous round
+    // If no one survived the previous round, revive all connected players
+    if (this.alivePlayers.size === 0) {
+      for (const [playerId, player] of this.playerManager.players) {
+        this.alivePlayers.add(playerId);
+      }
+      console.log(`No survivors - revived all ${this.alivePlayers.size} connected players for next round.`);
+    } else {
+      console.log(`${this.alivePlayers.size} survivors carry over to next round.`);
+    }
 
     // Reset round-specific state
     this.roundState = 'waiting';
