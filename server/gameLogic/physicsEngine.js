@@ -51,6 +51,9 @@ class PhysicsEngine {
     // Handle teleporter collisions
     this.handleTeleporters();
 
+    // Update game mode logic
+    this.levelManager.updateGameMode(1/60); // Pass delta time
+
     // Remove/respawn objects that fell off the world
     const worldBounds = {
       minX: -700,   // Left bound with margin

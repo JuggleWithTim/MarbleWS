@@ -9,6 +9,7 @@ class GameState {
     return {
       backgroundImage: (this.levelManager.currentLevel && this.levelManager.currentLevel.backgroundImage) ? this.levelManager.currentLevel.backgroundImage : '',
       marbleProperties: this.levelManager.marbleProperties, // Add marble properties to gameState
+      gameMode: this.levelManager.getGameModeData(), // Add game mode data
       players: Array.from(this.playerManager.players.values()).map(player => ({
         id: player.id,
         username: player.username,

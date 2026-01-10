@@ -33,6 +33,9 @@ class Game {
         this.ufoData = null;
         this.passengerData = null;
         this.hatData = null;
+
+        // Game mode renderers
+        this.colorRushRenderer = null;
     }
 
     // Linear interpolation function
@@ -130,12 +133,13 @@ class Game {
         this.gameScreen = document.getElementById('gameScreen');
         this.levelSelectModal = document.getElementById('levelSelectModal');
         this.canvas = document.getElementById('gameCanvas');
-        
+
         if (this.canvas) {
             this.renderer = new Renderer(this.canvas, this);
+            this.colorRushRenderer = new window.ColorRushRenderer(this.renderer, this);
             this.controls.setupCanvasControls(this.canvas, this);
         }
-        
+
         this.controls.setupUIControls(this, this.networking.BASE_PATH);
 
         // Setup wardrobe and store controls
@@ -213,6 +217,37 @@ class Game {
         // Add unlock result handler
         this.networking.socket.on('unlockResult', (result) => {
             this.handleUnlockResult(result);
+        });
+
+        // Add Color Rush event handlers
+        this.networking.socket.on('colorRushRoundStart', (data) => {
+            if (this.colorRushRenderer) {
+                this.colorRushRenderer.handleRoundStart(data);
+            }
+        });
+
+        this.networking.socket.on('colorRushRoundEnd', (data) => {
+            if (this.colorRushRenderer) {
+                this.colorRushRenderer.handleRoundEnd(data);
+            }
+        });
+
+        this.networking.socket.on('colorRushNextRound', (data) => {
+            if (this.colorRushRenderer) {
+                this.colorRushRenderer.handleNextRound(data);
+            }
+        });
+
+        this.networking.socket.on('colorRushSafeSectionChange', (data) => {
+            if (this.colorRushRenderer) {
+                this.colorRushRenderer.handleSafeSectionChange(data);
+            }
+        });
+
+        this.networking.socket.on('colorRushPlayerDeath', (data) => {
+            if (this.colorRushRenderer) {
+                this.colorRushRenderer.handlePlayerDeath(data);
+            }
         });
     }
 
@@ -635,6 +670,11 @@ class Game {
 
         // Update and draw goal particles
         this.renderer.updateGoalParticles(deltaTime);
+
+        // Render game mode specific elements
+        if (this.colorRushRenderer) {
+            this.colorRushRenderer.render();
+        }
 
         // Debug info (optional)
         // this.renderer.drawDebugInfo(this.gameState);
