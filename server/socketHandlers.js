@@ -194,6 +194,9 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
 
       const player = await gameLogic.addPlayer(socket.id, username.trim(), userId.trim());
 
+      // Handle player joining the current game mode
+      gameLogic.levelManager.handlePlayerJoin(player);
+
       socket.emit('loginSuccess', player);
       socket.broadcast.emit('playerJoined', player);
 
