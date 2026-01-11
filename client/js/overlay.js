@@ -27,6 +27,15 @@ class TransparentRenderer extends Renderer {
     const renderer = new TransparentRenderer(canvas);
     const networking = new Networking();
 
+    // Create game-like wrapper for ColorRushRenderer
+    const gameWrapper = {
+        gameState: null,
+        getInterpolatedPosition: getInterpolatedPosition
+    };
+
+    // Color Rush renderer
+    const colorRushRenderer = new window.ColorRushRenderer(renderer, gameWrapper);
+
     // Load shared game configuration via API
     let gameData;
     try {
@@ -275,6 +284,12 @@ class TransparentRenderer extends Renderer {
 
         // Update and draw goal particles
         renderer.updateGoalParticles(deltaTime);
+
+        // Render game mode specific elements
+        gameWrapper.gameState = gameState;
+        if (colorRushRenderer) {
+            colorRushRenderer.render();
+        }
     }
 
     // Initialize overlay
@@ -294,6 +309,37 @@ class TransparentRenderer extends Renderer {
         // Listen for emote goal events to trigger particle effects
         networking.on('emoteInGoal', (data) => {
             renderer.triggerGoalParticles(data.goalX, data.goalY);
+        });
+
+        // Add Color Rush event handlers
+        networking.socket.on('colorRushRoundStart', (data) => {
+            if (colorRushRenderer) {
+                colorRushRenderer.handleRoundStart(data);
+            }
+        });
+
+        networking.socket.on('colorRushRoundEnd', (data) => {
+            if (colorRushRenderer) {
+                colorRushRenderer.handleRoundEnd(data);
+            }
+        });
+
+        networking.socket.on('colorRushNextRound', (data) => {
+            if (colorRushRenderer) {
+                colorRushRenderer.handleNextRound(data);
+            }
+        });
+
+        networking.socket.on('colorRushSafeSectionChange', (data) => {
+            if (colorRushRenderer) {
+                colorRushRenderer.handleSafeSectionChange(data);
+            }
+        });
+
+        networking.socket.on('colorRushPlayerDeath', (data) => {
+            if (colorRushRenderer) {
+                colorRushRenderer.handlePlayerDeath(data);
+            }
         });
 
         // Send keepalive every 10 minutes to prevent idle timeout
