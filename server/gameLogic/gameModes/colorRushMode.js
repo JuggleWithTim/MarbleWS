@@ -14,7 +14,7 @@ class ColorRushMode extends BaseGameMode {
     this.resultsDuration = 10000; // 10 seconds period between rounds to show results
     this.safeColorChangeInterval = 5000; // 5 seconds between color changes
     this.initialGracePeriod = 8000; // 8 seconds initial grace period
-    this.minGracePeriod = 2000; // 2 seconds minimum grace period
+    this.minGracePeriod = 500; // 0.5 seconds minimum grace period
     this.gracePeriodDecay = 0.95; // Grace period reduces by 5% each change
 
     // Canvas sections (4 sections by default)
