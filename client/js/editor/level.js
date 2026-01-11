@@ -9,6 +9,7 @@ export const level = {
                 name: 'new-level',
                 description: '',
                 version: '1.0',
+                levelType: 'Marble',
                 backgroundImage: '',
                 objects: [],
                 connections: []
@@ -61,6 +62,7 @@ export const level = {
 
                 document.getElementById('levelName').value = this.level.name;
                 document.getElementById('levelDescription').value = this.level.description;
+                document.getElementById('levelType').value = this.level.levelType || 'Marble';
 
                 document.getElementById('backgroundImage').value = this.level.backgroundImage;
                 this.loadBackgroundImage();
@@ -103,26 +105,13 @@ export const level = {
             return;
         }
 
-        // Validate level
-        const hasSpawn = this.level.objects.some(obj => obj.properties.includes('spawnpoint'));
-        const hasGoal = this.level.objects.some(obj => obj.properties.includes('goal'));
-
-        if (!hasSpawn) {
-            alert('Level must have at least one spawnpoint!');
-            return;
-        }
-
-        if (!hasGoal) {
-            alert('Level must have at least one goal!');
-            return;
-        }
-
         // Recalculate connection lengths to account for any rotations
         recalculateConnectionLengths(this.level);
         this.updateJsonDisplay();
 
         this.level.name = levelName;
         this.level.description = document.getElementById('levelDescription').value;
+        this.level.levelType = document.getElementById('levelType').value;
         this.level.backgroundImage = document.getElementById('backgroundImage').value;
 
         try {

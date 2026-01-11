@@ -1,4 +1,5 @@
 const Matter = require('matter-js');
+const GameModeManager = require('./gameModes');
 
 class LevelManager {
   constructor(eventEmitter) {
@@ -21,6 +22,9 @@ class LevelManager {
       restitution: 0.7,
       density: 0.001
     };
+
+    // Game mode management
+    this.gameModeManager = null;
   }
 
   loadLevel(levelData) {
@@ -146,6 +150,24 @@ class LevelManager {
     // Update playerManager's reference to levelObjects
     if (this.playerManager) {
       this.playerManager.setLevelObjects(this.levelObjects);
+    }
+
+    // Initialize and switch game mode
+    if (!this.gameModeManager) {
+      this.initGameModeManager();
+    }
+    const levelType = levelData.levelType || 'Marble';
+    this.gameModeManager.switchMode(levelType, levelData);
+
+    // Add existing players to the new game mode
+    if (this.playerManager) {
+      for (const [playerId, player] of this.playerManager.players) {
+        const joinResult = this.gameModeManager.handlePlayerJoin(player);
+        if (joinResult && joinResult.spawnImmediately) {
+          // Player should spawn immediately
+          console.log(`Added existing player ${playerId} to ${levelType} mode`);
+        }
+      }
     }
   }
 
@@ -304,17 +326,10 @@ class LevelManager {
   }
 
   spawnEmote(emoteUrl, emoteName) {
-    // Find emotespawn first, then fall back to spawnpoint
-    let spawnLocation = this.levelObjects.find(obj =>
+    // Find emotespawn - emotes only spawn from dedicated emote spawners
+    const spawnLocation = this.levelObjects.find(obj =>
       obj.properties && obj.properties.includes('emotespawn')
     );
-
-    if (!spawnLocation) {
-      // Fall back to spawnpoint
-      spawnLocation = this.levelObjects.find(obj =>
-        obj.properties && obj.properties.includes('spawnpoint')
-      );
-    }
 
     if (spawnLocation) {
       // Use current position if spawnpoint is moving
@@ -357,6 +372,11 @@ class LevelManager {
     }
   }
 
+  // Initialize game mode manager
+  initGameModeManager() {
+    this.gameModeManager = new GameModeManager(this.eventEmitter, this.playerManager, this);
+  }
+
   // Set references to external dependencies
   setWorld(world) {
     this.world = world;
@@ -372,6 +392,39 @@ class LevelManager {
 
   setActiveObjects(activeObjects) {
     this.activeObjects = activeObjects;
+  }
+
+  // Game mode delegation methods
+  getGameModeData() {
+    return this.gameModeManager ? this.gameModeManager.getGameStateData() : {};
+  }
+
+  handlePlayerJoin(player) {
+    return this.gameModeManager ? this.gameModeManager.handlePlayerJoin(player) : { canJoin: true, spawnImmediately: true };
+  }
+
+  handlePlayerLeave(playerId) {
+    if (this.gameModeManager) {
+      this.gameModeManager.handlePlayerLeave(playerId);
+    }
+  }
+
+  handlePlayerInput(playerId, input) {
+    return this.gameModeManager ? this.gameModeManager.handlePlayerInput(playerId, input) : true;
+  }
+
+  canPlayerUseBeam(playerId) {
+    return this.gameModeManager ? this.gameModeManager.canPlayerUseBeam(playerId) : true;
+  }
+
+  updateGameMode(deltaTime) {
+    if (this.gameModeManager) {
+      this.gameModeManager.update(deltaTime);
+    }
+  }
+
+  checkGameModeWinConditions() {
+    return this.gameModeManager ? this.gameModeManager.checkWinConditions() : null;
   }
 }
 

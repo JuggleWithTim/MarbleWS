@@ -385,6 +385,18 @@
                     <input type="text" id="levelDescription" placeholder="Level description">
                 </div>
                 <div class="property-group">
+                    <label>Level Type:
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">The type of gameplay for this level. "Marble" is the classic marble-rolling gameplay. "Color Rush" is a survival minigame where players must stay in safe colored sections.</span>
+                        </span>
+                    </label>
+                    <select id="levelType">
+                        <option value="Marble">Marble</option>
+                        <option value="Color Rush">Color Rush</option>
+                    </select>
+                </div>
+                <div class="property-group">
                     <label>Level Background Image:
                         <span class="tooltip-container">
                             <span class="tooltip-icon">?</span>
@@ -449,7 +461,7 @@
                     <label for="objectSpawnpoint">Spawnpoint
                         <span class="tooltip-container">
                             <span class="tooltip-icon">?</span>
-                            <span class="tooltip-text">The marble will spawn at this object's position when the level starts.</span>
+                            <span class="tooltip-text">The marble will spawn at this object's position when the level starts. If no spawnpoint exists, no marble will spawn.</span>
                         </span>
                     </label>
                 </div>
@@ -458,7 +470,7 @@
                     <label for="objectPlayerspawn">Playerspawn
                         <span class="tooltip-container">
                             <span class="tooltip-icon">?</span>
-                            <span class="tooltip-text">Player UFO's spawn here. If not specified, they will spawn at the default spawnpoint.</span>
+                            <span class="tooltip-text">Player UFO's spawn here. If not specified, they will spawn at the center of the level.</span>
                         </span>
                     </label>
                 </div>
@@ -467,7 +479,7 @@
                     <label for="objectEmotespawn">Emotespawn
                         <span class="tooltip-container">
                             <span class="tooltip-icon">?</span>
-                            <span class="tooltip-text">Emotes from Twitch chat spawn here. If not specified, they will spawn at the default spawnpoint.</span>
+                            <span class="tooltip-text">Emotes from Twitch chat spawn here. If no emotespawn exists, no emotes will spawn.</span>
                         </span>
                     </label>
                 </div>
@@ -476,7 +488,7 @@
                     <label for="objectGoal">Goal
                         <span class="tooltip-container">
                             <span class="tooltip-icon">?</span>
-                            <span class="tooltip-text">Entering this object with the marble completes the level and loads the next level specified in the Next Level field.</span>
+                            <span class="tooltip-text">Entering this object with the marble completes the level and loads the next level specified in the Next Level field. If no goals exist, the level cannot be completed.</span>
                         </span>
                     </label>
                 </div>

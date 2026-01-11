@@ -142,6 +142,7 @@ export class LevelEditorCore {
         level.name = level.name || DEFAULT_LEVEL.name;
         level.description = level.description || DEFAULT_LEVEL.description;
         level.version = level.version || DEFAULT_LEVEL.version;
+        level.levelType = level.levelType || DEFAULT_LEVEL.levelType;
         level.backgroundImage = level.backgroundImage || DEFAULT_LEVEL.backgroundImage;
 
         return level;

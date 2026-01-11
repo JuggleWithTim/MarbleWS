@@ -4,6 +4,7 @@ export const DEFAULT_LEVEL = {
     name: 'new-level',
     description: '',
     version: '1.0',
+    levelType: 'Marble',
     backgroundImage: '',
     world: {
         gravity: 0.8

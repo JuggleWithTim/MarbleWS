@@ -74,6 +74,27 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
     });
   });
 
+  // Listen for Color Rush events
+  gameLogic.on('colorRushRoundStart', (data) => {
+    io.emit('colorRushRoundStart', data);
+  });
+
+  gameLogic.on('colorRushRoundEnd', (data) => {
+    io.emit('colorRushRoundEnd', data);
+  });
+
+  gameLogic.on('colorRushNextRound', (data) => {
+    io.emit('colorRushNextRound', data);
+  });
+
+  gameLogic.on('colorRushSafeSectionChange', (data) => {
+    io.emit('colorRushSafeSectionChange', data);
+  });
+
+  gameLogic.on('colorRushPlayerDeath', (data) => {
+    io.emit('colorRushPlayerDeath', data);
+  });
+
   io.on('connection', (socket) => {
     // Get real client IP address from proxy headers
     const clientIP = getClientIP(socket);
@@ -173,6 +194,9 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
 
       const player = await gameLogic.addPlayer(socket.id, username.trim(), userId.trim());
 
+      // Handle player joining the current game mode
+      gameLogic.levelManager.handlePlayerJoin(player);
+
       socket.emit('loginSuccess', player);
       socket.broadcast.emit('playerJoined', player);
 
@@ -196,7 +220,10 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
         }
       });
 
-      gameLogic.updatePlayerInput(socket.id, validatedInput);
+      // Check if game mode allows this input
+      if (gameLogic.levelManager.handlePlayerInput(socket.id, validatedInput)) {
+        gameLogic.updatePlayerInput(socket.id, validatedInput);
+      }
     });
 
     // Handle beam activation
@@ -209,13 +236,17 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
       }
 
       const { active } = data;
-      gameLogic.activateBeam(socket.id, active);
 
-      // Broadcast beam state to other players
-      socket.broadcast.emit('playerBeam', {
-        playerId: socket.id,
-        active
-      });
+      // Check if game mode allows beam usage
+      if (gameLogic.levelManager.canPlayerUseBeam(socket.id)) {
+        gameLogic.activateBeam(socket.id, active);
+
+        // Broadcast beam state to other players
+        socket.broadcast.emit('playerBeam', {
+          playerId: socket.id,
+          active
+        });
+      }
     });
 
     // Handle beam interaction

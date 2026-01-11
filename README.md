@@ -135,12 +135,6 @@ MarbleWS/
 5. **Special Objects**: Mark objects as spawnpoints or goals
 6. **Save Level**: Give your level a name and click Save
 
-### Level Requirements
-- **Must have**: At least one spawnpoint and one goal
-- **Spawnpoint**: Where marbles and emotes spawn (green)
-- **Goal**: Where marbles need to reach (yellow, glowing)
-- **Physics Objects**: Static platforms and movable pieces
-
 ### Object Properties
 - **Static**: Objects that don't move (platforms, walls)
 - **Dynamic**: Objects players can move with tractor beams
