@@ -35,7 +35,10 @@ const gameConfig = {
   },
 
   // Emote reward data
-  emoteReward: { xp: 50, coins: 10 }
+  emoteReward: { xp: 50, coins: 10 },
+
+  // Color Rush reward data (per player contribution to reward pot)
+  colorRushReward: { xp: 5, coins: 10 }
 };
 
 // Client-side global variable (only in browser)

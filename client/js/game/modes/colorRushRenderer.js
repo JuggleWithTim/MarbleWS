@@ -25,7 +25,7 @@ class ColorRushRenderer {
         this.resultsData = [];
         this.showResults = false;
         this.resultsStartTime = 0;
-        this.resultsDuration = 10000; // 10 seconds
+        this.resultsDuration = 15000; // 15 seconds
 
         // Grace period properties
         this.currentGracePeriod = 0;
@@ -221,8 +221,14 @@ class ColorRushRenderer {
                 const survivalTime = (result.survivalTime / 1000).toFixed(1);
                 const status = result.survived ? '✓' : '✗';
 
-                this.ctx.fillText(`${rank}. ${player.username} - ${survivalTime}s ${status}`,
-                                this.canvas.width / 2 - 200, y);
+                // Show rewards if available
+                let rewardText = '';
+                if (result.xpReward !== undefined && result.coinReward !== undefined) {
+                    rewardText = ` (+${result.xpReward} XP, ${result.coinReward} coins)`;
+                }
+
+                this.ctx.fillText(`${rank}. ${player.username} - ${survivalTime}s ${status}${rewardText}`,
+                                this.canvas.width / 2 - 250, y);
             }
         });
 

@@ -605,6 +605,79 @@ class PlayerManager {
     });
   }
 
+  awardXPAndCoinsForColorRush(roundResults) {
+    if (!roundResults || roundResults.length === 0) return;
+
+    const playerCount = roundResults.length;
+    const baseXP = gameConfig.colorRushReward.xp;
+    const baseCoins = gameConfig.colorRushReward.coins;
+
+    // Calculate total reward pot
+    const totalXP = playerCount * baseXP;
+    const totalCoins = playerCount * baseCoins;
+
+    console.log(`Color Rush round ended with ${playerCount} players. Reward pot: ${totalXP} XP, ${totalCoins} coins`);
+
+    // Calculate normalized weights for fair distribution
+    // Higher placements get exponentially more rewards, but total doesn't exceed pot
+    const weights = [];
+    let totalWeight = 0;
+
+    for (let i = 0; i < playerCount; i++) {
+      const weight = Math.pow(0.7, i); // Decreasing multiplier: 1, 0.7, 0.49, etc.
+      weights.push(weight);
+      totalWeight += weight;
+    }
+
+    // Distribute rewards based on normalized weights
+    roundResults.forEach((result, index) => {
+      const placement = index + 1; // 1-based placement
+      const player = Array.from(this.players.values()).find(p => p.id === result.playerId);
+
+      if (!player) return;
+
+      // Calculate reward based on normalized weight
+      const normalizedWeight = weights[index] / totalWeight;
+      const xpReward = Math.max(1, Math.round(totalXP * normalizedWeight));
+      const coinReward = Math.max(1, Math.round(totalCoins * normalizedWeight));
+
+      // Apply rewards
+      const oldLevel = player.level;
+      player.xp += xpReward;
+      player.coins += coinReward;
+
+      // Store reward amounts for event emission
+      result.xpReward = xpReward;
+      result.coinReward = coinReward;
+
+      // Calculate new level based on total XP
+      const newLevel = this.calculateLevelFromXP(player.xp);
+      let leveledUp = false;
+
+      if (newLevel > oldLevel) {
+        player.level = newLevel;
+        // Award coins for leveling up: old level × 100
+        const levelUpCoins = oldLevel * 100;
+        player.coins += levelUpCoins;
+        console.log(`Player ${player.username} leveled up to ${player.level} and gained ${levelUpCoins} coins from Color Rush!`);
+        leveledUp = true;
+
+        // Emit level up event for splash screen
+        this.eventEmitter.emit('playerLeveledUp', {
+          playerId: player.id,
+          username: player.username,
+          newLevel: player.level,
+          coinReward: levelUpCoins
+        });
+      }
+
+      // Save progress after XP gain (whether leveled up or not)
+      this.savePlayerData(player.userId, player.ufoAppearance, player.level, player.xp, player.coins, player.unlockedUFOs, player.unlockedPassengers, player.unlockedHats, player.username);
+
+      console.log(`Player ${player.username} (#${placement}) gained ${xpReward} XP and ${coinReward} coins from Color Rush!`);
+    });
+  }
+
   // Set references to external dependencies
   setWorld(world) {
     this.world = world;
