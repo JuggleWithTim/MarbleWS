@@ -11,7 +11,7 @@ class ColorRushMode extends BaseGameMode {
     this.resultsStartTime = 0;
 
     // Game configuration
-    this.resultsDuration = 10000; // 10 seconds period between rounds to show results
+    this.resultsDuration = 15000; // 15 seconds period between rounds to show results
     this.safeColorChangeInterval = 5000; // 5 seconds between color changes
     this.initialGracePeriod = 8000; // 8 seconds initial grace period
     this.minGracePeriod = 500; // 0.5 seconds minimum grace period
@@ -188,9 +188,12 @@ class ColorRushMode extends BaseGameMode {
     // Calculate survival times and rankings
     this.calculateResults();
 
+    // Award XP and coins based on round results
+    this.playerManager.awardXPAndCoinsForColorRush(this.roundResults);
+
     console.log(`Round ${this.currentRound} ended. ${this.alivePlayers.size} survivors.`);
 
-    // Emit round end event
+    // Emit round end event with reward data included
     this.eventEmitter.emit('colorRushRoundEnd', {
       round: this.currentRound,
       results: this.roundResults,
