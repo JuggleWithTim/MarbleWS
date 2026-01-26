@@ -264,7 +264,7 @@ class ColorRushRenderer {
     }
 
     renderDeadPlayerIndicator(player) {
-        // Draw "DEAD" indicator above player
+        // Draw "OUT" indicator above player
         const interpolated = this.game.getInterpolatedPosition(`player_${player.id}`);
         const x = interpolated ? interpolated.x : player.x;
         const y = interpolated ? interpolated.y : player.y;
@@ -277,7 +277,7 @@ class ColorRushRenderer {
         this.ctx.fillStyle = '#ffffff';
         this.ctx.font = 'bold 12px Arial';
         this.ctx.textAlign = 'center';
-        this.ctx.fillText('DEAD', x, y - 45);
+        this.ctx.fillText('OUT', x, y - 45);
 
         this.ctx.restore();
     }
