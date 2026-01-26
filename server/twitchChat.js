@@ -49,6 +49,35 @@ class TwitchChat {
   async onMessage(target, context, msg, self) {
     if (self) return; // Ignore messages from the bot itself
 
+    const username = context['display-name'] || context.username;
+    const userId = context['user-id'];
+
+    // Check for !sit command
+    if (msg.toLowerCase().startsWith('!sit')) {
+      const parts = msg.trim().split(/\s+/);
+      let chairNumber = null;
+
+      if (parts.length > 1) {
+        const num = parseInt(parts[1]);
+        if (!isNaN(num) && num >= 1 && num <= 99) {
+          chairNumber = num;
+        }
+      }
+
+      // Handle the sit command for the user
+      const result = this.gameLogic.handlePlayerSitByUserId(userId, chairNumber, username);
+
+      // Log the result
+      if (result.success) {
+        console.log(`${username} sat on chair ${result.chairNumber}`);
+      } else {
+        console.log(`${username} failed to sit: ${result.message}`);
+      }
+
+      // Don't process emotes for commands
+      return;
+    }
+
     // Check for emotes in the message
     if (context.emotes) {
       // Parse emotes from the message

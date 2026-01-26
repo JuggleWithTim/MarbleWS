@@ -118,6 +118,14 @@ class Networking {
             this.emit('emoteInGoal', data);
         });
 
+        this.socket.on('sitResult', (data) => {
+            this.emit('sitResult', data);
+        });
+
+        this.socket.on('playerSat', (data) => {
+            this.emit('playerSat', data);
+        });
+
         this.socket.on('error', (error) => {
             console.error('Server error:', error);
             this.emit('error', error);

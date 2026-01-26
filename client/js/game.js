@@ -214,6 +214,19 @@ class Game {
             this.triggerGoalParticles(data.goalX, data.goalY);
         });
 
+        this.networking.on('sitResult', (data) => {
+            if (data.success) {
+                console.log(`Successfully sat: ${data.message}`);
+            } else {
+                this.showError(data.message);
+            }
+        });
+
+        this.networking.on('playerSat', (data) => {
+            console.log(`${data.username} sat on chair ${data.chairNumber}`);
+            // Could add visual feedback here if desired
+        });
+
         // Add unlock result handler
         this.networking.socket.on('unlockResult', (result) => {
             this.handleUnlockResult(result);
