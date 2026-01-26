@@ -318,10 +318,16 @@ class LevelManager {
     });
 
     Matter.World.add(this.world, marble);
+
+    // Generate unique ID to prevent collisions when multiple marbles spawn simultaneously
+    const uniqueId = `marble_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
     this.marbles.push({
-      id: Date.now(),
+      id: uniqueId,
       body: marble,
-      type: 'marble'
+      type: 'marble',
+      spawnX: x,  // Store original spawn position for potential respawn logic
+      spawnY: y
     });
   }
 
