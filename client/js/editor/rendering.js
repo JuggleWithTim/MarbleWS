@@ -163,7 +163,24 @@ export const rendering = {
             }
         } else {
             // No background image, just use color
-            this.ctx.fillStyle = obj.color;
+            let fillColor = obj.color;
+
+            // If viewTransparent is enabled, override alpha for transparent objects
+            if (this.viewTransparent) {
+                // Parse the color to check if it's transparent
+                if (typeof obj.color === 'string' && obj.color.startsWith('rgba(')) {
+                    const rgbaMatch = obj.color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+                    if (rgbaMatch && rgbaMatch[4]) {
+                        const alpha = parseFloat(rgbaMatch[4]);
+                        if (alpha < 1.0) {
+                            // Override to 50% opacity for editor visibility
+                            fillColor = `rgba(${rgbaMatch[1]}, ${rgbaMatch[2]}, ${rgbaMatch[3]}, 0.5)`;
+                        }
+                    }
+                }
+            }
+
+            this.ctx.fillStyle = fillColor;
 
             if (obj.shape === 'rectangle') {
                 this.ctx.fillRect(

@@ -15,6 +15,7 @@ export class LevelEditorCore {
         this.gridSize = 20;
         this.showGrid = true;
         this.snapToGrid = true;
+        this.viewTransparent = false;
 
         // Canvas scaling factors (display size vs logical size)
         this.scaleX = CANVAS_SCALE.X;

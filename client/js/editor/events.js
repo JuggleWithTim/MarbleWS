@@ -35,6 +35,12 @@ export const events = {
             this.render();
         });
 
+        // View transparent controls
+        document.getElementById('viewTransparent').addEventListener('change', (e) => {
+            this.viewTransparent = e.target.checked;
+            this.render();
+        });
+
         // Level info and marble properties
         document.getElementById('levelName').addEventListener('input', (e) => {
             this.level.name = e.target.value;
