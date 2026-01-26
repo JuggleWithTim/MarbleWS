@@ -95,7 +95,7 @@ class GameLogic {
     return this.sitPlayerOnChair(player, chairNumber);
   }
 
-  handlePlayerSitByUserId(userId, chairNumber, username) {
+  async handlePlayerSitByUserId(userId, chairNumber, username) {
     // Find online player first
     let player = Array.from(this.players.values()).find(p => p.userId === userId);
 
@@ -104,7 +104,7 @@ class GameLogic {
       return this.sitPlayerOnChair(player, chairNumber);
     } else {
       // Player is offline, spawn them at the chair
-      return this.spawnPlayerAtChair(userId, username, chairNumber);
+      return await this.spawnPlayerAtChair(userId, username, chairNumber);
     }
   }
 
@@ -146,7 +146,7 @@ class GameLogic {
     };
   }
 
-  spawnPlayerAtChair(userId, username, chairNumber) {
+  async spawnPlayerAtChair(userId, username, chairNumber) {
     // Find available chairs in current level
     const chairs = this.levelManager.levelObjects.filter(obj => obj.chair !== undefined);
 
@@ -171,7 +171,7 @@ class GameLogic {
     const tempSocketId = `offline_${userId}_${Date.now()}`;
 
     // Spawn player at chair position
-    const playerData = this.playerManager.addPlayer(tempSocketId, username, userId);
+    const playerData = await this.playerManager.addPlayer(tempSocketId, username, userId);
 
     // Override spawn position to chair (50px higher)
     const player = this.players.get(tempSocketId);

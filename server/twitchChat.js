@@ -65,7 +65,7 @@ class TwitchChat {
       }
 
       // Handle the sit command for the user
-      const result = this.gameLogic.handlePlayerSitByUserId(userId, chairNumber, username);
+      const result = await this.gameLogic.handlePlayerSitByUserId(userId, chairNumber, username);
 
       // Log the result
       if (result.success) {
