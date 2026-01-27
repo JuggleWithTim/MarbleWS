@@ -88,6 +88,7 @@ export class LevelEditorCore {
         }
 
         this.render();
+        this.updateZoomDisplay();
     }
 
     async loadConfig() {
@@ -173,23 +174,18 @@ export class LevelEditorCore {
     // Handle zoom with mouse wheel
     handleZoom(deltaY, clientX, clientY) {
         const rect = this.canvas.getBoundingClientRect();
-        const canvasX = clientX - rect.left;
-        const canvasY = clientY - rect.top;
+        // Convert display pixels to logical pixels
+        const logicalX = (clientX - rect.left) * (this.canvas.width / rect.width);
+        const logicalY = (clientY - rect.top) * (this.canvas.height / rect.height);
 
         // Calculate zoom factor
         const zoomFactor = deltaY > 0 ? 0.9 : 1.1; // Zoom out or in
-
-        // Calculate the world point under the cursor
-        const worldX = (canvasX - this.panX) / this.zoomLevel;
-        const worldY = (canvasY - this.panY) / this.zoomLevel;
-
-        // Apply zoom
         const newZoomLevel = Math.max(0.1, Math.min(5.0, this.zoomLevel * zoomFactor));
-        const actualZoomFactor = newZoomLevel / this.zoomLevel;
 
-        // Adjust pan to keep the world point under the cursor
-        this.panX = canvasX - worldX * newZoomLevel;
-        this.panY = canvasY - worldY * newZoomLevel;
+        // Keep the world point under the cursor by adjusting pan
+        // panX/panY are in logical pixel space, logicalX/logicalY are in logical pixel space
+        this.panX = logicalX - (logicalX - this.panX) * (newZoomLevel / this.zoomLevel);
+        this.panY = logicalY - (logicalY - this.panY) * (newZoomLevel / this.zoomLevel);
 
         this.zoomLevel = newZoomLevel;
 
@@ -199,14 +195,16 @@ export class LevelEditorCore {
 
     // Zoom methods for toolbar buttons
     zoomIn() {
-        const centerX = this.canvas.width / 2;
-        const centerY = this.canvas.height / 2;
+        const rect = this.canvas.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
         this.handleZoom(-1, centerX, centerY);
     }
 
     zoomOut() {
-        const centerX = this.canvas.width / 2;
-        const centerY = this.canvas.height / 2;
+        const rect = this.canvas.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
         this.handleZoom(1, centerX, centerY);
     }
 

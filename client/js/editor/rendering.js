@@ -25,6 +25,7 @@ export const rendering = {
 
             // Apply zoom and pan transformation
             this.ctx.save();
+            // Apply zoom/pan in the logical coordinate space
             this.ctx.translate(this.panX, this.panY);
             this.ctx.scale(this.zoomLevel, this.zoomLevel);
 

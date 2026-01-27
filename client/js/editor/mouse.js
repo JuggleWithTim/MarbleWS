@@ -3,27 +3,26 @@
 export const mouse = {
     onMouseDown(e) {
         const rect = this.canvas.getBoundingClientRect();
-        // Convert display coordinates to canvas coordinates first
-        const canvasX = e.clientX - rect.left;
-        const canvasY = e.clientY - rect.top;
+        // Convert display pixels to logical pixels FIRST
+        let x = (e.clientX - rect.left) * (this.canvas.width / rect.width);
+        let y = (e.clientY - rect.top) * (this.canvas.height / rect.height);
 
-        // Apply inverse zoom and pan transformations to get world coordinates
-        const worldX = (canvasX - this.panX) / this.zoomLevel;
-        const worldY = (canvasY - this.panY) / this.zoomLevel;
-
-        // Apply original display scaling
-        let x = worldX * this.scaleX;
-        let y = worldY * this.scaleY;
+        // Now apply inverse transforms in logical pixel space
+        // Rendering: translate(panX, panY) -> scale(zoomLevel, zoomLevel)
+        // Inverse: undo translate, then undo scale
+        
+        x -= this.panX;      // panX is in logical pixels
+        y -= this.panY;      // panY is in logical pixels
+        
+        x /= this.zoomLevel;
+        y /= this.zoomLevel;
 
         this.mousePos = { x, y };
         this.dragStart = { x, y };
 
-        // Store canvas coords for panning
-        this.panStart = { x: canvasX, y: canvasY };
-
         if (this.snapToGrid) {
-            this.mousePos.x = Math.round(x / this.gridSize) * this.gridSize;
-            this.mousePos.y = Math.round(y / this.gridSize) * this.gridSize;
+            this.mousePos.x = Math.round(this.mousePos.x / this.gridSize) * this.gridSize;
+            this.mousePos.y = Math.round(this.mousePos.y / this.gridSize) * this.gridSize;
         }
 
         // Handle point selection mode first
@@ -54,23 +53,25 @@ export const mouse = {
     onMouseMove(e) {
         try {
             const rect = this.canvas.getBoundingClientRect();
-            // Convert display coordinates to canvas coordinates first
-            const canvasX = e.clientX - rect.left;
-            const canvasY = e.clientY - rect.top;
+            // Convert display pixels to logical pixels FIRST
+            let x = (e.clientX - rect.left) * (this.canvas.width / rect.width);
+            let y = (e.clientY - rect.top) * (this.canvas.height / rect.height);
 
-            // Apply inverse zoom and pan transformations to get world coordinates
-            const worldX = (canvasX - this.panX) / this.zoomLevel;
-            const worldY = (canvasY - this.panY) / this.zoomLevel;
-
-            // Apply original display scaling
-            let x = worldX * this.scaleX;
-            let y = worldY * this.scaleY;
+            // Now apply inverse transforms in logical pixel space
+            // Rendering: translate(panX, panY) -> scale(zoomLevel, zoomLevel)
+            // Inverse: undo translate, then undo scale
+            
+            x -= this.panX;      // panX is in logical pixels
+            y -= this.panY;      // panY is in logical pixels
+            
+            x /= this.zoomLevel;
+            y /= this.zoomLevel;
 
             this.mousePos = { x, y };
 
             if (this.snapToGrid) {
-                this.mousePos.x = Math.round(x / this.gridSize) * this.gridSize;
-                this.mousePos.y = Math.round(y / this.gridSize) * this.gridSize;
+                this.mousePos.x = Math.round(this.mousePos.x / this.gridSize) * this.gridSize;
+                this.mousePos.y = Math.round(this.mousePos.y / this.gridSize) * this.gridSize;
             }
 
             // Update mouse position display (show logical coordinates)
@@ -100,8 +101,13 @@ export const mouse = {
                 const deltaX = currentCanvasX - this.panStart.x;
                 const deltaY = currentCanvasY - this.panStart.y;
 
-                this.panX += deltaX;
-                this.panY += deltaY;
+                // Convert display pixel delta to logical pixel delta
+                // panX/panY are in logical pixel space
+                const logicalDeltaX = deltaX * (this.canvas.width / rect.width);
+                const logicalDeltaY = deltaY * (this.canvas.height / rect.height);
+
+                this.panX += logicalDeltaX;
+                this.panY += logicalDeltaY;
 
                 this.panStart.x = currentCanvasX;
                 this.panStart.y = currentCanvasY;
