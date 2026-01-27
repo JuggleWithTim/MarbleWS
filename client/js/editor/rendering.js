@@ -23,6 +23,12 @@ export const rendering = {
             // Clear canvas
             this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
+            // Apply zoom and pan transformation
+            this.ctx.save();
+            // Apply zoom/pan in the logical coordinate space
+            this.ctx.translate(this.panX, this.panY);
+            this.ctx.scale(this.zoomLevel, this.zoomLevel);
+
             // Draw background
             if (this.backgroundImage) {
                 // Draw the background image
@@ -73,8 +79,13 @@ export const rendering = {
                     this.drawConnection(connection);
                 });
             }
+
+            // Restore the zoom and pan transformation
+            this.ctx.restore();
         } catch (error) {
             console.error('Error in render:', error);
+            // If there's an error, make sure we restore the context
+            this.ctx.restore();
         }
     },
 

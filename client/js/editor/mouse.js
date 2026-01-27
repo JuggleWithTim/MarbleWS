@@ -3,17 +3,32 @@
 export const mouse = {
     onMouseDown(e) {
         const rect = this.canvas.getBoundingClientRect();
-        // Convert display coordinates to logical coordinates
-        const x = (e.clientX - rect.left) * this.scaleX;
-        const y = (e.clientY - rect.top) * this.scaleY;
+        // Convert display pixels to logical pixels FIRST
+        let x = (e.clientX - rect.left) * (this.canvas.width / rect.width);
+        let y = (e.clientY - rect.top) * (this.canvas.height / rect.height);
+
+        // Now apply inverse transforms in logical pixel space
+        // Rendering: translate(panX, panY) -> scale(zoomLevel, zoomLevel)
+        // Inverse: undo translate, then undo scale
+        
+        x -= this.panX;      // panX is in logical pixels
+        y -= this.panY;      // panY is in logical pixels
+        
+        x /= this.zoomLevel;
+        y /= this.zoomLevel;
 
         this.mousePos = { x, y };
         this.dragStart = { x, y };
 
         if (this.snapToGrid) {
-            this.mousePos.x = Math.round(x / this.gridSize) * this.gridSize;
-            this.mousePos.y = Math.round(y / this.gridSize) * this.gridSize;
+            this.mousePos.x = Math.round(this.mousePos.x / this.gridSize) * this.gridSize;
+            this.mousePos.y = Math.round(this.mousePos.y / this.gridSize) * this.gridSize;
         }
+
+        // Store logical coordinates for panning (rect already declared above)
+        const logicalX = (e.clientX - rect.left) * (this.canvas.width / rect.width);
+        const logicalY = (e.clientY - rect.top) * (this.canvas.height / rect.height);
+        this.panStart = { x: logicalX, y: logicalY };
 
         // Handle point selection mode first
         if (this.pointSelectionMode) {
@@ -43,15 +58,25 @@ export const mouse = {
     onMouseMove(e) {
         try {
             const rect = this.canvas.getBoundingClientRect();
-            // Convert display coordinates to logical coordinates
-            const x = (e.clientX - rect.left) * this.scaleX;
-            const y = (e.clientY - rect.top) * this.scaleY;
+            // Convert display pixels to logical pixels FIRST
+            let x = (e.clientX - rect.left) * (this.canvas.width / rect.width);
+            let y = (e.clientY - rect.top) * (this.canvas.height / rect.height);
+
+            // Now apply inverse transforms in logical pixel space
+            // Rendering: translate(panX, panY) -> scale(zoomLevel, zoomLevel)
+            // Inverse: undo translate, then undo scale
+            
+            x -= this.panX;      // panX is in logical pixels
+            y -= this.panY;      // panY is in logical pixels
+            
+            x /= this.zoomLevel;
+            y /= this.zoomLevel;
 
             this.mousePos = { x, y };
 
             if (this.snapToGrid) {
-                this.mousePos.x = Math.round(x / this.gridSize) * this.gridSize;
-                this.mousePos.y = Math.round(y / this.gridSize) * this.gridSize;
+                this.mousePos.x = Math.round(this.mousePos.x / this.gridSize) * this.gridSize;
+                this.mousePos.y = Math.round(this.mousePos.y / this.gridSize) * this.gridSize;
             }
 
             // Update mouse position display (show logical coordinates)
@@ -69,6 +94,28 @@ export const mouse = {
             // Handle rotation
             if (this.isRotating) {
                 this.performRotation(this.mousePos.x, this.mousePos.y);
+                return;
+            }
+
+            // Handle panning (CTRL + drag)
+            if (this.isPanning) {
+                // Get current logical coordinates
+                const currentLogicalX = (e.clientX - rect.left) * (this.canvas.width / rect.width);
+                const currentLogicalY = (e.clientY - rect.top) * (this.canvas.height / rect.height);
+
+                // Calculate delta in logical space (panStart is in logical coordinates)
+                const logicalDeltaX = currentLogicalX - this.panStart.x;
+                const logicalDeltaY = currentLogicalY - this.panStart.y;
+
+                // Update pan (panX/panY are in logical pixel space)
+                this.panX += logicalDeltaX;
+                this.panY += logicalDeltaY;
+
+                // Update panStart to current logical position
+                this.panStart.x = currentLogicalX;
+                this.panStart.y = currentLogicalY;
+
+                this.render();
                 return;
             }
 
@@ -108,6 +155,7 @@ export const mouse = {
         }
 
         this.isDragging = false;
+        this.isPanning = false;
         this.isResizing = false;
         this.resizeCorner = null;
         this.originalSize = null;
@@ -118,6 +166,12 @@ export const mouse = {
     },
 
     handleSelect(x, y) {
+        // If CTRL is pressed, start panning instead of selecting
+        if (this.ctrlKey) {
+            this.isPanning = true;
+            return;
+        }
+
         // First check if clicking on any handle (only if we have a single selected object for now)
         if (this.selectedObjects.length === 1) {
             const handle = this.getHandleAt(x, y);

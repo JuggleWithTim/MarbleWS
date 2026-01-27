@@ -18,7 +18,9 @@ export const events = {
         document.getElementById('newLevel').addEventListener('click', () => this.newLevel());
         document.getElementById('loadLevel').addEventListener('click', () => this.loadLevel());
         document.getElementById('saveLevel').addEventListener('click', () => this.saveLevel());
-        document.getElementById('testLevel').addEventListener('click', () => this.testLevel());
+        document.getElementById('zoomIn').addEventListener('click', () => this.zoomIn());
+        document.getElementById('zoomOut').addEventListener('click', () => this.zoomOut());
+        document.getElementById('resetZoom').addEventListener('click', () => this.resetZoom());
 
         // Grid controls
         document.getElementById('showGrid').addEventListener('change', (e) => {
@@ -158,9 +160,19 @@ export const events = {
             });
         }
 
+        // Mouse wheel zoom
+        this.canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            if (e.ctrlKey) {
+                // Zoom towards mouse cursor
+                this.handleZoom(e.deltaY, e.clientX, e.clientY);
+            }
+        });
+
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
             this.shiftKey = e.shiftKey;
+            this.ctrlKey = e.ctrlKey;
             if (e.key === 'Delete' && this.selectedObjects.length > 0) {
                 // Delete all selected objects
                 this.selectedObjects.forEach(obj => this.deleteObject(obj));
@@ -175,6 +187,7 @@ export const events = {
 
         document.addEventListener('keyup', (e) => {
             this.shiftKey = e.shiftKey;
+            this.ctrlKey = e.ctrlKey;
         });
 
         // Point selection event listeners

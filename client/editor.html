@@ -911,14 +911,17 @@
                 <button class="tool-button" id="newLevel">New</button>
                 <button class="tool-button" id="loadLevel">Load</button>
                 <button class="tool-button" id="saveLevel">Save</button>
-                <button class="tool-button" id="testLevel">Test</button>
+
+                <button class="tool-button" id="zoomIn" title="Zoom In (Ctrl + Scroll)">🔍+</button>
+                <button class="tool-button" id="zoomOut" title="Zoom Out (Ctrl + Scroll)">🔍-</button>
+                <button class="tool-button" id="resetZoom" title="Reset Zoom">🔄</button>
                 <span style="margin-left: 20px;">Grid:</span>
                 <input type="checkbox" id="showGrid" checked>
+                <input type="number" id="gridSize" value="20" min="10" max="50" class="toolbar-input" style="width: 60px; margin-left: 10px;">
                 <span style="margin-left: 20px;">Snap:</span>
                 <input type="checkbox" id="snapToGrid" checked>
                 <span style="margin-left: 20px;">Transparent:</span>
                 <input type="checkbox" id="viewTransparent">
-                <input type="number" id="gridSize" value="20" min="10" max="50" class="toolbar-input" style="width: 60px; margin-left: 10px;">
                 <button class="tool-button" id="toggleJsonPanel" style="margin-left: auto;">📄 JSON</button>
             </div>
             
@@ -928,7 +931,7 @@
             
             <div class="status-bar">
                 <span id="statusText">Ready</span>
-                <span style="float: right;" id="mousePos">Mouse: 0, 0</span>
+                <span style="float: right;" id="zoomLevel"><span id="mousePos">Mouse: 0, 0</span> | Zoom: 100%</span>
             </div>
         </div>
 

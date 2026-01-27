@@ -133,17 +133,6 @@ export const level = {
         }
     },
 
-    testLevel() {
-        const levelName = document.getElementById('levelName').value;
-        if (!levelName) {
-            alert('Please save the level first');
-            return;
-        }
-
-        // Open game in new tab with level parameter, using base path
-        window.open(`${this.basePath}/?level=${levelName}`, '_blank');
-    },
-
     updateStatus(message) {
         document.getElementById('statusText').textContent = message;
     }

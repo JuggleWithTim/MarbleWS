@@ -62,6 +62,13 @@ export class LevelEditorCore {
 
         // Clipboard for copy/paste functionality
         this.clipboard = [];
+
+        // Zoom and pan state
+        this.zoomLevel = 1.0;
+        this.panX = 0;
+        this.panY = 0;
+        this.isPanning = false;
+        this.panStart = { x: 0, y: 0 };
     }
 
     async init() {
@@ -81,6 +88,7 @@ export class LevelEditorCore {
         }
 
         this.render();
+        this.updateZoomDisplay();
     }
 
     async loadConfig() {
@@ -161,5 +169,59 @@ export class LevelEditorCore {
         });
 
         return promise;
+    }
+
+    // Handle zoom with mouse wheel
+    handleZoom(deltaY, clientX, clientY) {
+        const rect = this.canvas.getBoundingClientRect();
+        // Convert display pixels to logical pixels
+        const logicalX = (clientX - rect.left) * (this.canvas.width / rect.width);
+        const logicalY = (clientY - rect.top) * (this.canvas.height / rect.height);
+
+        // Calculate zoom factor
+        const zoomFactor = deltaY > 0 ? 0.9 : 1.1; // Zoom out or in
+        const newZoomLevel = Math.max(0.1, Math.min(5.0, this.zoomLevel * zoomFactor));
+
+        // Keep the world point under the cursor by adjusting pan
+        // panX/panY are in logical pixel space, logicalX/logicalY are in logical pixel space
+        this.panX = logicalX - (logicalX - this.panX) * (newZoomLevel / this.zoomLevel);
+        this.panY = logicalY - (logicalY - this.panY) * (newZoomLevel / this.zoomLevel);
+
+        this.zoomLevel = newZoomLevel;
+
+        this.render();
+        this.updateZoomDisplay();
+    }
+
+    // Zoom methods for toolbar buttons
+    zoomIn() {
+        const rect = this.canvas.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        this.handleZoom(-1, centerX, centerY);
+    }
+
+    zoomOut() {
+        const rect = this.canvas.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        this.handleZoom(1, centerX, centerY);
+    }
+
+    resetZoom() {
+        this.zoomLevel = 1.0;
+        this.panX = 0;
+        this.panY = 0;
+        this.render();
+        this.updateZoomDisplay();
+    }
+
+    // Update the zoom level display in the status bar
+    updateZoomDisplay() {
+        const zoomElement = document.getElementById('zoomLevel');
+        if (zoomElement) {
+            const zoomPercent = Math.round(this.zoomLevel * 100);
+            zoomElement.innerHTML = `<span id="mousePos">Mouse: 0, 0</span> | Zoom: ${zoomPercent}%`;
+        }
     }
 }
