@@ -85,6 +85,115 @@ class GameLogic {
     return this.playerManager.addCoinsToPlayer(userId, amount, reason);
   }
 
+  // Chair sitting functionality
+  handlePlayerSit(socketId, chairNumber) {
+    const player = this.players.get(socketId);
+    if (!player) {
+      return { success: false, message: 'Player not found' };
+    }
+
+    return this.sitPlayerOnChair(player, chairNumber);
+  }
+
+  async handlePlayerSitByUserId(userId, chairNumber, username) {
+    // Find online player first
+    let player = Array.from(this.players.values()).find(p => p.userId === userId);
+
+    if (player) {
+      // Player is online, move their existing UFO
+      return this.sitPlayerOnChair(player, chairNumber);
+    } else {
+      // Player is offline, spawn them at the chair
+      return await this.spawnPlayerAtChair(userId, username, chairNumber);
+    }
+  }
+
+  sitPlayerOnChair(player, chairNumber) {
+    // Find available chairs in current level
+    const chairs = this.levelManager.levelObjects.filter(obj => obj.chair !== undefined);
+
+    if (chairs.length === 0) {
+      return { success: false, message: 'No chairs available in this level' };
+    }
+
+    let targetChair;
+    if (chairNumber !== null) {
+      // Find specific chair
+      targetChair = chairs.find(chair => chair.chair === chairNumber);
+      if (!targetChair) {
+        return { success: false, message: `Chair ${chairNumber} not found` };
+      }
+    } else {
+      // Pick random available chair
+      targetChair = chairs[Math.floor(Math.random() * chairs.length)];
+      chairNumber = targetChair.chair;
+    }
+
+    // Move player to chair position (50px higher)
+    if (player.body) {
+      Matter.Body.setPosition(player.body, { x: targetChair.x, y: targetChair.y - 50 });
+      Matter.Body.setVelocity(player.body, { x: 0, y: 0 });
+      player.x = targetChair.x;
+      player.y = targetChair.y - 50;
+    }
+
+    return {
+      success: true,
+      message: `Sat on chair ${chairNumber}`,
+      chairNumber,
+      x: targetChair.x,
+      y: targetChair.y - 50
+    };
+  }
+
+  async spawnPlayerAtChair(userId, username, chairNumber) {
+    // Find available chairs in current level
+    const chairs = this.levelManager.levelObjects.filter(obj => obj.chair !== undefined);
+
+    if (chairs.length === 0) {
+      return { success: false, message: 'No chairs available in this level' };
+    }
+
+    let targetChair;
+    if (chairNumber !== null) {
+      // Find specific chair
+      targetChair = chairs.find(chair => chair.chair === chairNumber);
+      if (!targetChair) {
+        return { success: false, message: `Chair ${chairNumber} not found` };
+      }
+    } else {
+      // Pick random available chair
+      targetChair = chairs[Math.floor(Math.random() * chairs.length)];
+      chairNumber = targetChair.chair;
+    }
+
+    // Create a temporary socket-like object for spawning
+    const tempSocketId = `offline_${userId}_${Date.now()}`;
+
+    // Spawn player at chair position
+    const playerData = await this.playerManager.addPlayer(tempSocketId, username, userId);
+
+    // Override spawn position to chair (50px higher)
+    const player = this.players.get(tempSocketId);
+    if (player && player.body) {
+      Matter.Body.setPosition(player.body, { x: targetChair.x, y: targetChair.y - 50});
+      player.x = targetChair.x;
+      player.y = targetChair.y - 50;
+
+      // Mark as offline spawn (could be used for cleanup later)
+      player.isOfflineSpawn = true;
+    }
+
+    return {
+      success: true,
+      message: `Spawned at chair ${chairNumber}`,
+      chairNumber,
+      x: targetChair.x,
+      y: targetChair.y - 50,
+      playerId: tempSocketId
+    };
+  }
+
   // Level management (delegate to levelManager)
   loadLevel(levelData) {
     this.levelManager.loadLevel(levelData);

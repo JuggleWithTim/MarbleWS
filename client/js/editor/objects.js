@@ -48,6 +48,12 @@ export const objects = {
             obj.teleporterTarget = teleporterTarget;
         }
 
+        // Add chair property for chair objects
+        const chairNumber = this.getChairNumber();
+        if (chairNumber !== null) {
+            obj.chair = chairNumber;
+        }
+
         this.level.objects.push(obj);
         this.selectObject(obj);
         this.updateObjectList();
@@ -92,6 +98,12 @@ export const objects = {
             obj.nextLevel = nextLevel;
         }
 
+        // Add chair property for chair objects
+        const chairNumber = this.getChairNumber();
+        if (chairNumber !== null) {
+            obj.chair = chairNumber;
+        }
+
         this.level.objects.push(obj);
         this.selectObject(obj);
         this.updateObjectList();
@@ -132,6 +144,14 @@ export const objects = {
             return document.getElementById('objectTeleporterTarget').value.trim();
         }
         return '';
+    },
+
+    getChairNumber() {
+        if (document.getElementById('objectChair').checked) {
+            const num = parseInt(document.getElementById('objectChairNumber').value);
+            return isNaN(num) || num < 1 || num > 99 ? null : num;
+        }
+        return null;
     },
 
     selectObject(obj) {
@@ -193,6 +213,7 @@ export const objects = {
             document.getElementById('objectEmotespawn').checked = obj.properties.includes('emotespawn');
             document.getElementById('objectGoal').checked = obj.properties.includes('goal');
             document.getElementById('objectTeleporter').checked = obj.properties.includes('teleporter');
+            document.getElementById('objectChair').checked = obj.chair !== undefined;
 
             // Show/hide nextLevel field based on goal property
             document.getElementById('nextLevelContainer').style.display =
@@ -202,11 +223,18 @@ export const objects = {
             document.getElementById('teleporterTargetContainer').style.display =
                 obj.properties.includes('teleporter') ? 'block' : 'none';
 
+            // Show/hide chairNumber field based on chair property
+            document.getElementById('chairNumberContainer').style.display =
+                obj.chair !== undefined ? 'block' : 'none';
+
             // Set nextLevel value if it exists
             document.getElementById('objectNextLevel').value = obj.nextLevel || '';
 
             // Set teleporterTarget value if it exists
             document.getElementById('objectTeleporterTarget').value = obj.teleporterTarget || '';
+
+            // Set chairNumber value if it exists
+            document.getElementById('objectChairNumber').value = obj.chair || '';
 
             // Set active properties
             document.getElementById('objectActive').checked = obj.active || false;
@@ -423,6 +451,14 @@ export const objects = {
                 obj.teleporterTarget = teleporterTarget;
             } else if (obj.teleporterTarget) {
                 delete obj.teleporterTarget;
+            }
+
+            // Update chair property for chair objects
+            const chairNumber = this.getChairNumber();
+            if (chairNumber !== null) {
+                obj.chair = chairNumber;
+            } else if (obj.chair !== undefined) {
+                delete obj.chair;
             }
 
             // Update active properties

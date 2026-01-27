@@ -318,10 +318,16 @@ class LevelManager {
     });
 
     Matter.World.add(this.world, marble);
+
+    // Generate unique ID to prevent collisions when multiple marbles spawn simultaneously
+    const uniqueId = `marble_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
     this.marbles.push({
-      id: Date.now(),
+      id: uniqueId,
       body: marble,
-      type: 'marble'
+      type: 'marble',
+      spawnX: x,  // Store original spawn position for potential respawn logic
+      spawnY: y
     });
   }
 
@@ -361,8 +367,12 @@ class LevelManager {
       );
 
       Matter.World.add(this.world, emote);
+
+      // Generate unique ID to prevent collisions when multiple emotes spawn simultaneously
+      const uniqueId = `emote_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
       this.emotes.push({
-        id: Date.now() + Math.random(),
+        id: uniqueId,
         body: emote,
         type: 'emote',
         name: emoteName,

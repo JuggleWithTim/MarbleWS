@@ -299,6 +299,9 @@ class ColorRushMode extends BaseGameMode {
     const deathTime = Date.now() - this.roundStartTime;
     this.deadPlayers.set(playerId, deathTime);
 
+    // Clear any active input to prevent stuck movement
+    this.playerManager.players.get(playerId).input = null;
+
     // Emit player death event
     this.eventEmitter.emit('colorRushPlayerDeath', {
       playerId: playerId,

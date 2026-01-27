@@ -320,7 +320,40 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
       const player = gameLogic.players.get(socket.id);
 
       if (player) {
-        // Broadcast chat message to all players
+        // Check for !sit command
+        if (message.toLowerCase().startsWith('!sit')) {
+          const parts = message.trim().split(/\s+/);
+          let chairNumber = null;
+
+          if (parts.length > 1) {
+            const num = parseInt(parts[1]);
+            if (!isNaN(num) && num >= 1 && num <= 99) {
+              chairNumber = num;
+            }
+          }
+
+          // Handle the sit command
+          const result = gameLogic.handlePlayerSit(socket.id, chairNumber);
+
+          // Send result back to the player
+          socket.emit('sitResult', result);
+
+          // If successful, broadcast to other players
+          if (result.success) {
+            socket.broadcast.emit('playerSat', {
+              playerId: socket.id,
+              username: player.username,
+              chairNumber: result.chairNumber,
+              x: result.x,
+              y: result.y
+            });
+          }
+
+          // Don't broadcast the command as a regular chat message
+          return;
+        }
+
+        // Broadcast regular chat message to all players
         io.emit('chatMessage', {
           playerId: socket.id,
           username: player.username,

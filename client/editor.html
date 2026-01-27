@@ -520,6 +520,24 @@
                     <input type="text" id="objectTeleporterTarget" placeholder="Object name of teleporter destination">
                 </div>
                 <div class="checkbox-group">
+                    <input type="checkbox" id="objectChair">
+                    <label for="objectChair">Chair
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Players can sit on this chair using the !sit command. Assign a unique number to identify this seat.</span>
+                        </span>
+                    </label>
+                </div>
+                <div class="property-group" id="chairNumberContainer" style="display: none;">
+                    <label>Chair Number:
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Unique number for this chair (1-99). Players use !sit [number] to sit here.</span>
+                        </span>
+                    </label>
+                    <input type="number" id="objectChairNumber" placeholder="1" min="1" max="99">
+                </div>
+                <div class="checkbox-group">
                     <input type="checkbox" id="objectActive">
                     <label for="objectActive">Active
                         <span class="tooltip-container">
@@ -898,6 +916,8 @@
                 <input type="checkbox" id="showGrid" checked>
                 <span style="margin-left: 20px;">Snap:</span>
                 <input type="checkbox" id="snapToGrid" checked>
+                <span style="margin-left: 20px;">Transparent:</span>
+                <input type="checkbox" id="viewTransparent">
                 <input type="number" id="gridSize" value="20" min="10" max="50" class="toolbar-input" style="width: 60px; margin-left: 10px;">
                 <button class="tool-button" id="toggleJsonPanel" style="margin-left: auto;">📄 JSON</button>
             </div>

@@ -35,6 +35,12 @@ export const events = {
             this.render();
         });
 
+        // View transparent controls
+        document.getElementById('viewTransparent').addEventListener('change', (e) => {
+            this.viewTransparent = e.target.checked;
+            this.render();
+        });
+
         // Level info and marble properties
         document.getElementById('levelName').addEventListener('input', (e) => {
             this.level.name = e.target.value;
@@ -110,6 +116,12 @@ export const events = {
                 e.target.checked ? 'block' : 'none';
         });
 
+        // Show/hide chairNumber field when chair checkbox is toggled
+        document.getElementById('objectChair').addEventListener('change', (e) => {
+            document.getElementById('chairNumberContainer').style.display =
+                e.target.checked ? 'block' : 'none';
+        });
+
         // Show/hide active options when active checkbox is toggled
         document.getElementById('objectActive').addEventListener('change', (e) => {
             document.getElementById('activeOptionsContainer').style.display =
@@ -126,7 +138,7 @@ export const events = {
         const propertyInputs = [
             'objectColor', 'objectAlpha', 'objectBackgroundImage', 'objectWidth', 'objectHeight', 'objectRadius',
             'objectFriction', 'objectRestitution', 'objectDensity', 'objectRotation', 'objectStatic',
-            'objectSpawnpoint', 'objectPlayerspawn', 'objectEmotespawn', 'objectGoal', 'objectNextLevel', 'objectTeleporter', 'objectTeleporterTarget', 'objectSolid', 'objectZIndex',
+            'objectSpawnpoint', 'objectPlayerspawn', 'objectEmotespawn', 'objectGoal', 'objectNextLevel', 'objectTeleporter', 'objectTeleporterTarget', 'objectChair', 'objectChairNumber', 'objectSolid', 'objectZIndex',
             'objectActive', 'objectPointAX', 'objectPointAY', 'objectPointBX', 'objectPointBY', 'objectTimeToA', 'objectTimeFromA', 'objectSpeedToB', 'objectSpeedFromB',
             'objectRotationA', 'objectRotationB', 'objectRotationPointX', 'objectRotationPointY', 'objectAdvancedRotation', 'objectRotationSpeedToB', 'objectRotationSpeedFromB'
         ];

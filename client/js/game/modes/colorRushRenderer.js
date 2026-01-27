@@ -10,10 +10,10 @@ class ColorRushRenderer {
         this.roundState = 'waiting';
         this.roundNumber = 0;
         this.sections = [
-            { id: 0, color: '#ff6b6b', x: 0, y: 0, width: 960, height: 540 },      // Top-left (red)
-            { id: 1, color: '#4ecdc4', x: 960, y: 0, width: 960, height: 540 },    // Top-right (teal)
-            { id: 2, color: '#45b7d1', x: 0, y: 540, width: 960, height: 540 },    // Bottom-left (blue)
-            { id: 3, color: '#f9ca24', x: 960, y: 540, width: 960, height: 540 }   // Bottom-right (yellow)
+            { id: 0, color: '#ff7b00', x: 0, y: 0, width: 960, height: 540 },      // Top-left (red)
+            { id: 1, color: '#7300a9', x: 960, y: 0, width: 960, height: 540 },    // Top-right (teal)
+            { id: 2, color: '#48c5e0', x: 0, y: 540, width: 960, height: 540 },    // Bottom-left (blue)
+            { id: 3, color: '#db930e', x: 960, y: 540, width: 960, height: 540 }   // Bottom-right (yellow)
         ];
 
         // Animation properties for section highlighting
@@ -264,7 +264,7 @@ class ColorRushRenderer {
     }
 
     renderDeadPlayerIndicator(player) {
-        // Draw "DEAD" indicator above player
+        // Draw "OUT" indicator above player
         const interpolated = this.game.getInterpolatedPosition(`player_${player.id}`);
         const x = interpolated ? interpolated.x : player.x;
         const y = interpolated ? interpolated.y : player.y;
@@ -277,7 +277,7 @@ class ColorRushRenderer {
         this.ctx.fillStyle = '#ffffff';
         this.ctx.font = 'bold 12px Arial';
         this.ctx.textAlign = 'center';
-        this.ctx.fillText('DEAD', x, y - 45);
+        this.ctx.fillText('OUT', x, y - 45);
 
         this.ctx.restore();
     }

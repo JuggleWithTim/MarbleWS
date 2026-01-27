@@ -67,21 +67,35 @@ class PhysicsEngine {
       const pos = marble.body.position;
       if (pos.x < worldBounds.minX || pos.x > worldBounds.maxX ||
           pos.y < worldBounds.minY || pos.y > worldBounds.maxY) {
-        // Find spawnpoint
-        const spawnpoint = this.levelManager.levelObjects.find(obj =>
-          obj.properties && obj.properties.includes('spawnpoint')
-        );
+        // Respawn marble at its original spawn location if available, otherwise find a spawnpoint
+        let respawnX, respawnY;
 
-        if (spawnpoint) {
-          // Respawn marble at spawnpoint (use current position if spawnpoint is moving)
-          const spawnX = spawnpoint.body ? spawnpoint.body.position.x : spawnpoint.x;
-          const spawnY = spawnpoint.body ? spawnpoint.body.position.y : spawnpoint.y;
-          Matter.Body.setPosition(marble.body, {
-            x: spawnX,
-            y: spawnY - 50
-          });
-          Matter.Body.setVelocity(marble.body, { x: 0, y: 0 });
+        if (marble.spawnX !== undefined && marble.spawnY !== undefined) {
+          // Use the marble's original spawn position
+          respawnX = marble.spawnX;
+          respawnY = marble.spawnY;
+        } else {
+          // Fallback: find any spawnpoint
+          const spawnpoint = this.levelManager.levelObjects.find(obj =>
+            obj.properties && obj.properties.includes('spawnpoint')
+          );
+
+          if (spawnpoint) {
+            // Use current position if spawnpoint is moving
+            respawnX = spawnpoint.body ? spawnpoint.body.position.x : spawnpoint.x;
+            respawnY = spawnpoint.body ? spawnpoint.body.position.y : spawnpoint.y;
+          } else {
+            // Fallback to center if no spawnpoint found
+            respawnX = 960;
+            respawnY = 540;
+          }
         }
+
+        Matter.Body.setPosition(marble.body, {
+          x: respawnX,
+          y: respawnY - 50
+        });
+        Matter.Body.setVelocity(marble.body, { x: 0, y: 0 });
       }
     });
 
