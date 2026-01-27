@@ -62,6 +62,13 @@ export class LevelEditorCore {
 
         // Clipboard for copy/paste functionality
         this.clipboard = [];
+
+        // Zoom and pan state
+        this.zoomLevel = 1.0;
+        this.panX = 0;
+        this.panY = 0;
+        this.isPanning = false;
+        this.panStart = { x: 0, y: 0 };
     }
 
     async init() {
@@ -161,5 +168,62 @@ export class LevelEditorCore {
         });
 
         return promise;
+    }
+
+    // Handle zoom with mouse wheel
+    handleZoom(deltaY, clientX, clientY) {
+        const rect = this.canvas.getBoundingClientRect();
+        const canvasX = clientX - rect.left;
+        const canvasY = clientY - rect.top;
+
+        // Calculate zoom factor
+        const zoomFactor = deltaY > 0 ? 0.9 : 1.1; // Zoom out or in
+
+        // Calculate the world point under the cursor
+        const worldX = (canvasX - this.panX) / this.zoomLevel;
+        const worldY = (canvasY - this.panY) / this.zoomLevel;
+
+        // Apply zoom
+        const newZoomLevel = Math.max(0.1, Math.min(5.0, this.zoomLevel * zoomFactor));
+        const actualZoomFactor = newZoomLevel / this.zoomLevel;
+
+        // Adjust pan to keep the world point under the cursor
+        this.panX = canvasX - worldX * newZoomLevel;
+        this.panY = canvasY - worldY * newZoomLevel;
+
+        this.zoomLevel = newZoomLevel;
+
+        this.render();
+        this.updateZoomDisplay();
+    }
+
+    // Zoom methods for toolbar buttons
+    zoomIn() {
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2;
+        this.handleZoom(-1, centerX, centerY);
+    }
+
+    zoomOut() {
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2;
+        this.handleZoom(1, centerX, centerY);
+    }
+
+    resetZoom() {
+        this.zoomLevel = 1.0;
+        this.panX = 0;
+        this.panY = 0;
+        this.render();
+        this.updateZoomDisplay();
+    }
+
+    // Update the zoom level display in the status bar
+    updateZoomDisplay() {
+        const zoomElement = document.getElementById('zoomLevel');
+        if (zoomElement) {
+            const zoomPercent = Math.round(this.zoomLevel * 100);
+            zoomElement.innerHTML = `<span id="mousePos">Mouse: 0, 0</span> | Zoom: ${zoomPercent}%`;
+        }
     }
 }

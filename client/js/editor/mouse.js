@@ -3,12 +3,23 @@
 export const mouse = {
     onMouseDown(e) {
         const rect = this.canvas.getBoundingClientRect();
-        // Convert display coordinates to logical coordinates
-        const x = (e.clientX - rect.left) * this.scaleX;
-        const y = (e.clientY - rect.top) * this.scaleY;
+        // Convert display coordinates to canvas coordinates first
+        const canvasX = e.clientX - rect.left;
+        const canvasY = e.clientY - rect.top;
+
+        // Apply inverse zoom and pan transformations to get world coordinates
+        const worldX = (canvasX - this.panX) / this.zoomLevel;
+        const worldY = (canvasY - this.panY) / this.zoomLevel;
+
+        // Apply original display scaling
+        let x = worldX * this.scaleX;
+        let y = worldY * this.scaleY;
 
         this.mousePos = { x, y };
         this.dragStart = { x, y };
+
+        // Store canvas coords for panning
+        this.panStart = { x: canvasX, y: canvasY };
 
         if (this.snapToGrid) {
             this.mousePos.x = Math.round(x / this.gridSize) * this.gridSize;
@@ -43,9 +54,17 @@ export const mouse = {
     onMouseMove(e) {
         try {
             const rect = this.canvas.getBoundingClientRect();
-            // Convert display coordinates to logical coordinates
-            const x = (e.clientX - rect.left) * this.scaleX;
-            const y = (e.clientY - rect.top) * this.scaleY;
+            // Convert display coordinates to canvas coordinates first
+            const canvasX = e.clientX - rect.left;
+            const canvasY = e.clientY - rect.top;
+
+            // Apply inverse zoom and pan transformations to get world coordinates
+            const worldX = (canvasX - this.panX) / this.zoomLevel;
+            const worldY = (canvasY - this.panY) / this.zoomLevel;
+
+            // Apply original display scaling
+            let x = worldX * this.scaleX;
+            let y = worldY * this.scaleY;
 
             this.mousePos = { x, y };
 
@@ -69,6 +88,25 @@ export const mouse = {
             // Handle rotation
             if (this.isRotating) {
                 this.performRotation(this.mousePos.x, this.mousePos.y);
+                return;
+            }
+
+            // Handle panning (CTRL + drag)
+            if (this.isPanning) {
+                const rect = this.canvas.getBoundingClientRect();
+                const currentCanvasX = e.clientX - rect.left;
+                const currentCanvasY = e.clientY - rect.top;
+
+                const deltaX = currentCanvasX - this.panStart.x;
+                const deltaY = currentCanvasY - this.panStart.y;
+
+                this.panX += deltaX;
+                this.panY += deltaY;
+
+                this.panStart.x = currentCanvasX;
+                this.panStart.y = currentCanvasY;
+
+                this.render();
                 return;
             }
 
@@ -108,6 +146,7 @@ export const mouse = {
         }
 
         this.isDragging = false;
+        this.isPanning = false;
         this.isResizing = false;
         this.resizeCorner = null;
         this.originalSize = null;
@@ -118,6 +157,12 @@ export const mouse = {
     },
 
     handleSelect(x, y) {
+        // If CTRL is pressed, start panning instead of selecting
+        if (this.ctrlKey) {
+            this.isPanning = true;
+            return;
+        }
+
         // First check if clicking on any handle (only if we have a single selected object for now)
         if (this.selectedObjects.length === 1) {
             const handle = this.getHandleAt(x, y);
