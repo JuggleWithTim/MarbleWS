@@ -25,6 +25,11 @@ export const mouse = {
             this.mousePos.y = Math.round(this.mousePos.y / this.gridSize) * this.gridSize;
         }
 
+        // Store logical coordinates for panning (rect already declared above)
+        const logicalX = (e.clientX - rect.left) * (this.canvas.width / rect.width);
+        const logicalY = (e.clientY - rect.top) * (this.canvas.height / rect.height);
+        this.panStart = { x: logicalX, y: logicalY };
+
         // Handle point selection mode first
         if (this.pointSelectionMode) {
             this.setPoint(this.mousePos.x, this.mousePos.y);
@@ -94,23 +99,21 @@ export const mouse = {
 
             // Handle panning (CTRL + drag)
             if (this.isPanning) {
-                const rect = this.canvas.getBoundingClientRect();
-                const currentCanvasX = e.clientX - rect.left;
-                const currentCanvasY = e.clientY - rect.top;
+                // Get current logical coordinates
+                const currentLogicalX = (e.clientX - rect.left) * (this.canvas.width / rect.width);
+                const currentLogicalY = (e.clientY - rect.top) * (this.canvas.height / rect.height);
 
-                const deltaX = currentCanvasX - this.panStart.x;
-                const deltaY = currentCanvasY - this.panStart.y;
+                // Calculate delta in logical space (panStart is in logical coordinates)
+                const logicalDeltaX = currentLogicalX - this.panStart.x;
+                const logicalDeltaY = currentLogicalY - this.panStart.y;
 
-                // Convert display pixel delta to logical pixel delta
-                // panX/panY are in logical pixel space
-                const logicalDeltaX = deltaX * (this.canvas.width / rect.width);
-                const logicalDeltaY = deltaY * (this.canvas.height / rect.height);
-
+                // Update pan (panX/panY are in logical pixel space)
                 this.panX += logicalDeltaX;
                 this.panY += logicalDeltaY;
 
-                this.panStart.x = currentCanvasX;
-                this.panStart.y = currentCanvasY;
+                // Update panStart to current logical position
+                this.panStart.x = currentLogicalX;
+                this.panStart.y = currentLogicalY;
 
                 this.render();
                 return;
