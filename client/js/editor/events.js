@@ -18,7 +18,6 @@ export const events = {
         document.getElementById('newLevel').addEventListener('click', () => this.newLevel());
         document.getElementById('loadLevel').addEventListener('click', () => this.loadLevel());
         document.getElementById('saveLevel').addEventListener('click', () => this.saveLevel());
-        document.getElementById('testLevel').addEventListener('click', () => this.testLevel());
         document.getElementById('zoomIn').addEventListener('click', () => this.zoomIn());
         document.getElementById('zoomOut').addEventListener('click', () => this.zoomOut());
         document.getElementById('resetZoom').addEventListener('click', () => this.resetZoom());
