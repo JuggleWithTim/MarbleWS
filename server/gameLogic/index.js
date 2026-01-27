@@ -194,6 +194,26 @@ class GameLogic {
     };
   }
 
+  // Chair unsit functionality
+  handlePlayerUnsitByUserId(userId) {
+    // Find player by userId (could be online or offline-spawned)
+    const player = Array.from(this.players.values()).find(p => p.userId === userId);
+
+    if (!player) {
+      return { success: false, message: 'Player not found' };
+    }
+
+    // Remove the player from the game
+    this.removePlayer(player.id);
+
+    return {
+      success: true,
+      message: 'Player despawned',
+      playerId: player.id,
+      username: player.username
+    };
+  }
+
   // Level management (delegate to levelManager)
   loadLevel(levelData) {
     this.levelManager.loadLevel(levelData);

@@ -78,6 +78,22 @@ class TwitchChat {
       return;
     }
 
+    // Check for !unsit command
+    if (msg.toLowerCase() === '!unsit') {
+      // Handle the unsit command for the user
+      const result = this.gameLogic.handlePlayerUnsitByUserId(userId);
+
+      // Log the result
+      if (result.success) {
+        console.log(`${username} despawned`);
+      } else {
+        console.log(`${username} failed to unsit: ${result.message}`);
+      }
+
+      // Don't process emotes for commands
+      return;
+    }
+
     // Check for emotes in the message
     if (context.emotes) {
       // Parse emotes from the message
