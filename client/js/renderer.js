@@ -220,7 +220,7 @@ class Renderer {
 
                 // Draw hat image with configurable offsets
                 this.ctx.drawImage(hatImg,
-                    -hatWidth / 2 + hatOffsetX, baseY - hatHeight + (15 * this.camera.zoom) + hatOffsetY,
+                    -hatWidth / 2 + hatOffsetX, baseY - hatHeight + (15 * this.camera.zoom * scale) + hatOffsetY,
                     hatWidth, hatHeight);
             } else {
                 // Start loading the hat image if not already loading
