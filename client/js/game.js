@@ -36,6 +36,7 @@ class Game {
 
         // Game mode renderers
         this.colorRushRenderer = null;
+        this.dungeonRenderer = null;
     }
 
     // Linear interpolation function
@@ -137,6 +138,7 @@ class Game {
         if (this.canvas) {
             this.renderer = new Renderer(this.canvas, this);
             this.colorRushRenderer = new window.ColorRushRenderer(this.renderer, this);
+            this.dungeonRenderer = new window.DungeonRenderer(this.renderer, this);
             this.controls.setupCanvasControls(this.canvas, this);
         }
 
@@ -561,8 +563,14 @@ class Game {
         // Draw level background if provided, else gradient fallback
         this.renderer.drawBackground(this.gameState.backgroundImage);
 
-        // Fixed camera view - no following, show entire 1920x1080 game area
-        this.renderer.setCamera(960, 540, 1); // Center of 1920x1080 canvas
+        // Apply camera based on game mode (dungeon mode has following camera)
+        const gameModeData = this.gameState.gameMode;
+        if (this.dungeonRenderer) {
+            this.dungeonRenderer.applyCamera(gameModeData);
+        } else {
+            // Default: Fixed camera view - no following, show entire 1920x1080 game area
+            this.renderer.setCamera(960, 540, 1); // Center of 1920x1080 canvas
+        }
 
         // Create combined array of all renderable objects with z-index
         const allRenderables = [];
@@ -657,13 +665,16 @@ class Game {
                     break;
                 case 'player':
                     const color = renderable.data.color || '#4ecdc4';
+                    const isDungeonMode = this.gameState.gameMode && this.gameState.gameMode.mode === 'dungeon';
+                    const playerScale = isDungeonMode ? (this.gameState.gameMode.playerScale || 0.5) : 1;
                     this.renderer.drawUFO(
                         renderable.data.x,
                         renderable.data.y,
                         color,
                         renderable.data.beamActive,
                         renderable.data.ufoAppearance,
-                        this
+                        this,
+                        playerScale
                     );
                     break;
             }
@@ -687,6 +698,10 @@ class Game {
         // Render game mode specific elements
         if (this.colorRushRenderer) {
             this.colorRushRenderer.render();
+        }
+
+        if (this.dungeonRenderer) {
+            this.dungeonRenderer.render();
         }
 
         // Debug info (optional)

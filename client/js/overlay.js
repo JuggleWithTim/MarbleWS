@@ -150,7 +150,23 @@ class TransparentRenderer extends Renderer {
     function renderGameState(gameState, deltaTime = 0) {
         // Draw level background (remove to keep transparent overlay)
         renderer.drawBackground(gameState.backgroundImage);
-        renderer.setCamera(960, 540, 1);
+
+        // Apply camera based on game mode
+        const gameModeData = gameState.gameMode;
+        if (gameModeData && gameModeData.mode === 'dungeon' && gameModeData.followTarget) {
+            // Dungeon mode with follow target - use zoomed camera following the target player
+            const followPlayer = gameState.players.find(p => p.username.toLowerCase() === gameModeData.followTarget.toLowerCase());
+            if (followPlayer) {
+                // Apply dungeon-like camera (2x zoom, following player)
+                renderer.setCamera(followPlayer.x, followPlayer.y, 2.0);
+            } else {
+                // Target player not found, show default full view
+                renderer.setCamera(960, 540, 1);
+            }
+        } else {
+            // Default: Fixed camera view - show entire 1920x1080 game area
+            renderer.setCamera(960, 540, 1);
+        }
 
         // Create combined array of all renderable objects with z-index
         const allRenderables = [];

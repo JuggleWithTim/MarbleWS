@@ -94,6 +94,28 @@ class TwitchChat {
       return;
     }
 
+    // Check for !follow command (for Dungeon mode overlay)
+    if (msg.toLowerCase().startsWith('!follow')) {
+      const parts = msg.trim().split(/\s+/);
+
+      if (parts.length > 1) {
+        const targetUsername = parts[1].toLowerCase();
+
+        // Check if current game mode is Dungeon
+        const currentMode = this.gameLogic.gameModeManager.getCurrentMode();
+        if (currentMode && currentMode.getModeName() === 'Dungeon') {
+          // Set follow target for dungeon mode
+          this.gameLogic.setDungeonFollowTarget(targetUsername);
+          console.log(`Dungeon mode overlay now following user: ${targetUsername}`);
+        } else {
+          console.log(`Follow command ignored - not in Dungeon mode`);
+        }
+      }
+
+      // Don't process emotes for commands
+      return;
+    }
+
     // Check for emotes in the message
     if (context.emotes) {
       // Parse emotes from the message

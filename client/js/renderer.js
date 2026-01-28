@@ -126,9 +126,9 @@ class Renderer {
         this.ctx.restore();
     }
 
-    drawUFO(x, y, color = '#4ecdc4', beamActive = false, appearance = null, game = null) {
+    drawUFO(x, y, color = '#4ecdc4', beamActive = false, appearance = null, game = null, scale = 1) {
         const screenPos = this.worldToScreen(x, y);
-        const size = 30 * this.camera.zoom;
+        const size = 30 * this.camera.zoom * scale;
 
         this.ctx.save();
         this.ctx.translate(screenPos.x, screenPos.y);
