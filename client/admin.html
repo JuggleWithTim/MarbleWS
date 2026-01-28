@@ -500,6 +500,10 @@
                 <h3>Other Levels</h3>
                 <div class="levels-grid" id="otherLevelsGrid"></div>
             </div>
+            <div class="levels-section">
+                <h3>Dungeons</h3>
+                <div class="levels-grid" id="dungeonsGrid"></div>
+            </div>
 
             <div class="players-section">
                 <h3>Player Management</h3>
@@ -871,9 +875,11 @@
                 const prodGrid = document.getElementById('prodLevelsGrid');
                 const devGrid = document.getElementById('devLevelsGrid');
                 const otherGrid = document.getElementById('otherLevelsGrid');
+                const dungeonsGrid = document.getElementById('dungeonsGrid');
                 prodGrid.innerHTML = '';
                 devGrid.innerHTML = '';
                 otherGrid.innerHTML = '';
+                dungeonsGrid.innerHTML = '';
 
                 if (levels.length === 0) {
                     otherGrid.innerHTML = '<p>No levels found. Create some levels in the editor!</p>';
@@ -884,6 +890,7 @@
                 const categorizedLevels = {
                     prod: [],
                     dev: [],
+                    dungeons: [],
                     other: []
                 };
 
@@ -893,6 +900,8 @@
                         categorizedLevels.prod.push(level);
                     } else if (desc.includes('dev')) {
                         categorizedLevels.dev.push(level);
+                    } else if (desc.includes('dungeon')) {
+                        categorizedLevels.dungeons.push(level);
                     } else {
                         categorizedLevels.other.push(level);
                     }
@@ -900,7 +909,7 @@
 
                 // Render levels in each category
                 Object.keys(categorizedLevels).forEach(category => {
-                    const grid = category === 'prod' ? prodGrid : category === 'dev' ? devGrid : otherGrid;
+                    const grid = category === 'prod' ? prodGrid : category === 'dev' ? devGrid : category === 'dungeons' ? dungeonsGrid : otherGrid;
                     const levelsInCategory = categorizedLevels[category];
 
                     if (levelsInCategory.length === 0) {
