@@ -173,9 +173,9 @@ class Renderer {
                 // Get custom dimensions from game data
                 const passengerData = game && game.passengerData ? game.passengerData[appearance.passenger] : null;
                 const passengerWidth = (passengerData && passengerData.width) ?
-                    passengerData.width * this.camera.zoom * 0.8 : size * 1.5;
+                    passengerData.width * this.camera.zoom * 0.8 * scale : size * 1.5;
                 const passengerHeight = (passengerData && passengerData.height) ?
-                    passengerData.height * this.camera.zoom * 0.8 : size * 1.5;
+                    passengerData.height * this.camera.zoom * 0.8 * scale : size * 1.5;
 
                 // Get configurable offsets from game data
                 const passengerOffsetX = (passengerData && passengerData.offsetX !== undefined) ?
@@ -205,9 +205,9 @@ class Renderer {
                 // Get custom dimensions from game data
                 const hatData = game && game.hatData ? game.hatData[appearance.hat] : null;
                 const hatWidth = (hatData && hatData.width) ?
-                    hatData.width * this.camera.zoom * 0.8 : size * 1.2;
+                    hatData.width * this.camera.zoom * 0.8 * scale : size * 1.2;
                 const hatHeight = (hatData && hatData.height) ?
-                    hatData.height * this.camera.zoom * 0.8 : size * 1.2;
+                    hatData.height * this.camera.zoom * 0.8 * scale : size * 1.2;
 
                 // Get configurable offsets from game data
                 const hatOffsetX = (hatData && hatData.offsetX !== undefined) ?
