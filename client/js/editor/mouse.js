@@ -154,6 +154,11 @@ export const mouse = {
             return;
         }
 
+        // Save state if we were dragging objects
+        if (this.isDragging) {
+            this.saveState();
+        }
+
         this.isDragging = false;
         this.isPanning = false;
         this.isResizing = false;
@@ -585,6 +590,7 @@ export const mouse = {
         }
 
         this.level.connections.push(connection);
+        this.saveState();
 
         // Update remove connections button visibility for both connected objects
         this.updateRemoveConnectionsButtonVisibility();
