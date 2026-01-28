@@ -62,12 +62,12 @@ class DungeonRenderer {
         const viewWidth = this.canvas.width / zoom;
         const viewHeight = this.canvas.height / zoom;
 
-        // Calculate camera bounds, keeping margin from edges
-        const margin = this.cameraBounds.margin;
-        const minCameraX = this.cameraBounds.left + viewWidth / 2 + margin;
-        const maxCameraX = this.cameraBounds.right - viewWidth / 2 - margin;
-        const minCameraY = this.cameraBounds.top + viewHeight / 2 + margin;
-        const maxCameraY = this.cameraBounds.bottom - viewHeight / 2 - margin;
+        // Calculate camera bounds to allow exploration of the entire level
+        // Allow camera to move so player can see the level boundaries
+        const minCameraX = this.cameraBounds.left + viewWidth / 2;
+        const maxCameraX = this.cameraBounds.right - viewWidth / 2;
+        const minCameraY = this.cameraBounds.top + viewHeight / 2;
+        const maxCameraY = this.cameraBounds.bottom - viewHeight / 2;
 
         // Clamp camera position to bounds
         const clampedCameraX = Math.max(minCameraX, Math.min(maxCameraX, this.currentCameraX));

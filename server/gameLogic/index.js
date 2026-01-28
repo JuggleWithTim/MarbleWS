@@ -29,6 +29,7 @@ class GameLogic {
     // Set up cross-module references
     this.playerManager.setWorld(this.world);
     this.playerManager.setLevelObjects(this.levelManager.levelObjects);
+    this.playerManager.setGameMode(this.gameModeManager.currentGameMode);
 
     this.levelManager.setWorld(this.world);
     this.levelManager.setEngine(this.engine);

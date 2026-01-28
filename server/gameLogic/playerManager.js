@@ -93,8 +93,15 @@ class PlayerManager {
       }
     }
 
+    // Calculate UFO physics radius based on game mode
+    // Dungeon mode scales down the visual size, so physics should match
+    let physicsRadius = 25; // Default radius
+    if (this.gameMode && this.gameMode.getModeName() === 'Dungeon') {
+      physicsRadius = 25 * this.gameMode.playerScale;
+    }
+
     // Create UFO physics body
-    const ufoBody = Matter.Bodies.circle(spawnX, spawnY, 25, {
+    const ufoBody = Matter.Bodies.circle(spawnX, spawnY, physicsRadius, {
       isStatic: false,
       friction: 0.2,        // Increased from 0.1
       frictionAir: 0.05,    // Increased from 0.05 for better stopping
@@ -685,6 +692,11 @@ class PlayerManager {
 
   setLevelObjects(levelObjects) {
     this.levelObjects = levelObjects;
+  }
+
+  // Set reference to current game mode
+  setGameMode(gameMode) {
+    this.gameMode = gameMode;
   }
 }
 
