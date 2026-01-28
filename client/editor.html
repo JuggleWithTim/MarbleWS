@@ -397,6 +397,20 @@
                         <option value="Dungeon">Dungeon</option>
                     </select>
                 </div>
+                <div class="property-group" id="levelSizeGroup" style="display: none;">
+                    <label>Level Size (Dungeon worlds only):
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">The width and height of the world boundaries for dungeon levels. Larger sizes allow for bigger exploration areas. The camera stays within these bounds and follows players around.</span>
+                        </span>
+                    </label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="number" id="levelWidth" value="1920" min="1920" max="10000" step="1">
+                        <span>x</span>
+                        <input type="number" id="levelHeight" value="1080" min="1080" max="10000" step="1">
+                        <span>pixels</span>
+                    </div>
+                </div>
                 <div class="property-group">
                     <label>Level Background Image:
                         <span class="tooltip-container">

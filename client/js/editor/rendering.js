@@ -29,22 +29,29 @@ export const rendering = {
             this.ctx.translate(this.panX, this.panY);
             this.ctx.scale(this.zoomLevel, this.zoomLevel);
 
+            // Get world bounds for background scaling
+            const levelWidth = this.level.levelWidth || 1920;
+            const levelHeight = this.level.levelHeight || 1080;
+
             // Draw background
             if (this.backgroundImage) {
-                // Draw the background image
-                this.ctx.drawImage(this.backgroundImage, 0, 0, this.canvas.width, this.canvas.height);
+                // Draw the background image scaled to world bounds for consistency
+                this.ctx.drawImage(this.backgroundImage, 0, 0, levelWidth, levelHeight);
 
                 // Add a slight overlay to ensure objects are visible
                 this.ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                this.ctx.fillRect(0, 0, levelWidth, levelHeight);
             } else {
-                // Draw default gradient background
-                const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
+                // Draw default gradient background covering the entire world
+                const gradient = this.ctx.createLinearGradient(0, 0, 0, levelHeight);
                 gradient.addColorStop(0, '#1a1a2e');
                 gradient.addColorStop(1, '#16213e');
                 this.ctx.fillStyle = gradient;
-                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                this.ctx.fillRect(0, 0, levelWidth, levelHeight);
             }
+
+            // Draw world boundaries (always show for visual feedback)
+            this.drawWorldBoundaries();
 
             // Draw grid
             if (this.showGrid) {
@@ -89,23 +96,54 @@ export const rendering = {
         }
     },
 
+    drawWorldBoundaries() {
+        const levelWidth = this.level.levelWidth || 1920;
+        const levelHeight = this.level.levelHeight || 1080;
+
+        // Draw world boundary rectangle
+        this.ctx.strokeStyle = 'rgba(255, 165, 0, 0.7)'; // Orange color for world boundaries
+        this.ctx.lineWidth = 3;
+        this.ctx.setLineDash([10, 5]);
+        this.ctx.strokeRect(0, 0, levelWidth, levelHeight);
+
+        // Reset line dash
+        this.ctx.setLineDash([]);
+
+        // Draw dimension labels
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        this.ctx.font = '12px Arial';
+        this.ctx.textAlign = 'center';
+
+        // Top center label
+        this.ctx.fillText(`${levelWidth} x ${levelHeight}`, levelWidth / 2, -10);
+
+        // Bottom right corner label (show it's the world size)
+        this.ctx.fillStyle = 'rgba(255, 165, 0, 0.9)';
+        this.ctx.font = '10px Arial';
+        this.ctx.textAlign = 'right';
+        this.ctx.fillText('WORLD BOUNDS', levelWidth - 10, levelHeight - 10);
+    },
+
     drawGrid() {
         this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
         this.ctx.lineWidth = 1;
 
-        // Vertical lines
-        for (let x = 0; x <= this.canvas.width; x += this.gridSize) {
+        const levelWidth = this.level.levelWidth || 1920;
+        const levelHeight = this.level.levelHeight || 1080;
+
+        // Vertical lines covering the entire world bounds
+        for (let x = 0; x <= levelWidth; x += this.gridSize) {
             this.ctx.beginPath();
             this.ctx.moveTo(x, 0);
-            this.ctx.lineTo(x, this.canvas.height);
+            this.ctx.lineTo(x, levelHeight);
             this.ctx.stroke();
         }
 
-        // Horizontal lines
-        for (let y = 0; y <= this.canvas.height; y += this.gridSize) {
+        // Horizontal lines covering the entire world bounds
+        for (let y = 0; y <= levelHeight; y += this.gridSize) {
             this.ctx.beginPath();
             this.ctx.moveTo(0, y);
-            this.ctx.lineTo(this.canvas.width, y);
+            this.ctx.lineTo(levelWidth, y);
             this.ctx.stroke();
         }
     },

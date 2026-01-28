@@ -162,6 +162,15 @@ export class LevelEditorCore {
         level.levelType = level.levelType || DEFAULT_LEVEL.levelType;
         level.backgroundImage = level.backgroundImage || DEFAULT_LEVEL.backgroundImage;
 
+        // Set level size defaults based on level type
+        if (level.levelType === 'Dungeon') {
+            level.levelWidth = level.levelWidth || 3840; // 2x default width for dungeon levels
+            level.levelHeight = level.levelHeight || 2160; // 2x default height for dungeon levels
+        } else {
+            level.levelWidth = level.levelWidth || 1920; // Standard size for other level types
+            level.levelHeight = level.levelHeight || 1080; // Standard size for other level types
+        }
+
         return level;
     }
 
@@ -306,9 +315,21 @@ export class LevelEditorCore {
         if (document.getElementById('levelDescription')) {
             document.getElementById('levelDescription').value = this.level.description || '';
         }
+        if (document.getElementById('levelType')) {
+            document.getElementById('levelType').value = this.level.levelType || 'Marble';
+        }
         if (document.getElementById('backgroundImage')) {
             document.getElementById('backgroundImage').value = this.level.backgroundImage || '';
             this.loadBackgroundImage();
+        }
+
+        // Level size controls (show/hide based on level type)
+        this.updateLevelTypeVisibility();
+        if (document.getElementById('levelWidth')) {
+            document.getElementById('levelWidth').value = this.level.levelWidth || 1920;
+        }
+        if (document.getElementById('levelHeight')) {
+            document.getElementById('levelHeight').value = this.level.levelHeight || 1080;
         }
 
         // World physics properties
@@ -352,6 +373,18 @@ export class LevelEditorCore {
             if (document.getElementById('emoteSpawnAll')) {
                 document.getElementById('emoteSpawnAll').checked = this.level.emote.spawnAll || false;
             }
+        }
+    }
+
+    // Update level type visibility
+    updateLevelTypeVisibility() {
+        const levelType = this.level.levelType || 'Marble';
+        const levelSizeGroup = document.getElementById('levelSizeGroup');
+        if (levelSizeGroup) {
+            levelSizeGroup.style.display = levelType === 'Dungeon' ? 'block' : 'none';
+        }
+        if (document.getElementById('levelType')) {
+            document.getElementById('levelType').value = levelType;
         }
     }
 }
