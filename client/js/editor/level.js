@@ -29,6 +29,10 @@ export const level = {
             this.updateObjectList();
             this.render();
             this.updateJsonDisplay();
+
+            // Save the new level as initial state for undo/redo
+            this.saveState();
+
             this.updateStatus('New level created');
         }
     },
@@ -89,6 +93,10 @@ export const level = {
                 this.updateObjectList();
                 this.render();
                 this.updateJsonDisplay();
+
+                // Save the loaded level as initial state for undo/redo
+                this.saveState();
+
                 this.updateStatus(`Loaded level: ${levelName}`);
             } else {
                 alert('Level not found!');

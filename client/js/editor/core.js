@@ -69,6 +69,11 @@ export class LevelEditorCore {
         this.panY = 0;
         this.isPanning = false;
         this.panStart = { x: 0, y: 0 };
+
+        // Undo/redo history
+        this.actionHistory = [];
+        this.historyIndex = -1;
+        this.maxHistory = 50;
     }
 
     async init() {
@@ -86,6 +91,9 @@ export class LevelEditorCore {
         if (removeConnectionsBtn) {
             removeConnectionsBtn.style.display = 'none';
         }
+
+        // Save initial state for undo functionality
+        this.saveState();
 
         this.render();
         this.updateZoomDisplay();
@@ -222,6 +230,128 @@ export class LevelEditorCore {
         if (zoomElement) {
             const zoomPercent = Math.round(this.zoomLevel * 100);
             zoomElement.innerHTML = `<span id="mousePos">Mouse: 0, 0</span> | Zoom: ${zoomPercent}%`;
+        }
+    }
+
+    // Undo/redo functionality
+    saveState() {
+        // Create a deep clone of the current level state
+        const levelCopy = JSON.parse(JSON.stringify(this.level));
+
+        // Remove future history if we're not at the end
+        this.actionHistory = this.actionHistory.slice(0, this.historyIndex + 1);
+
+        // Add the new state
+        this.actionHistory.push(levelCopy);
+
+        // Trim old history if exceeding max
+        if (this.actionHistory.length > this.maxHistory) {
+            this.actionHistory.shift();
+        } else {
+            this.historyIndex++;
+        }
+    }
+
+    canUndo() {
+        return this.historyIndex > 0;
+    }
+
+    canRedo() {
+        return this.historyIndex < this.actionHistory.length - 1;
+    }
+
+    undo() {
+        if (this.canUndo()) {
+            this.historyIndex--;
+            this.loadState();
+            this.updateStatus('Undid last action');
+        } else {
+            this.updateStatus('Cannot undo');
+        }
+    }
+
+    redo() {
+        if (this.canRedo()) {
+            this.historyIndex++;
+            this.loadState();
+            this.updateStatus('Redid last action');
+        } else {
+            this.updateStatus('Cannot redo');
+        }
+    }
+
+    loadState() {
+        // Load the level from history
+        this.level = JSON.parse(JSON.stringify(this.actionHistory[this.historyIndex]));
+
+        // Reset selections and update UI
+        this.selectedObjects = [];
+        this.selectedObject = null;
+
+        // Update all UI elements
+        this.updateObjectList();
+        this.updateJsonDisplay();
+        this.render();
+
+        // Update form inputs to reflect the loaded level
+        this.updateFormInputs();
+    }
+
+    // Update form inputs to match the current level state
+    updateFormInputs() {
+        // Level info
+        if (document.getElementById('levelName')) {
+            document.getElementById('levelName').value = this.level.name || '';
+        }
+        if (document.getElementById('levelDescription')) {
+            document.getElementById('levelDescription').value = this.level.description || '';
+        }
+        if (document.getElementById('backgroundImage')) {
+            document.getElementById('backgroundImage').value = this.level.backgroundImage || '';
+            this.loadBackgroundImage();
+        }
+
+        // World physics properties
+        if (document.getElementById('worldGravity')) {
+            document.getElementById('worldGravity').value = this.level.world?.gravity || 9.8;
+        }
+
+        // Marble properties
+        if (this.level.marble) {
+            if (document.getElementById('marbleColor')) {
+                document.getElementById('marbleColor').value = this.level.marble.color || '#ffffff';
+            }
+            if (document.getElementById('marbleRadius')) {
+                document.getElementById('marbleRadius').value = this.level.marble.radius || 10;
+            }
+            if (document.getElementById('marbleFriction')) {
+                document.getElementById('marbleFriction').value = this.level.marble.friction || 0.1;
+            }
+            if (document.getElementById('marbleRestitution')) {
+                document.getElementById('marbleRestitution').value = this.level.marble.restitution || 0.8;
+            }
+            if (document.getElementById('marbleDensity')) {
+                document.getElementById('marbleDensity').value = this.level.marble.density || 0.001;
+            }
+        }
+
+        // Emote properties
+        if (this.level.emote) {
+            if (document.getElementById('emoteRadius')) {
+                document.getElementById('emoteRadius').value = this.level.emote.radius || 5;
+            }
+            if (document.getElementById('emoteFriction')) {
+                document.getElementById('emoteFriction').value = this.level.emote.friction || 0.1;
+            }
+            if (document.getElementById('emoteRestitution')) {
+                document.getElementById('emoteRestitution').value = this.level.emote.restitution || 0.8;
+            }
+            if (document.getElementById('emoteDensity')) {
+                document.getElementById('emoteDensity').value = this.level.emote.density || 0.001;
+            }
+            if (document.getElementById('emoteSpawnAll')) {
+                document.getElementById('emoteSpawnAll').checked = this.level.emote.spawnAll || false;
+            }
         }
     }
 }

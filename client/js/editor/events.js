@@ -46,64 +46,78 @@ export const events = {
         // Level info and marble properties
         document.getElementById('levelName').addEventListener('input', (e) => {
             this.level.name = e.target.value;
+            this.saveState();
         });
 
         document.getElementById('levelDescription').addEventListener('input', (e) => {
             this.level.description = e.target.value;
+            this.saveState();
         });
 
         document.getElementById('backgroundImage').addEventListener('input', (e) => {
             this.level.backgroundImage = e.target.value;
             this.loadBackgroundImage();
             this.render();
+            this.saveState();
         });
 
         // World physics properties
         document.getElementById('worldGravity').addEventListener('input', (e) => {
             this.level.world.gravity = parseFloat(e.target.value);
             this.updateJsonDisplay(); // Update JSON panel when gravity changes
+            this.saveState();
         });
 
         // Marble property inputs
         document.getElementById('marbleColor').addEventListener('input', (e) => {
             this.level.marble.color = e.target.value;
+            this.saveState();
         });
 
         document.getElementById('marbleRadius').addEventListener('input', (e) => {
             this.level.marble.radius = parseInt(e.target.value);
+            this.saveState();
         });
 
         document.getElementById('marbleFriction').addEventListener('input', (e) => {
             this.level.marble.friction = parseFloat(e.target.value);
+            this.saveState();
         });
 
         document.getElementById('marbleRestitution').addEventListener('input', (e) => {
             this.level.marble.restitution = parseFloat(e.target.value);
+            this.saveState();
         });
 
         document.getElementById('marbleDensity').addEventListener('input', (e) => {
             this.level.marble.density = parseFloat(e.target.value);
+            this.saveState();
         });
 
         // Emote property inputs
         document.getElementById('emoteRadius').addEventListener('input', (e) => {
             this.level.emote.radius = parseInt(e.target.value);
+            this.saveState();
         });
 
         document.getElementById('emoteFriction').addEventListener('input', (e) => {
             this.level.emote.friction = parseFloat(e.target.value);
+            this.saveState();
         });
 
         document.getElementById('emoteRestitution').addEventListener('input', (e) => {
             this.level.emote.restitution = parseFloat(e.target.value);
+            this.saveState();
         });
 
         document.getElementById('emoteDensity').addEventListener('input', (e) => {
             this.level.emote.density = parseFloat(e.target.value);
+            this.saveState();
         });
 
         document.getElementById('emoteSpawnAll').addEventListener('change', (e) => {
             this.level.emote.spawnAll = e.target.checked;
+            this.saveState();
         });
 
         // Show/hide nextLevel field when goal checkbox is toggled
@@ -182,6 +196,12 @@ export const events = {
             } else if (e.ctrlKey && e.key === 'v' && this.clipboard.length > 0) {
                 // Paste objects from clipboard
                 this.pasteObjects();
+            } else if (e.ctrlKey && !e.shiftKey && e.key === 'z') {
+                // Undo with Ctrl+Z
+                this.undo();
+            } else if (e.ctrlKey && e.shiftKey && e.key === 'Z') {
+                // Redo with Ctrl+Shift+Z
+                this.redo();
             }
         });
 

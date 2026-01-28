@@ -1,7 +1,7 @@
 // Object creation, selection, and manipulation
 
 import { DEFAULT_OBJECT_PROPERTIES } from './constants.js';
-import { generateUniqueObjectName, createRgba, parseRgba, rgbToHex, loadObjectImage } from './utils.js';
+import { generateUniqueObjectName, createRgba, parseRgba, rgbToHex, hexToRgb, loadObjectImage } from './utils.js';
 
 export const objects = {
     createRectangle(x, y) {
@@ -55,6 +55,7 @@ export const objects = {
         }
 
         this.level.objects.push(obj);
+        this.saveState();
         this.selectObject(obj);
         this.updateObjectList();
         this.render();
@@ -105,6 +106,7 @@ export const objects = {
         }
 
         this.level.objects.push(obj);
+        this.saveState();
         this.selectObject(obj);
         this.updateObjectList();
         this.render();
@@ -535,6 +537,7 @@ export const objects = {
             this.updateAlphaDisplay(alpha);
         }
 
+        this.saveState();
         this.updateObjectList();
         this.render();
     },
@@ -559,6 +562,7 @@ export const objects = {
                 this.selectObjects(this.selectedObjects); // Refresh selection
             }
 
+            this.saveState();
             this.updateObjectList();
             this.render();
             this.updateJsonDisplay();
@@ -666,6 +670,7 @@ export const objects = {
         else if (this.pointSelectionMode === 'rotationPoint') pointLabel = 'Rotation Point';
 
         this.pointSelectionMode = null;
+        this.saveState();
         this.updateStatus(`Point ${pointLabel} set`);
         this.render();
     },
@@ -719,6 +724,7 @@ export const objects = {
         // Update button visibility after removing connections
         this.updateRemoveConnectionsButtonVisibility();
 
+        this.saveState();
         this.render();
         this.updateJsonDisplay();
     },
@@ -762,6 +768,7 @@ export const objects = {
         // Select the newly pasted objects
         this.selectObjects(pastedObjects);
 
+        this.saveState();
         this.updateObjectList();
         this.render();
         this.updateJsonDisplay();
