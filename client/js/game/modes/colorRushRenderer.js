@@ -10,10 +10,10 @@ class ColorRushRenderer {
         this.roundState = 'waiting';
         this.roundNumber = 0;
         this.sections = [
-            { id: 0, color: '#ff7b00', x: 0, y: 0, width: 960, height: 540 },      // Top-left (red)
-            { id: 1, color: '#7300a9', x: 960, y: 0, width: 960, height: 540 },    // Top-right (teal)
-            { id: 2, color: '#48c5e0', x: 0, y: 540, width: 960, height: 540 },    // Bottom-left (blue)
-            { id: 3, color: '#db930e', x: 960, y: 540, width: 960, height: 540 }   // Bottom-right (yellow)
+            { id: 0, color: '#ff7b00', x: 0, y: 0, width: 960, height: 540 },      // Top-left
+            { id: 1, color: '#7300a9', x: 960, y: 0, width: 960, height: 540 },    // Top-right
+            { id: 2, color: '#48c5e0', x: 0, y: 540, width: 960, height: 540 },    // Bottom-left
+            { id: 3, color: '#db930e', x: 960, y: 540, width: 960, height: 540 }   // Bottom-right
         ];
 
         // Animation properties for section highlighting
