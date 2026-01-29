@@ -171,6 +171,8 @@ class PlayerManager {
   }
 
   repositionPlayersToSpawn(levelData) {
+    const isDungeonMode = levelData && levelData.levelType === 'Dungeon';
+
     // Find spawn position - prioritize playerspawn, then fall back to spawnpoint
     let spawnX = 960;
     let spawnY = 540;
@@ -197,8 +199,32 @@ class PlayerManager {
     // Reposition all existing players to the spawnpoint
     this.players.forEach(player => {
       if (player.body) {
-        Matter.Body.setPosition(player.body, { x: spawnX, y: spawnY });
-        Matter.Body.setVelocity(player.body, { x: 0, y: 0 });
+        // Remove old body from physics world
+        Matter.World.remove(this.world, player.body);
+
+        // Calculate physics radius based on game mode
+        let physicsRadius = 25; // Default radius
+        if (isDungeonMode) {
+          physicsRadius = 25 * 0.5; // 50% scale for dungeon mode
+        }
+
+        // Create new body with correct radius
+        const newBody = Matter.Bodies.circle(spawnX, spawnY, physicsRadius, {
+          isStatic: false,
+          friction: 0.2,
+          frictionAir: 0.05,
+          restitution: 0.2,
+          density: 0.0008,
+          render: {
+            fillStyle: '#4ecdc4'
+          }
+        });
+
+        // Add new body to physics world
+        Matter.World.add(this.world, newBody);
+
+        // Update player reference
+        player.body = newBody;
         player.x = spawnX;
         player.y = spawnY;
 
