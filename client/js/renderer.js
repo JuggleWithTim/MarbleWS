@@ -518,4 +518,49 @@ class Renderer {
             this.ctx.restore();
         });
     }
+
+    drawStreamerClaw(clawPos) {
+        const screenPos = this.worldToScreen(clawPos.x, clawPos.y);
+
+        // Draw alien claw hand
+        const clawSize = 40 * this.camera.zoom;
+
+        this.ctx.save();
+        this.ctx.translate(screenPos.x, screenPos.y);
+
+        // Claw fingers (3 spread out fingers)
+        this.ctx.strokeStyle = '#9b59b6';
+        this.ctx.lineWidth = 3 * this.camera.zoom;
+        this.ctx.lineCap = 'round';
+
+        // Finger lines emanating from center
+        for (let i = 0; i < 3; i++) {
+            const angle = (i - 1) * 0.5; // Spread fingers: -0.5, 0, 0.5 radians
+            const startX = 0;
+            const startY = 0;
+            const endX = Math.sin(angle) * clawSize;
+            const endY = Math.cos(angle) * clawSize;
+
+            this.ctx.beginPath();
+            this.ctx.moveTo(startX, startY);
+            this.ctx.lineTo(endX, endY);
+            this.ctx.stroke();
+        }
+
+        // Claw palm/center (purple circle)
+        this.ctx.beginPath();
+        this.ctx.arc(0, 0, clawSize * 0.3, 0, Math.PI * 2);
+        this.ctx.fillStyle = '#8e44ad';
+        this.ctx.fill();
+
+        // Add glow effect around the claw
+        this.ctx.shadowColor = '#9b59b6';
+        this.ctx.shadowBlur = 15;
+        this.ctx.beginPath();
+        this.ctx.arc(0, 0, clawSize * 0.3, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.ctx.shadowBlur = 0;
+
+        this.ctx.restore();
+    }
 }

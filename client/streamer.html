@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Streamer Panel - MarbleWS</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        body {
+            background: #1a1a2e;
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            color: white;
+            overflow: hidden;
+        }
+
+        .streamer-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background: #1a1a2e;
+        }
+
+        .login-screen {
+            display: flex;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .login-form {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 40px;
+            border-radius: 8px;
+            text-align: center;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .login-form h2 {
+            color: #4ecdc4;
+            margin-bottom: 20px;
+        }
+
+        .login-form p {
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 30px;
+        }
+
+        .connect-btn {
+            background: #4ecdc4;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .connect-btn:hover {
+            background: #45a29e;
+            transform: translateY(-1px);
+        }
+
+        #gameCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            cursor: grab;
+        }
+
+        #gameCanvas.grabbing {
+            cursor: grabbing;
+        }
+
+        .status-overlay {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 100;
+        }
+
+        .status-connected {
+            color: #4ecdc4;
+        }
+
+        .status-disconnected {
+            color: #ff6b6b;
+        }
+
+        .instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px 20px;
+            border-radius: 5px;
+            font-size: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 400px;
+            z-index: 100;
+        }
+
+        .instructions h3 {
+            color: #4ecdc4;
+            margin: 0 0 10px 0;
+            font-size: 16px;
+        }
+
+        .instructions ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 5px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+    </style>
+</head>
+<body>
+    <div class="streamer-container">
+        <div class="login-screen" id="loginScreen">
+            <div class="login-form">
+                <h2>Streamer Panel</h2>
+                <p>Connected as Alien Claw controller</p>
+                <button class="connect-btn" onclick="connectStreamer()">Connect</button>
+            </div>
+        </div>
+
+        <div id="gameScreen" style="display: none;">
+            <canvas id="gameCanvas"></canvas>
+
+            <div class="status-overlay" id="statusOverlay">
+                Status: <span id="statusText" class="status-disconnected">Disconnected</span>
+            </div>
+
+            <div class="instructions">
+                <h3>Streamer Controls</h3>
+                <ul>
+                    <li><strong>Mouse:</strong> Move alien claw</li>
+                    <li><strong>Click & Drag:</strong> Grab and move objects</li>
+                    <li><strong>Release:</strong> Drop grabbed objects</li>
+                    <li>The alien claw can move through walls and grab anything</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let networking = null;
+        let gameState = null;
+        let renderer = null;
+        let isLoggedIn = false;
+        let isGrabbing = false;
+        let grabbedObject = null;
+        let basePath = "__BASE_PATH__";
+
+        // Load client configuration
+        async function loadConfig() {
+            try {
+                const response = await fetch(`${basePath}/api/client-config`);
+                if (response.ok) {
+                    const config = await response.json();
+                    basePath = config.basePath || '';
+                    console.log('Streamer config loaded:', config);
+                    return;
+                }
+            } catch (error) {
+                console.error('Failed to load streamer config:', error);
+            }
+            basePath = '';
+        }
+
+        async function connectStreamer() {
+            await loadConfig();
+
+            // Initialize networking
+            networking = new StreamerNetworking();
+            await networking.connect();
+            renderer = new StreamerRenderer(document.getElementById('gameCanvas'), networking);
+
+            // Hide login screen and show game
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('gameScreen').style.display = 'block';
+
+            // Setup mouse controls
+            setupMouseControls();
+
+            // Start game loop
+            gameLoop();
+        }
+
+        function setupMouseControls() {
+            const canvas = document.getElementById('gameCanvas');
+
+            // Update cursor on mouse movement
+            canvas.addEventListener('mousemove', (e) => {
+                const worldPos = renderer.screenToWorld(e.offsetX, e.offsetY);
+                renderer.updateCursor(e);
+
+                if (isGrabbing) {
+                    networking.sendStreamerMove(worldPos.x, worldPos.y);
+                } else {
+                    networking.sendStreamerUpdateClaw(worldPos.x, worldPos.y);
+                }
+            });
+
+            canvas.addEventListener('mousedown', (e) => {
+                const worldPos = renderer.screenToWorld(e.offsetX, e.offsetY);
+                networking.sendStreamerGrab(worldPos.x, worldPos.y);
+                isGrabbing = true;
+                canvas.classList.add('grabbing');
+            });
+
+            canvas.addEventListener('mouseup', () => {
+                if (isGrabbing) {
+                    networking.sendStreamerRelease();
+                    isGrabbing = false;
+                    canvas.classList.remove('grabbing');
+                }
+            });
+
+            // Prevent context menu
+            canvas.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+            });
+        }
+
+        function gameLoop() {
+            if (renderer && gameState) {
+                renderer.render(gameState);
+            }
+            requestAnimationFrame(gameLoop);
+        }
+
+        // StreamerNetworking class for streamer-specific socket handling
+        class StreamerNetworking {
+            constructor() {
+                this.socket = null;
+                this.connected = false;
+                this.callbacks = {};
+            }
+
+            async connect() {
+                return new Promise((resolve) => {
+                    if (!window.io) {
+                        // Load Socket.IO
+                        const script = document.createElement('script');
+                        script.src = `${basePath}/socket.io/socket.io.js`;
+                        script.onload = () => this.initSocket(resolve);
+                        document.head.appendChild(script);
+                    } else {
+                        this.initSocket(resolve);
+                    }
+                });
+            }
+
+            initSocket(resolve) {
+                this.socket = io({ path: `${basePath}/socket.io` });
+
+                this.socket.on('connect', () => {
+                    console.log('Streamer connected to server');
+                    this.connected = true;
+                    document.getElementById('statusText').textContent = 'Connected';
+                    document.getElementById('statusText').className = 'status-connected';
+                    this.socket.emit('login', { token: 'streamer_auth_bypass' });
+                    resolve();
+                });
+
+                this.socket.on('disconnect', () => {
+                    console.log('Streamer disconnected from server');
+                    this.connected = false;
+                    document.getElementById('statusText').textContent = 'Disconnected';
+                    document.getElementById('statusText').className = 'status-disconnected';
+                });
+
+                this.socket.on('loginSuccess', (player) => {
+                    console.log('Streamer login successful:', player);
+                    isLoggedIn = true;
+                });
+
+                this.socket.on('gameState', (state) => {
+                    gameState = state;
+                    this.emit('gameState', state);
+                });
+
+                this.socket.on('gameStateUpdate', (state) => {
+                    gameState = state;
+                    this.emit('gameStateUpdate', state);
+                });
+
+                this.socket.on('error', (error) => {
+                    console.error('Streamer error:', error);
+                });
+            }
+
+            sendStreamerGrab(worldX, worldY) {
+                if (this.socket && this.connected) {
+                    this.socket.emit('streamerGrabObject', { worldX, worldY });
+                }
+            }
+
+            sendStreamerMove(worldX, worldY) {
+                if (this.socket && this.connected) {
+                    this.socket.emit('streamerMoveObject', { worldX, worldY });
+                }
+            }
+
+            sendStreamerRelease() {
+                if (this.socket && this.connected) {
+                    this.socket.emit('streamerReleaseObject', {});
+                }
+            }
+
+            sendStreamerUpdateClaw(worldX, worldY) {
+                if (this.socket && this.connected) {
+                    this.socket.emit('streamerUpdateClaw', { worldX, worldY });
+                }
+            }
+
+            on(event, callback) {
+                if (!this.callbacks[event]) {
+                    this.callbacks[event] = [];
+                }
+                this.callbacks[event].push(callback);
+            }
+
+            emit(event, data) {
+                if (this.callbacks[event]) {
+                    this.callbacks[event].forEach(callback => callback(data));
+                }
+            }
+        }
+
+        // StreamerRenderer class for rendering the game state from streamer perspective
+        class StreamerRenderer {
+            constructor(canvas, networking) {
+                this.canvas = canvas;
+                this.ctx = canvas.getContext('2d');
+                this.networking = networking;
+
+                // Set canvas size to fill screen
+                this.resizeCanvas();
+                window.addEventListener('resize', () => this.resizeCanvas());
+
+                this.cameraX = 960;
+                this.cameraY = 540;
+                this.scale = 1;
+            }
+
+            // Show/cursor changes when hovering over grab-able objects
+            updateCursor(mouseEvent) {
+                const worldPos = this.screenToWorld(mouseEvent.offsetX, mouseEvent.offsetY);
+
+                // Check if mouse is over any grab-able object (placeholder - we'll enhance this)
+                // For now, just show grab cursor in general streaming area
+                this.canvas.style.cursor = 'grab';
+
+                if (this.isMouseOverGrabableObject(worldPos.x, worldPos.y)) {
+                    this.canvas.style.cursor = 'pointer';
+                }
+            }
+
+            isMouseOverGrabableObject(worldX, worldY) {
+                // Check nearby objects that can be grabbed
+                if (!gameState) return false;
+
+                const objects = [...gameState.levelObjects, ...gameState.marbles, ...gameState.emotes];
+                const checkRadius = 50; // Highlight distance
+
+                for (const obj of objects) {
+                    // Only highlight objects that have physics bodies (can be grabbed)
+                    if (!obj.body) continue;
+
+                    const distance = Math.sqrt(Math.pow(obj.x - worldX, 2) + Math.pow(obj.y - worldY, 2));
+                    if (distance < checkRadius) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            resizeCanvas() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+            }
+
+            screenToWorld(screenX, screenY) {
+                const worldX = (screenX - this.canvas.width / 2) / this.scale + this.cameraX;
+                const worldY = (screenY - this.canvas.height / 2) / this.scale + this.cameraY;
+                return { x: worldX, y: worldY };
+            }
+
+            worldToScreen(worldX, worldY) {
+                const screenX = (worldX - this.cameraX) * this.scale + this.canvas.width / 2;
+                const screenY = (worldY - this.cameraY) * this.scale + this.canvas.height / 2;
+                return { x: screenX, y: screenY };
+            }
+
+            render(gameState) {
+                if (!gameState) return;
+
+                // Clear canvas
+                this.ctx.fillStyle = '#1a1a2e';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+                // Draw level background
+                this.drawBackground(gameState.backgroundImage);
+
+                // Draw level objects
+                gameState.levelObjects.forEach(obj => {
+                    this.drawLevelObject(obj);
+                });
+
+                // Draw marbles
+                gameState.marbles.forEach(marble => {
+                    this.drawMarble(marble);
+                });
+
+                // Draw players
+                gameState.players.forEach(player => {
+                    this.drawPlayer(player);
+                });
+
+                // Draw emotes
+                gameState.emotes.forEach(emote => {
+                    this.drawEmote(emote);
+                });
+
+                // Draw streamer claw indicator
+                if (gameState.streamerClaw) {
+                    this.drawStreamerClaw(gameState.streamerClaw);
+                }
+            }
+
+            drawBackground(backgroundImage) {
+                if (backgroundImage) {
+                    // For simplicity, just draw a gradient background when there's a background image
+                    const gradient = this.ctx.createLinearGradient(0, 0, this.canvas.width, this.canvas.height);
+                    gradient.addColorStop(0, '#2c3e50');
+                    gradient.addColorStop(1, '#34495e');
+                    this.ctx.fillStyle = gradient;
+                    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                } else {
+                    const gradient = this.ctx.createRadialGradient(
+                        this.canvas.width / 2, this.canvas.height / 2, 0,
+                        this.canvas.width / 2, this.canvas.height / 2, Math.max(this.canvas.width, this.canvas.height) / 2
+                    );
+                    gradient.addColorStop(0, '#2c3e50');
+                    gradient.addColorStop(1, '#1a1a2e');
+                    this.ctx.fillStyle = gradient;
+                    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                }
+            }
+
+            drawLevelObject(obj) {
+                const screenPos = this.worldToScreen(obj.x, obj.y);
+
+                if (obj.shape === 'rectangle') {
+                    this.ctx.fillStyle = obj.color || '#888888';
+                    this.ctx.fillRect(
+                        screenPos.x - (obj.width * this.scale) / 2,
+                        screenPos.y - (obj.height * this.scale) / 2,
+                        obj.width * this.scale,
+                        obj.height * this.scale
+                    );
+                } else if (obj.shape === 'circle') {
+                    this.ctx.beginPath();
+                    this.ctx.arc(screenPos.x, screenPos.y, (obj.radius || 30) * this.scale, 0, Math.PI * 2);
+                    this.ctx.fillStyle = obj.color || '#888888';
+                    this.ctx.fill();
+                }
+            }
+
+            drawMarble(marble) {
+                const screenPos = this.worldToScreen(marble.x, marble.y);
+                const radius = (marble.radius || 30) * this.scale;
+
+                this.ctx.beginPath();
+                this.ctx.arc(screenPos.x, screenPos.y, radius, 0, Math.PI * 2);
+                this.ctx.fillStyle = marble.color || '#ff6b6b';
+                this.ctx.fill();
+
+                // Add glow effect
+                this.ctx.shadowColor = marble.color || '#ff6b6b';
+                this.ctx.shadowBlur = 10;
+                this.ctx.beginPath();
+                this.ctx.arc(screenPos.x, screenPos.y, radius, 0, Math.PI * 2);
+                this.ctx.fill();
+                this.ctx.shadowBlur = 0;
+            }
+
+            drawPlayer(player) {
+                const screenPos = this.worldToScreen(player.x, player.y);
+
+                // Draw UFO
+                this.ctx.beginPath();
+                this.ctx.arc(screenPos.x, screenPos.y, 20 * this.scale, 0, Math.PI * 2);
+                this.ctx.fillStyle = player.color || '#4ecdc4';
+                this.ctx.fill();
+
+                // Draw username
+                this.ctx.fillStyle = player.color || '#4ecdc4';
+                this.ctx.font = `${12 * this.scale}px Arial`;
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText(player.username, screenPos.x, screenPos.y - 30 * this.scale);
+            }
+
+            drawEmote(emote) {
+                const screenPos = this.worldToScreen(emote.x, emote.y);
+                const size = 32 * this.scale;
+
+                // For simplicity, draw a colored square for emotes
+                this.ctx.fillStyle = '#ff6b6b';
+                this.ctx.fillRect(
+                    screenPos.x - size / 2,
+                    screenPos.y - size / 2,
+                    size,
+                    size
+                );
+            }
+
+            drawStreamerClaw(clawPos) {
+                const screenPos = this.worldToScreen(clawPos.x, clawPos.y);
+
+                // Draw alien claw hand
+                const clawSize = 40 * this.scale;
+
+                // Claw fingers
+                this.ctx.strokeStyle = '#9b59b6';
+                this.ctx.lineWidth = 3 * this.scale;
+                this.ctx.lineCap = 'round';
+
+                // Finger lines
+                for (let i = 0; i < 3; i++) {
+                    const angle = (i - 1) * 0.5; // Spread fingers
+                    const startX = screenPos.x;
+                    const startY = screenPos.y;
+                    const endX = startX + Math.sin(angle) * clawSize;
+                    const endY = startY + Math.cos(angle) * clawSize;
+
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(startX, startY);
+                    this.ctx.lineTo(endX, endY);
+                    this.ctx.stroke();
+                }
+
+                // Claw center (palm)
+                this.ctx.beginPath();
+                this.ctx.arc(screenPos.x, screenPos.y, clawSize * 0.3, 0, Math.PI * 2);
+                this.ctx.fillStyle = '#8e44ad';
+                this.ctx.fill();
+
+                // Add glow effect
+                this.ctx.shadowColor = '#9b59b6';
+                this.ctx.shadowBlur = 15;
+                this.ctx.beginPath();
+                this.ctx.arc(screenPos.x, screenPos.y, clawSize * 0.3, 0, Math.PI * 2);
+                this.ctx.fill();
+                this.ctx.shadowBlur = 0;
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // Auto-connect for streamer (no login required beyond basic auth)
+            // connectStreamer() will be called when user clicks connect button
+        });
+    </script>
+</body>
+</html>

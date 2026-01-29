@@ -26,6 +26,12 @@ class GameLogic {
     // Dungeon mode follow target tracking
     this.dungeonFollowTarget = null;
 
+    // Streamer state
+    this.streamerPlayer = null;
+    this.streamerGrabbedObject = null;
+    this.streamerSocketId = null;
+    this.streamerGrabbedConstraint = null;
+
     // Set up cross-module references
     this.playerManager.setWorld(this.world);
     this.playerManager.setLevelObjects(this.levelManager.levelObjects);
@@ -268,6 +274,160 @@ class GameLogic {
   // Expose players for backward compatibility
   get players() {
     return this.playerManager.players;
+  }
+
+  // Streamer functionality
+  addStreamerPlayer(socketId) {
+    // Remove existing streamer player if it exists
+    if (this.streamerPlayer) {
+      this.removePlayer(this.streamerPlayer.id);
+    }
+
+    // Create streamer player as a special player
+    this.streamerPlayer = {
+      id: socketId,
+      username: 'Alien Claw',
+      userId: 'streamer_system',
+      x: 960,
+      y: 540,
+      color: '#9b59b6',
+      level: 999,
+      xp: 0,
+      coins: 0,
+      beamActive: false,
+      isStreamer: true
+    };
+
+    this.streamerSocketId = socketId;
+
+    console.log('Streamer player added:', this.streamerPlayer.username);
+    return this.streamerPlayer;
+  }
+
+  removeStreamerPlayer() {
+    if (this.streamerPlayer) {
+      // Clean up any grabbed objects and constraints
+      if (this.streamerGrabbedConstraint) {
+        Matter.World.remove(this.world, this.streamerGrabbedConstraint);
+      }
+
+      this.streamerPlayer = null;
+      this.streamerGrabbedObject = null;
+      this.streamerSocketId = null;
+      this.streamerGrabbedConstraint = null;
+      console.log('Streamer player removed');
+    }
+  }
+
+  handleStreamerGrabObject(socketId, worldX, worldY) {
+    if (socketId !== this.streamerSocketId || !this.streamerPlayer || this.streamerGrabbedObject) return;
+
+    // Get all objects that have physics bodies (can be grabbed)
+    const allObjects = [
+      ...this.levelManager.levelObjects,
+      ...this.levelManager.marbles,
+      ...this.levelManager.emotes
+    ].filter(obj => obj.body); // Only objects with physics bodies can be grabbed
+
+    if (allObjects.length === 0) {
+      console.log(`No grab-able objects found in level`);
+      return;
+    }
+
+    // Find the closest object at the given position (within 75px radius for better reach)
+    let closestObject = null;
+    let closestDistance = 75; // Increased reach
+
+    for (const obj of allObjects) {
+      const distance = Math.sqrt(Math.pow(obj.x - worldX, 2) + Math.pow(obj.y - worldY, 2));
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestObject = obj;
+      }
+    }
+
+    if (closestObject) {
+      this.streamerGrabbedObject = closestObject;
+
+      // Create a constraint to fix the object to the mouse position
+      this.streamerGrabbedConstraint = Matter.Constraint.create({
+        bodyA: closestObject.body,
+        pointA: { x: 0, y: 0 },
+        pointB: { x: worldX, y: worldY },
+        stiffness: 1.0, // Perfectly rigid
+        damping: 1.0
+      });
+
+      Matter.World.add(this.world, this.streamerGrabbedConstraint);
+
+      console.log(`Streamer grabbed object (type: ${closestObject.shape || 'marble'}, distance: ${closestDistance.toFixed(1)}px) at (${worldX}, ${worldY})`);
+    } else {
+      console.log(`No objects found within 75px of (${worldX}, ${worldY}). Total grab-able objects: ${allObjects.length}`);
+    }
+  }
+
+  handleStreamerMoveObject(socketId, worldX, worldY) {
+    if (socketId !== this.streamerSocketId || !this.streamerGrabbedConstraint) return;
+
+    // Update the constraint point to move the object
+    this.streamerGrabbedConstraint.pointB.x = worldX;
+    this.streamerGrabbedConstraint.pointB.y = worldY;
+  }
+
+  handleStreamerReleaseObject(socketId) {
+    if (socketId !== this.streamerSocketId) return;
+
+    if (this.streamerGrabbedObject && this.streamerGrabbedConstraint) {
+      console.log('Streamer released object');
+
+      // Remove the constraint from the world
+      Matter.World.remove(this.world, this.streamerGrabbedConstraint);
+
+      // Clear references
+      this.streamerGrabbedObject = null;
+      this.streamerGrabbedConstraint = null;
+    }
+  }
+
+  updateStreamerClawPosition(worldX, worldY) {
+    if (!this.streamerPlayer) return;
+
+    this.streamerPlayer.x = worldX;
+    this.streamerPlayer.y = worldY;
+  }
+
+  // Modified removePlayer to handle streamer removal
+  removePlayer(socketId) {
+    if (socketId === this.streamerSocketId) {
+      this.removeStreamerPlayer();
+    } else {
+      this.playerManager.removePlayer(socketId);
+    }
+  }
+
+  // Modified getGameState to include streamer data
+  getGameState() {
+    const gameState = this.gameState.getGameState();
+
+    // Add dungeon follow target to game state if in dungeon mode
+    if (gameState.gameMode && gameState.gameMode.mode === 'dungeon') {
+      gameState.gameMode.followTarget = this.dungeonFollowTarget;
+    }
+
+    // Add streamer claw position to game state
+    if (this.streamerPlayer) {
+      gameState.streamerClaw = {
+        x: this.streamerPlayer.x,
+        y: this.streamerPlayer.y
+      };
+    }
+
+    // Mark grabbed object for visual feedback
+    if (this.streamerGrabbedObject) {
+      gameState.streamerGrabbedObject = this.streamerGrabbedObject.id;
+    }
+
+    return gameState;
   }
 }
 

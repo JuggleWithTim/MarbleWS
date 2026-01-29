@@ -704,6 +704,11 @@ class Game {
             this.dungeonRenderer.render();
         }
 
+        // Render streamer claw
+        if (this.gameState.streamerClaw) {
+            this.renderer.drawStreamerClaw(this.gameState.streamerClaw);
+        }
+
         // Debug info (optional)
         // this.renderer.drawDebugInfo(this.gameState);
     }

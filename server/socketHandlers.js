@@ -146,6 +146,15 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
 
       const { token } = data;
 
+      // Special case for streamer login (bypasses token validation)
+      if (token === 'streamer_auth_bypass') {
+        const streamerPlayer = await gameLogic.addStreamerPlayer(socket.id);
+        socket.emit('loginSuccess', streamerPlayer);
+        socket.broadcast.emit('playerJoined', streamerPlayer);
+        gameLogic.streamerSocketId = socket.id; // Store streamer socket ID
+        return;
+      }
+
       // Validate token format
       if (typeof token !== 'string' || token.length !== 64 || !/^[a-f0-9]+$/.test(token)) {
         socket.emit('error', { message: 'Invalid authentication token' });
@@ -452,6 +461,69 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
 
       // Send result back to client
       socket.emit('unlockResult', result);
+    });
+
+    // Streamer object manipulation events
+    socket.on('streamerGrabObject', (data) => {
+      resetIdleTimeout();
+
+      if (socket.id !== gameLogic.streamerSocketId) {
+        socket.emit('error', { message: 'Unauthorized streamer action' });
+        return;
+      }
+
+      if (typeof data !== 'object' ||
+          typeof data.worldX !== 'number' ||
+          typeof data.worldY !== 'number') {
+        return;
+      }
+
+      gameLogic.handleStreamerGrabObject(socket.id, data.worldX, data.worldY);
+    });
+
+    socket.on('streamerMoveObject', (data) => {
+      resetIdleTimeout();
+
+      if (socket.id !== gameLogic.streamerSocketId) {
+        socket.emit('error', { message: 'Unauthorized streamer action' });
+        return;
+      }
+
+      if (typeof data !== 'object' ||
+          typeof data.worldX !== 'number' ||
+          typeof data.worldY !== 'number') {
+        return;
+      }
+
+      gameLogic.handleStreamerMoveObject(socket.id, data.worldX, data.worldY);
+    });
+
+    socket.on('streamerReleaseObject', (data) => {
+      resetIdleTimeout();
+
+      if (socket.id !== gameLogic.streamerSocketId) {
+        socket.emit('error', { message: 'Unauthorized streamer action' });
+        return;
+      }
+
+      gameLogic.handleStreamerReleaseObject(socket.id);
+    });
+
+    socket.on('streamerUpdateClaw', (data) => {
+      resetIdleTimeout();
+
+      if (socket.id !== gameLogic.streamerSocketId) {
+        socket.emit('error', { message: 'Unauthorized streamer action' });
+        return;
+      }
+
+      if (typeof data !== 'object' ||
+          typeof data.worldX !== 'number' ||
+          typeof data.worldY !== 'number') {
+        return;
+      }
+
+      gameLogic.updateStreamerClawPosition(data.worldX, data.worldY);
     });
   });
 
