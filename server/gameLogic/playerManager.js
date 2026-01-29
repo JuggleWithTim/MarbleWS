@@ -93,11 +93,16 @@ class PlayerManager {
       }
     }
 
-    // Calculate UFO physics radius based on game mode
+    // Calculate UFO physics radius and density based on game mode
     // Dungeon mode scales down the visual size, so physics should match
     let physicsRadius = 25; // Default radius
+    let physicsDensity = 0.0008; // Default density
     if (this.gameMode && this.gameMode.getModeName() === 'Dungeon') {
       physicsRadius = 25 * this.gameMode.playerScale;
+      // Increase density to maintain same mass (since area scales with radius^2)
+      // Mass should stay the same: old_mass = density * π * r^2
+      // new_density = old_mass / (π * new_r^2) = old_density * (old_r / new_r)^2
+      physicsDensity = 0.0008 * (25 / (25 * this.gameMode.playerScale)) ** 2;
     }
 
     // Create UFO physics body
@@ -106,7 +111,7 @@ class PlayerManager {
       friction: 0.2,        // Increased from 0.1
       frictionAir: 0.05,    // Increased from 0.05 for better stopping
       restitution: 0.2,     // Reduced from 0.3 for less bouncing
-      density: 0.0008,       // Increased from 0.001 for more stability
+      density: physicsDensity,  // Adjusted for dungeon mode to maintain mass
       render: {
         fillStyle: '#4ecdc4'
       }
@@ -204,17 +209,22 @@ class PlayerManager {
 
         // Calculate physics radius based on game mode
         let physicsRadius = 25; // Default radius
+        let physicsDensity = 0.0008; // Default density
         if (isDungeonMode) {
           physicsRadius = 25 * 0.5; // 50% scale for dungeon mode
+          // Increase density to maintain same mass (since area scales with radius^2)
+          // Mass should stay the same: old_mass = density * π * r^2
+          // new_density = old_mass / (π * new_r^2) = old_density * (old_r / new_r)^2
+          physicsDensity = 0.0008 * (25 / (25 * 0.5)) ** 2; // = 0.0008 * 4 = 0.0032
         }
 
-        // Create new body with correct radius
+        // Create new body with correct radius and adjusted density
         const newBody = Matter.Bodies.circle(spawnX, spawnY, physicsRadius, {
           isStatic: false,
           friction: 0.2,
           frictionAir: 0.05,
           restitution: 0.2,
-          density: 0.0008,
+          density: physicsDensity,
           render: {
             fillStyle: '#4ecdc4'
           }
