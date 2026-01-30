@@ -8,8 +8,14 @@ class TwitchChat {
     this.emoteCache = new Map();
     this.lastEmoteSpawn = 0;
     this.emoteSpawnCooldown = 0.1; // 0.1 seconds between emote spawns
-    
+
     this.initializeChat();
+
+    // Listen for chat message requests
+    this.gameLogic.eventEmitter.on('sendChatMessage', (message) => this.sendAnnouncement(message));
+
+    // Listen for formatted announcements
+    this.gameLogic.eventEmitter.on('sendAnnouncement', (announcement) => this.sendFormattedAnnouncement(announcement));
   }
 
   initializeChat() {
@@ -267,6 +273,68 @@ class TwitchChat {
 
     // Reinitialize with new channel
     this.initializeChat();
+  }
+
+  // Send an announcement to the Twitch chat (checks config master toggle)
+  sendAnnouncement(message) {
+    const gameConfig = require('../shared/gameConfig.js');
+    if (gameConfig.announcements.twitch.enabled && this.client && process.env.TWITCH_CHANNEL) {
+      this.client.say(process.env.TWITCH_CHANNEL, message);
+    }
+  }
+
+  // Process and send a formatted announcement with placeholders replaced
+  sendFormattedAnnouncement(announcement) {
+    const gameConfig = require('../shared/gameConfig.js');
+    if (!gameConfig.announcements.twitch.enabled || !this.client || !process.env.TWITCH_CHANNEL) {
+      return;
+    }
+
+    // Process the announcement data
+    const { type, data } = announcement;
+    const config = gameConfig.announcements.twitch[type];
+
+    if (!config || !config.enabled) {
+      return;
+    }
+
+    let message = config.message;
+
+    // Replace placeholders based on announcement type
+    switch (type) {
+      case 'levelUp':
+        message = message.replace('{username}', data.username).replace('{newLevel}', data.newLevel);
+        break;
+      case 'colorRushEnd':
+        const maxPlayers = config.maxPlayers || 3;
+        const topPlayers = data.results.slice(0, maxPlayers).map(r => r.username);
+        const playerList = topPlayers.join(', ');
+        message = message.replace('{count}', topPlayers.length).replace('{players}', playerList);
+        break;
+      case 'levelChange':
+        message = message.replace('{levelName}', data.levelName);
+        break;
+      case 'modeChange':
+        message = message.replace('{modeName}', data.modeName);
+        break;
+      case 'joinLeave':
+        // Use specific join/leave messages
+        if (data.action === 'join' && config.joinMessage) {
+          message = config.joinMessage.replace('{username}', data.username);
+        } else if (data.action === 'leave' && config.leaveMessage) {
+          message = config.leaveMessage.replace('{username}', data.username);
+        }
+        break;
+    }
+
+    this.client.say(process.env.TWITCH_CHANNEL, message);
+  }
+
+  // Send a message to the Twitch chat (bypasses config toggle - for direct messages)
+  sendChatMessage(message) {
+    if (this.client && process.env.TWITCH_CHANNEL) {
+      this.client.say(process.env.TWITCH_CHANNEL, message);
+    }
   }
 }
 

@@ -37,6 +37,15 @@ class GameModeManager {
     this.currentMode.init(levelData);
 
     console.log(`Switched to game mode: ${this.currentMode.getModeName()}`);
+
+    // Send mode change announcement to Twitch chat
+    this.eventEmitter.emit('sendAnnouncement', {
+      type: 'modeChange',
+      data: {
+        modeName: this.currentMode.getModeName()
+      }
+    });
+
     return this.currentMode;
   }
 

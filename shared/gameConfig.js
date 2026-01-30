@@ -41,7 +41,52 @@ const gameConfig = {
   maxActiveEmotes: 222,
 
   // Color Rush reward data (per player contribution to reward pot)
-  colorRushReward: { xp: 5, coins: 10 }
+  colorRushReward: { xp: 5, coins: 10 },
+
+  // Twitch chat announcements configuration
+  announcements: {
+    twitch: {
+      enabled: true, // Master toggle for all announcements
+
+      // Player join/leave announcements
+      joinLeave: {
+        enabled: true,
+        joinMessage: "{username} joined the game!",
+        leaveMessage: "{username} left the game"
+      },
+
+      // Player level up announcements
+      levelUp: {
+        enabled: true,
+        message: "{username} leveled up to level {newLevel}!"
+      },
+
+      // Emote goal reached announcements
+      emoteGoal: {
+        enabled: true,
+        message: "Emote goal reached! All players earned bonus XP and coins! PogChamp"
+      },
+
+      // Color Rush round end announcements
+      colorRushEnd: {
+        enabled: true,
+        message: "Top {count} Color Rush players: {players}",
+        maxPlayers: 3
+      },
+
+      // Level change announcements
+      levelChange: {
+        enabled: true,
+        message: "Level changed to: {levelName}"
+      },
+
+      // Game mode change announcements
+      modeChange: {
+        enabled: true,
+        message: "Game mode changed to: {modeName}"
+      }
+    }
+  }
 };
 
 // Client-side global variable (only in browser)
