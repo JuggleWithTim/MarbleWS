@@ -93,17 +93,9 @@ class PlayerManager {
       }
     }
 
-    // Calculate UFO physics radius and density based on game mode
-    // Dungeon mode scales down the visual size, so physics should match
+    // Calculate UFO physics radius and density (normal size for all modes)
     let physicsRadius = 25; // Default radius
     let physicsDensity = 0.0008; // Default density
-    if (this.gameMode && this.gameMode.getModeName() === 'Dungeon') {
-      physicsRadius = 25 * this.gameMode.playerScale;
-      // Increase density to maintain same mass (since area scales with radius^2)
-      // Mass should stay the same: old_mass = density * π * r^2
-      // new_density = old_mass / (π * new_r^2) = old_density * (old_r / new_r)^2
-      physicsDensity = 0.0008 * (25 / (25 * this.gameMode.playerScale)) ** 2;
-    }
 
     // Create UFO physics body
     const ufoBody = Matter.Bodies.circle(spawnX, spawnY, physicsRadius, {
@@ -207,16 +199,9 @@ class PlayerManager {
         // Remove old body from physics world
         Matter.World.remove(this.world, player.body);
 
-        // Calculate physics radius based on game mode
+        // Use standard physics size for all modes
         let physicsRadius = 25; // Default radius
         let physicsDensity = 0.0008; // Default density
-        if (isDungeonMode) {
-          physicsRadius = 25 * 0.5; // 50% scale for dungeon mode
-          // Increase density to maintain same mass (since area scales with radius^2)
-          // Mass should stay the same: old_mass = density * π * r^2
-          // new_density = old_mass / (π * new_r^2) = old_density * (old_r / new_r)^2
-          physicsDensity = 0.0008 * (25 / (25 * 0.5)) ** 2; // = 0.0008 * 4 = 0.0032
-        }
 
         // Create new body with correct radius and adjusted density
         const newBody = Matter.Bodies.circle(spawnX, spawnY, physicsRadius, {

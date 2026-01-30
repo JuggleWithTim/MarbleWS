@@ -6,7 +6,7 @@ class DungeonRenderer {
         this.ctx = renderer.ctx;
 
         // Dungeon Mode specific properties
-        this.playerScale = 0.5; // 50% of normal UFO size
+        this.playerScale = 1.0; // Normal UFO size
         this.cameraZoom = 2.0; // 2x zoom for zoomed-in dungeon view
         this.cameraBounds = {
             left: 0,
@@ -29,7 +29,7 @@ class DungeonRenderer {
         if (!gameModeData || gameModeData.mode !== 'dungeon') return;
 
         // Update configuration from server
-        this.playerScale = gameModeData.playerScale || 0.5;
+        this.playerScale = gameModeData.playerScale || 1.0;
         this.cameraBounds = gameModeData.cameraBounds || this.cameraBounds;
 
         // Update camera target based on current player position

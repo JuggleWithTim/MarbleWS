@@ -8,7 +8,7 @@ class DungeonMode extends BaseGameMode {
     this.ignoreCameraMoves = true; // Flag to communicate camera handling to clients
 
     // Player scaling configuration
-    this.playerScale = 0.5; // 50% of normal size to fit dungeon view
+    this.playerScale = 1.0; // Normal size for consistency across modes
 
     // Camera bounds (to prevent camera from going outside level)
     this.cameraBoundsTop = 0;
