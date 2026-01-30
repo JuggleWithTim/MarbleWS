@@ -32,12 +32,20 @@ class DungeonRenderer {
         this.playerScale = gameModeData.playerScale || 1.0;
         this.cameraBounds = gameModeData.cameraBounds || this.cameraBounds;
 
-        // Update camera target based on current player position
+        // Update camera target based on interpolated current player position for smooth following
         if (this.game.currentPlayer && this.game.gameState && this.game.gameState.players) {
             const currentPlayer = this.game.gameState.players.find(p => p.id === this.game.currentPlayer.id);
             if (currentPlayer) {
-                this.targetCameraX = currentPlayer.x;
-                this.targetCameraY = currentPlayer.y;
+                // Use interpolated position to prevent camera lag behind rendered objects
+                const interpolatedPos = this.game.getInterpolatedPosition(`player_${this.game.currentPlayer.id}`);
+                if (interpolatedPos) {
+                    this.targetCameraX = interpolatedPos.x;
+                    this.targetCameraY = interpolatedPos.y;
+                } else {
+                    // Fallback to raw position if interpolation not available
+                    this.targetCameraX = currentPlayer.x;
+                    this.targetCameraY = currentPlayer.y;
+                }
             }
         }
     }
