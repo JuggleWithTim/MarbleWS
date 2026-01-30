@@ -20,7 +20,8 @@ class LevelManager {
       radius: 25,
       friction: 0.3,
       restitution: 0.7,
-      density: 0.001
+      density: 0.001,
+      maxActiveEmotes: require('../../shared/gameConfig').maxActiveEmotes
     };
 
     // Game mode management
@@ -64,12 +65,15 @@ class LevelManager {
       restitution: 0.7,
       density: 0.004
     };
-    this.emoteProperties = levelData.emote || {
+    const gameConfig = require('../../shared/gameConfig');
+    const defaultEmoteProperties = {
       radius: 25,
       friction: 0.3,
       restitution: 0.7,
-      density: 0.001
+      density: 0.001,
+      maxActiveEmotes: gameConfig.maxActiveEmotes
     };
+    this.emoteProperties = { ...defaultEmoteProperties, ...(levelData.emote || {}) };
 
     // Update world gravity from level data
     if (levelData.world && levelData.world.gravity !== undefined) {
@@ -371,14 +375,34 @@ class LevelManager {
       // Generate unique ID to prevent collisions when multiple emotes spawn simultaneously
       const uniqueId = `emote_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
+      // Add spawn timestamp for age tracking
+      const spawnTime = Date.now();
+
       this.emotes.push({
         id: uniqueId,
         body: emote,
         type: 'emote',
         name: emoteName,
         url: emoteUrl,
-        interactedPlayers: new Set()
+        interactedPlayers: new Set(),
+        spawnTime: spawnTime
       });
+
+      // Enforce emote limit - remove oldest emotes if exceeded
+      const maxActiveEmotes = this.emoteProperties.maxActiveEmotes;
+      if (this.emotes.length > maxActiveEmotes) {
+        // Sort by spawn time to get oldest first
+        this.emotes.sort((a, b) => a.spawnTime - b.spawnTime);
+
+        // Remove oldest emotes
+        const emotesToRemove = this.emotes.length - maxActiveEmotes;
+        for (let i = 0; i < emotesToRemove; i++) {
+          const oldestEmote = this.emotes.shift();
+          if (oldestEmote) {
+            Matter.World.remove(this.world, oldestEmote.body);
+          }
+        }
+      }
     }
   }
 

@@ -127,6 +127,11 @@ export const events = {
             this.saveState();
         });
 
+        document.getElementById('emoteMaxActive').addEventListener('input', (e) => {
+            this.level.emote.maxActiveEmotes = parseInt(e.target.value);
+            this.saveState();
+        });
+
         document.getElementById('emoteDensity').addEventListener('input', (e) => {
             this.level.emote.density = parseFloat(e.target.value);
             this.saveState();

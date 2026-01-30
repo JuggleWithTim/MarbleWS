@@ -144,6 +144,7 @@ export class LevelEditorCore {
             level.emote = { ...DEFAULT_LEVEL.emote };
         } else {
             // Ensure all emote properties exist with defaults
+            level.emote.maxActiveEmotes = level.emote.maxActiveEmotes || DEFAULT_LEVEL.emote.maxActiveEmotes;
             level.emote.radius = level.emote.radius || DEFAULT_LEVEL.emote.radius;
             level.emote.friction = level.emote.friction || DEFAULT_LEVEL.emote.friction;
             level.emote.restitution = level.emote.restitution || DEFAULT_LEVEL.emote.restitution;
@@ -358,6 +359,9 @@ export class LevelEditorCore {
 
         // Emote properties
         if (this.level.emote) {
+            if (document.getElementById('emoteMaxActive')) {
+                document.getElementById('emoteMaxActive').value = this.level.emote.maxActiveEmotes || 222;
+            }
             if (document.getElementById('emoteRadius')) {
                 document.getElementById('emoteRadius').value = this.level.emote.radius || 5;
             }
