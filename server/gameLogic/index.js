@@ -256,6 +256,11 @@ class GameLogic {
     console.log(`Dungeon mode overlay follow target set to: ${username}`);
   }
 
+  clearDungeonFollowTarget() {
+    this.dungeonFollowTarget = null;
+    console.log(`Dungeon mode overlay follow target cleared`);
+  }
+
   getDungeonFollowTarget() {
     return this.dungeonFollowTarget;
   }

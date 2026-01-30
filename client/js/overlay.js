@@ -217,8 +217,25 @@ class TransparentRenderer extends Renderer {
         // Apply camera based on game mode
         const gameModeData = gameState.gameMode;
         if (gameModeData && gameModeData.mode === 'dungeon' && gameState.players && gameState.players.length > 0) {
-            // Dungeon mode: Dynamic camera that fits all players
-            calculateDynamicDungeonCamera(gameState.players, renderer);
+            // Dungeon mode: Check if spectating a specific player
+            if (gameModeData.followTarget) {
+                const targetPlayer = gameState.players.find(p =>
+                    (p.username || '').toLowerCase() === gameModeData.followTarget.toLowerCase()
+                );
+                if (targetPlayer) {
+                    // Spectate mode: Use interpolated position for smooth following
+                    const id = `player_${targetPlayer.id || targetPlayer.username}`;
+                    const interpolated = getInterpolatedPosition(id);
+                    const targetPos = interpolated ? { x: interpolated.x, y: interpolated.y } : { x: targetPlayer.x, y: targetPlayer.y };
+                    renderer.setCamera(targetPos.x, targetPos.y, 1.5);
+                } else {
+                    // Target not found, fallback to dynamic camera
+                    calculateDynamicDungeonCamera(gameState.players, renderer);
+                }
+            } else {
+                // Default dungeon view: Dynamic camera that fits all players
+                calculateDynamicDungeonCamera(gameState.players, renderer);
+            }
         } else {
             // Default: Fixed camera view - show entire 1920x1080 game area
             renderer.setCamera(960, 540, 1);

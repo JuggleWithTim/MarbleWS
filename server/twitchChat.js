@@ -94,22 +94,38 @@ class TwitchChat {
       return;
     }
 
-    // Check for !follow command (for Dungeon mode overlay)
-    if (msg.toLowerCase().startsWith('!follow')) {
+    // Check for !spectate command (for Dungeon mode overlay)
+    if (msg.toLowerCase().startsWith('!spectate')) {
       const parts = msg.trim().split(/\s+/);
 
       if (parts.length > 1) {
         const targetUsername = parts[1].toLowerCase();
 
         // Check if current game mode is Dungeon
-        const currentMode = this.gameLogic.gameModeManager.getCurrentMode();
+        const currentMode = this.gameLogic.levelManager.gameModeManager.getCurrentMode();
         if (currentMode && currentMode.getModeName() === 'Dungeon') {
           // Set follow target for dungeon mode
           this.gameLogic.setDungeonFollowTarget(targetUsername);
-          console.log(`Dungeon mode overlay now following user: ${targetUsername}`);
+          console.log(`Dungeon mode overlay now spectating user: ${targetUsername}`);
         } else {
-          console.log(`Follow command ignored - not in Dungeon mode`);
+          console.log(`Spectate command ignored - not in Dungeon mode`);
         }
+      }
+
+      // Don't process emotes for commands
+      return;
+    }
+
+    // Check for !unspectate command (for Dungeon mode overlay)
+    if (msg.toLowerCase() === '!unspectate') {
+      // Check if current game mode is Dungeon
+      const currentMode = this.gameLogic.levelManager.gameModeManager.getCurrentMode();
+      if (currentMode && currentMode.getModeName() === 'Dungeon') {
+        // Clear follow target for dungeon mode
+        this.gameLogic.clearDungeonFollowTarget();
+        console.log(`Dungeon mode overlay stopped spectating`);
+      } else {
+        console.log(`Unspectate command ignored - not in Dungeon mode`);
       }
 
       // Don't process emotes for commands
