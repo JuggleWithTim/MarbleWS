@@ -4,6 +4,7 @@ const PlayerManager = require('./playerManager');
 const LevelManager = require('./levelManager');
 const PhysicsEngine = require('./physicsEngine');
 const GameState = require('./gameState');
+const GameModeManager = require('./gameModes/index');
 
 class GameLogic {
   constructor() {
@@ -20,10 +21,15 @@ class GameLogic {
     this.levelManager = new LevelManager(this.eventEmitter);
     this.physicsEngine = new PhysicsEngine(this.eventEmitter);
     this.gameState = new GameState(this.eventEmitter, this.playerManager, this.levelManager);
+    this.gameModeManager = new GameModeManager(this.eventEmitter, this.playerManager, this.levelManager);
+
+    // Dungeon mode follow target tracking
+    this.dungeonFollowTarget = null;
 
     // Set up cross-module references
     this.playerManager.setWorld(this.world);
     this.playerManager.setLevelObjects(this.levelManager.levelObjects);
+    this.playerManager.setGameMode(this.gameModeManager.currentGameMode);
 
     this.levelManager.setWorld(this.world);
     this.levelManager.setEngine(this.engine);
@@ -234,7 +240,29 @@ class GameLogic {
 
   // Game state (delegate to gameState)
   getGameState() {
-    return this.gameState.getGameState();
+    const gameState = this.gameState.getGameState();
+
+    // Add dungeon follow target to game state if in dungeon mode
+    if (gameState.gameMode && gameState.gameMode.mode === 'dungeon') {
+      gameState.gameMode.followTarget = this.dungeonFollowTarget;
+    }
+
+    return gameState;
+  }
+
+  // Dungeon mode follow target management
+  setDungeonFollowTarget(username) {
+    this.dungeonFollowTarget = username;
+    console.log(`Dungeon mode overlay follow target set to: ${username}`);
+  }
+
+  clearDungeonFollowTarget() {
+    this.dungeonFollowTarget = null;
+    console.log(`Dungeon mode overlay follow target cleared`);
+  }
+
+  getDungeonFollowTarget() {
+    return this.dungeonFollowTarget;
   }
 
   // Expose current level for backward compatibility

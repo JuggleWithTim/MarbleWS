@@ -388,13 +388,28 @@
                     <label>Level Type:
                         <span class="tooltip-container">
                             <span class="tooltip-icon">?</span>
-                            <span class="tooltip-text">The type of gameplay for this level. "Marble" is the classic marble-rolling gameplay. "Color Rush" is a survival minigame where players must stay in safe colored sections.</span>
+                            <span class="tooltip-text">The type of gameplay for this level. "Marble" is the classic marble-rolling gameplay. "Color Rush" is a survival minigame where players must stay in safe colored sections. "Dungeon" provides a zoomed-in camera view that follows each player, making exploration feel more immersive.</span>
                         </span>
                     </label>
                     <select id="levelType">
                         <option value="Marble">Marble</option>
                         <option value="Color Rush">Color Rush</option>
+                        <option value="Dungeon">Dungeon</option>
                     </select>
+                </div>
+                <div class="property-group" id="levelSizeGroup" style="display: none;">
+                    <label>Level Size (Dungeon worlds only):
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">The width and height of the world boundaries for dungeon levels. Larger sizes allow for bigger exploration areas. The camera stays within these bounds and follows players around.</span>
+                        </span>
+                    </label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="number" id="levelWidth" value="1920" min="1920" max="10000" step="1">
+                        <span>x</span>
+                        <input type="number" id="levelHeight" value="1080" min="1080" max="10000" step="1">
+                        <span>pixels</span>
+                    </div>
                 </div>
                 <div class="property-group">
                     <label>Level Background Image:
@@ -840,6 +855,15 @@
                         <span class="tooltip-text">Physics properties that affect emote behavior in this level.</span>
                     </span>
                 </h3>
+                <div class="property-group">
+                    <label>Max Active Emotes:
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Maximum number of emotes that can be active at the same time. When this limit is exceeded, oldest emotes despawn. Set to 0 for no limit (not recommended).</span>
+                        </span>
+                    </label>
+                    <input type="number" id="emoteMaxActive" value="222" min="1" max="10000" step="1">
+                </div>
                 <div class="property-group">
                     <label>Radius:
                         <span class="tooltip-container">

@@ -17,6 +17,7 @@ export const DEFAULT_LEVEL = {
         density: 0.004
     },
     emote: {
+        maxActiveEmotes: 222,
         radius: 25,
         friction: 0.3,
         restitution: 0.7,

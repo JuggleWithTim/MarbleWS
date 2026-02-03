@@ -55,11 +55,18 @@ class PhysicsEngine {
     this.levelManager.updateGameMode(1/60); // Pass delta time
 
     // Remove/respawn objects that fell off the world
+    // Get level dimensions, defaulting to standard canvas size
+    const levelWidth = Math.max(1920, this.levelManager.currentLevel?.levelWidth || 1920);
+    const levelHeight = Math.max(1080, this.levelManager.currentLevel?.levelHeight || 1080);
+
+    // Use margin of 700 for all directions to allow some off-screen movement
+    const margin = 700;
+
     const worldBounds = {
-      minX: -700,   // Left bound with margin
-      maxX: 2620,   // Right bound (1920 + margin)
-      minY: -700,   // Top bound with margin (for inverted gravity)
-      maxY: 1780    // Bottom bound (1080 + margin)
+      minX: -margin,
+      maxX: levelWidth + margin,
+      minY: -margin,
+      maxY: levelHeight + margin
     };
 
     // Check marbles that went out of bounds in any direction and respawn them

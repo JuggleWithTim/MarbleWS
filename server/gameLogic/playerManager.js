@@ -93,13 +93,17 @@ class PlayerManager {
       }
     }
 
+    // Calculate UFO physics radius and density (normal size for all modes)
+    let physicsRadius = 25; // Default radius
+    let physicsDensity = 0.0008; // Default density
+
     // Create UFO physics body
-    const ufoBody = Matter.Bodies.circle(spawnX, spawnY, 25, {
+    const ufoBody = Matter.Bodies.circle(spawnX, spawnY, physicsRadius, {
       isStatic: false,
       friction: 0.2,        // Increased from 0.1
       frictionAir: 0.05,    // Increased from 0.05 for better stopping
       restitution: 0.2,     // Reduced from 0.3 for less bouncing
-      density: 0.0008,       // Increased from 0.001 for more stability
+      density: physicsDensity,  // Adjusted for dungeon mode to maintain mass
       render: {
         fillStyle: '#4ecdc4'
       }
@@ -164,6 +168,8 @@ class PlayerManager {
   }
 
   repositionPlayersToSpawn(levelData) {
+    const isDungeonMode = levelData && levelData.levelType === 'Dungeon';
+
     // Find spawn position - prioritize playerspawn, then fall back to spawnpoint
     let spawnX = 960;
     let spawnY = 540;
@@ -190,8 +196,30 @@ class PlayerManager {
     // Reposition all existing players to the spawnpoint
     this.players.forEach(player => {
       if (player.body) {
-        Matter.Body.setPosition(player.body, { x: spawnX, y: spawnY });
-        Matter.Body.setVelocity(player.body, { x: 0, y: 0 });
+        // Remove old body from physics world
+        Matter.World.remove(this.world, player.body);
+
+        // Use standard physics size for all modes
+        let physicsRadius = 25; // Default radius
+        let physicsDensity = 0.0008; // Default density
+
+        // Create new body with correct radius and adjusted density
+        const newBody = Matter.Bodies.circle(spawnX, spawnY, physicsRadius, {
+          isStatic: false,
+          friction: 0.2,
+          frictionAir: 0.05,
+          restitution: 0.2,
+          density: physicsDensity,
+          render: {
+            fillStyle: '#4ecdc4'
+          }
+        });
+
+        // Add new body to physics world
+        Matter.World.add(this.world, newBody);
+
+        // Update player reference
+        player.body = newBody;
         player.x = spawnX;
         player.y = spawnY;
 
@@ -685,6 +713,11 @@ class PlayerManager {
 
   setLevelObjects(levelObjects) {
     this.levelObjects = levelObjects;
+  }
+
+  // Set reference to current game mode
+  setGameMode(gameMode) {
+    this.gameMode = gameMode;
   }
 }
 

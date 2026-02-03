@@ -51,6 +51,12 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
   gameLogic.on('playerLeveledUp', (levelUpData) => {
     // Send level up event only to the player who leveled up
     io.to(levelUpData.playerId).emit('playerLeveledUp', levelUpData);
+
+    // Send level up announcement to Twitch chat
+    gameLogic.eventEmitter.emit('sendAnnouncement', {
+      type: 'levelUp',
+      data: levelUpData
+    });
   });
 
   // Listen for player cheer events from gameLogic
@@ -72,6 +78,12 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
       goalY,
       emoteName: emote.name
     });
+
+    // Send emote goal announcement to Twitch chat
+    gameLogic.eventEmitter.emit('sendAnnouncement', {
+      type: 'emoteGoal',
+      data: emoteData
+    });
   });
 
   // Listen for Color Rush events
@@ -81,6 +93,12 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
 
   gameLogic.on('colorRushRoundEnd', (data) => {
     io.emit('colorRushRoundEnd', data);
+
+    // Send Color Rush round end announcement to Twitch chat
+    gameLogic.eventEmitter.emit('sendAnnouncement', {
+      type: 'colorRushEnd',
+      data: data
+    });
   });
 
   gameLogic.on('colorRushNextRound', (data) => {
@@ -200,6 +218,15 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
       socket.emit('loginSuccess', player);
       socket.broadcast.emit('playerJoined', player);
 
+      // Send join announcement to Twitch chat
+      gameLogic.eventEmitter.emit('sendAnnouncement', {
+        type: 'joinLeave',
+        data: {
+          username: player.username,
+          action: 'join'
+        }
+      });
+
       // Send current game state to new player
       socket.emit('gameState', gameLogic.getGameState());
     });
@@ -269,15 +296,23 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
       const fs = require('fs');
       const path = require('path');
       const levelPath = path.join(__dirname, '../levels', `${levelName}.json`);
-      
+
       if (fs.existsSync(levelPath)) {
         const levelData = JSON.parse(fs.readFileSync(levelPath, 'utf8'));
         gameLogic.loadLevel(levelData);
-        
+
         // Broadcast level change to all players
         io.emit('levelLoaded', {
           levelName,
           levelData
+        });
+
+        // Send level change announcement to Twitch chat
+        gameLogic.eventEmitter.emit('sendAnnouncement', {
+          type: 'levelChange',
+          data: {
+            levelName
+          }
         });
       } else {
         socket.emit('error', { message: 'Level not found' });
@@ -297,6 +332,8 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
     // Handle disconnect
     socket.on('disconnect', () => {
       console.log('Player disconnected:', socket.id);
+      const player = gameLogic.players.get(socket.id);
+
       gameLogic.removePlayer(socket.id);
 
       // Clean up connection tracking - using same IP extraction as connect
@@ -312,6 +349,17 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
       socket.broadcast.emit('playerLeft', {
         playerId: socket.id
       });
+
+      // Send leave announcement to Twitch chat
+      if (player) {
+        gameLogic.eventEmitter.emit('sendAnnouncement', {
+          type: 'joinLeave',
+          data: {
+            username: player.username,
+            action: 'leave'
+          }
+        });
+      }
     });
 
     // Handle chat messages (optional feature)

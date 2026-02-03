@@ -321,19 +321,25 @@ class ColorRushMode extends BaseGameMode {
     // Add surviving players (they get maximum survival time)
     const roundDuration = Date.now() - this.roundStartTime;
     for (const playerId of this.alivePlayers) {
+      const player = this.playerManager.players.get(playerId);
+      const username = player ? player.username : 'Unknown';
       this.roundResults.push({
         playerId: playerId,
         survivalTime: roundDuration,
-        survived: true
+        survived: true,
+        username: username
       });
     }
 
     // Add dead players with their survival times
     for (const [playerId, deathTime] of this.deadPlayers) {
+      const player = this.playerManager.players.get(playerId);
+      const username = player ? player.username : 'Unknown';
       this.roundResults.push({
         playerId: playerId,
         survivalTime: deathTime,
-        survived: false
+        survived: false,
+        username: username
       });
     }
 

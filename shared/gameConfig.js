@@ -4,41 +4,89 @@
 const gameConfig = {
   // UFO customization data
   ufoData: {
-    'ufoderp.png': { cost: 222, name: 'Derpcraft' },
-    'Fez.png': { cost: 111, name: 'Fez' }
+    'ufoderp.png': { cost: 1, name: 'Derpcraft' },
+    'Fez.png': { cost: 1, name: 'Fez' }
   },
 
   // Passenger (pilot) customization data
   passengerData: {
-    'luminoCoffee.png': { cost: 100, name: 'Lilly', width: 50, height: 50, offsetX: 0, offsetY: 0 },
-    'Missy.png': { cost: 100, name: 'Missy', width: 50, height: 50, offsetX: 0, offsetY: 0 },
-    'Derp.png': { cost: 333, name: 'LuminousNova', width: 50, height: 50, offsetX: 0, offsetY: 0 },
-    'Nox.png': { cost: 333, name: 'Noxanimus', width: 50, height: 50, offsetX: 0, offsetY: 0 },
-    'Tim.png': { cost: 333, name: 'JuggleWithTim', width: 100, height: 60, offsetX: 0, offsetY: 0 },
-    'pepe.png': { cost: 123, name: 'Pepe', width: 50, height: 50, offsetX: 0, offsetY: 0 },
+    'luminoCoffee.png': { cost: 1, name: 'Lilly', width: 50, height: 50, offsetX: 0, offsetY: 0 },
+    'Missy.png': { cost: 1, name: 'Missy', width: 50, height: 50, offsetX: 0, offsetY: 0 },
+    'Derp.png': { cost: 1, name: 'LuminousNova', width: 50, height: 50, offsetX: 0, offsetY: 0 },
+    'Nox.png': { cost: 1, name: 'Noxanimus', width: 50, height: 50, offsetX: 0, offsetY: 0 },
+    'Tim.png': { cost: 1, name: 'JuggleWithTim', width: 100, height: 60, offsetX: 0, offsetY: 0 },
+    'pepe.png': { cost: 1, name: 'Pepe', width: 50, height: 50, offsetX: 0, offsetY: 0 },
     'trollface.png': { cost: 69, name: 'Trollolololol', width: 50, height: 50, offsetX: 0, offsetY: 0 }
   },
 
   // Hat customization data
   hatData: {
-    'santahatpixel.png': { cost: 7531, name: 'Santa Hat (Wait until December or spend one hell of a lot of coins for it LUL)', width: 60, height: 50, offsetX: 0, offsetY: 0 },
-    'captain.png': { cost: 300, name: 'Captain Hat', width: 50, height: 50, offsetX: 0, offsetY: 0 },
-    'crown.png': { cost: 744, name: 'Crown', width: 50, height: 50, offsetX: 0, offsetY: 0 },
+    'santahatpixel.png': { cost: 1, name: 'Santa Hat (Wait until December or spend one hell of a lot of coins for it LUL)', width: 60, height: 50, offsetX: 0, offsetY: 0 },
+    'captain.png': { cost: 1, name: 'Captain Hat', width: 50, height: 50, offsetX: 0, offsetY: 0 },
+    'crown.png': { cost: 1, name: 'Crown', width: 50, height: 50, offsetX: 0, offsetY: 0 },
     //'jester.png': { cost: 321, name: 'Jester Hat', width: 50, height: 50, offsetX: 0, offsetY: 0 },
-    'jester2.png': { cost: 321, name: 'Jester Hat', width: 83, height: 60, offsetX: 0, offsetY: 0 },
+    'jester2.png': { cost: 1, name: 'Jester Hat', width: 83, height: 60, offsetX: 0, offsetY: 0 },
     'propeller.png': { cost: 67, name: 'Propeller Hat', width: 50, height: 50, offsetX: 0, offsetY: 0 },
     //'tophat.png': { cost: 555, name: 'Top Hat', width: 50, height: 50, offsetX: 0, offsetY: 0 },
-    'tophatcat.png': { cost: 555, name: 'Top Hat Top Cat', width: 67, height: 60, offsetX: 0, offsetY: 0 },
-    'viking.png': { cost: 333, name: 'Viking Helmet', width: 60, height: 60, offsetX: 0, offsetY: 0 },
-    'witch.png': { cost: 333, name: 'Witch Hat', width: 60, height: 60, offsetX: 0, offsetY: 0 },
-    'purplesanta.png': { cost: 333, name: 'Purple Santa Hat', width: 75, height: 95, offsetX: 10, offsetY: 55 }
+    'tophatcat.png': { cost: 1, name: 'Top Hat Top Cat', width: 67, height: 60, offsetX: 0, offsetY: 0 },
+    'viking.png': { cost: 1, name: 'Viking Helmet', width: 60, height: 60, offsetX: 0, offsetY: 0 },
+    'witch.png': { cost: 1, name: 'Witch Hat', width: 60, height: 60, offsetX: 0, offsetY: 0 },
+    'purplesanta.png': { cost: 1, name: 'Purple Santa Hat', width: 75, height: 95, offsetX: 10, offsetY: 55 }
   },
 
   // Emote reward data
   emoteReward: { xp: 50, coins: 10 },
 
+  // Maximum active emotes in a level (oldest despawned when exceeded)
+  maxActiveEmotes: 222,
+
   // Color Rush reward data (per player contribution to reward pot)
-  colorRushReward: { xp: 5, coins: 10 }
+  colorRushReward: { xp: 5, coins: 10 },
+
+  // Twitch chat announcements configuration
+  announcements: {
+    twitch: {
+      enabled: true, // Master toggle for all announcements
+
+      // Player join/leave announcements
+      joinLeave: {
+        enabled: true,
+        joinMessage: "{username} joined the game!",
+        leaveMessage: "{username} left the game"
+      },
+
+      // Player level up announcements
+      levelUp: {
+        enabled: true,
+        message: "{username} leveled up to level {newLevel}!"
+      },
+
+      // Emote goal reached announcements
+      emoteGoal: {
+        enabled: true,
+        message: "Emote goal reached! All players earned bonus XP and coins! PogChamp"
+      },
+
+      // Color Rush round end announcements
+      colorRushEnd: {
+        enabled: true,
+        message: "Top {count} Color Rush players: {players}",
+        maxPlayers: 3
+      },
+
+      // Level change announcements
+      levelChange: {
+        enabled: true,
+        message: "Level changed to: {levelName}"
+      },
+
+      // Game mode change announcements
+      modeChange: {
+        enabled: true,
+        message: "Game mode changed to: {modeName}"
+      }
+    }
+  }
 };
 
 // Client-side global variable (only in browser)

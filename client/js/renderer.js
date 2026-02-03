@@ -126,9 +126,9 @@ class Renderer {
         this.ctx.restore();
     }
 
-    drawUFO(x, y, color = '#4ecdc4', beamActive = false, appearance = null, game = null) {
+    drawUFO(x, y, color = '#4ecdc4', beamActive = false, appearance = null, game = null, scale = 1) {
         const screenPos = this.worldToScreen(x, y);
-        const size = 30 * this.camera.zoom;
+        const size = 30 * this.camera.zoom * scale;
 
         this.ctx.save();
         this.ctx.translate(screenPos.x, screenPos.y);
@@ -173,9 +173,9 @@ class Renderer {
                 // Get custom dimensions from game data
                 const passengerData = game && game.passengerData ? game.passengerData[appearance.passenger] : null;
                 const passengerWidth = (passengerData && passengerData.width) ?
-                    passengerData.width * this.camera.zoom * 0.8 : size * 1.5;
+                    passengerData.width * this.camera.zoom * 0.8 * scale : size * 1.5;
                 const passengerHeight = (passengerData && passengerData.height) ?
-                    passengerData.height * this.camera.zoom * 0.8 : size * 1.5;
+                    passengerData.height * this.camera.zoom * 0.8 * scale : size * 1.5;
 
                 // Get configurable offsets from game data
                 const passengerOffsetX = (passengerData && passengerData.offsetX !== undefined) ?
@@ -205,9 +205,9 @@ class Renderer {
                 // Get custom dimensions from game data
                 const hatData = game && game.hatData ? game.hatData[appearance.hat] : null;
                 const hatWidth = (hatData && hatData.width) ?
-                    hatData.width * this.camera.zoom * 0.8 : size * 1.2;
+                    hatData.width * this.camera.zoom * 0.8 * scale : size * 1.2;
                 const hatHeight = (hatData && hatData.height) ?
-                    hatData.height * this.camera.zoom * 0.8 : size * 1.2;
+                    hatData.height * this.camera.zoom * 0.8 * scale : size * 1.2;
 
                 // Get configurable offsets from game data
                 const hatOffsetX = (hatData && hatData.offsetX !== undefined) ?
@@ -220,7 +220,7 @@ class Renderer {
 
                 // Draw hat image with configurable offsets
                 this.ctx.drawImage(hatImg,
-                    -hatWidth / 2 + hatOffsetX, baseY - hatHeight + (15 * this.camera.zoom) + hatOffsetY,
+                    -hatWidth / 2 + hatOffsetX, baseY - hatHeight + (15 * this.camera.zoom * scale) + hatOffsetY,
                     hatWidth, hatHeight);
             } else {
                 // Start loading the hat image if not already loading

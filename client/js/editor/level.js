@@ -58,6 +58,7 @@ export const level = {
                 document.getElementById('marbleDensity').value = this.level.marble.density;
 
                 // Update emote property inputs
+                document.getElementById('emoteMaxActive').value = this.level.emote.maxActiveEmotes || 222;
                 document.getElementById('emoteRadius').value = this.level.emote.radius;
                 document.getElementById('emoteFriction').value = this.level.emote.friction;
                 document.getElementById('emoteRestitution').value = this.level.emote.restitution;
@@ -73,6 +74,10 @@ export const level = {
 
                 // Update world physics inputs
                 document.getElementById('worldGravity').value = this.level.world.gravity;
+
+                // Update level size inputs
+                document.getElementById('levelWidth').value = this.level.levelWidth || 1920;
+                document.getElementById('levelHeight').value = this.level.levelHeight || 1080;
 
                 // Load background images for objects
                 this.level.objects.forEach(obj => {
@@ -121,6 +126,14 @@ export const level = {
         this.level.description = document.getElementById('levelDescription').value;
         this.level.levelType = document.getElementById('levelType').value;
         this.level.backgroundImage = document.getElementById('backgroundImage').value;
+
+        // Save level size if specified
+        const levelWidth = parseInt(document.getElementById('levelWidth').value);
+        const levelHeight = parseInt(document.getElementById('levelHeight').value);
+        if (levelWidth && levelHeight) {
+            this.level.levelWidth = levelWidth;
+            this.level.levelHeight = levelHeight;
+        }
 
         try {
             const response = await fetch(`${this.basePath}/api/levels/${levelName}`, {

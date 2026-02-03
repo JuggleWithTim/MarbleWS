@@ -146,11 +146,100 @@ class TransparentRenderer extends Renderer {
         }
     }
 
+    // Calculate dynamic camera for dungeon mode that fits all players
+    function calculateDynamicDungeonCamera(players, renderer) {
+        // Use interpolated positions for smooth camera movement
+        const playerPositions = players.map(player => {
+            const id = `player_${player.id || player.username}`;
+            const interpolated = getInterpolatedPosition(id);
+            return interpolated ? { x: interpolated.x, y: interpolated.y } : { x: player.x, y: player.y };
+        });
+
+        if (playerPositions.length === 0) {
+            // Fallback to default view if no players
+            renderer.setCamera(960, 540, 1);
+            return;
+        }
+
+        // Calculate bounding box
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+
+        playerPositions.forEach(pos => {
+            minX = Math.min(minX, pos.x);
+            maxX = Math.max(maxX, pos.x);
+            minY = Math.min(minY, pos.y);
+            maxY = Math.max(maxY, pos.y);
+        });
+
+        // Calculate center point
+        const centerX = (minX + maxX) / 2;
+        const centerY = (minY + maxY) / 2;
+
+        // Calculate dimensions of bounding box
+        const width = maxX - minX;
+        const height = maxY - minY;
+
+        // Canvas dimensions (1920x1080)
+        const canvasWidth = 1920;
+        const canvasHeight = 1080;
+
+        // Add padding around players (200px minimum margin, like dungeon mode margin)
+        const paddingX = Math.max(200, width * 0.1);
+        const paddingY = Math.max(150, height * 0.1);
+
+        // Calculate required zoom to fit the bounding box plus padding
+        const requiredWidth = width + paddingX * 2;
+        const requiredHeight = height + paddingY * 2;
+
+        // Calculate zoom levels needed for each dimension
+        const zoomX = canvasWidth / requiredWidth;
+        const zoomY = canvasHeight / requiredHeight;
+
+        // Use the smaller zoom to ensure everything fits
+        let zoom = Math.min(zoomX, zoomY);
+
+        // Clamp zoom between reasonable limits
+        zoom = Math.max(0.3, Math.min(5.0, zoom));
+
+        // Special handling for single player - don't zoom in too much
+        if (players.length === 1) {
+            zoom = Math.min(2.0, zoom); // Cap at 2x for single player
+        }
+
+        renderer.setCamera(centerX, centerY, zoom);
+    }
+
     // Set camera to show the full board (centered, 1920x1080)
     function renderGameState(gameState, deltaTime = 0) {
         // Draw level background (remove to keep transparent overlay)
         renderer.drawBackground(gameState.backgroundImage);
-        renderer.setCamera(960, 540, 1);
+
+        // Apply camera based on game mode
+        const gameModeData = gameState.gameMode;
+        if (gameModeData && gameModeData.mode === 'dungeon' && gameState.players && gameState.players.length > 0) {
+            // Dungeon mode: Check if spectating a specific player
+            if (gameModeData.followTarget) {
+                const targetPlayer = gameState.players.find(p =>
+                    (p.username || '').toLowerCase() === gameModeData.followTarget.toLowerCase()
+                );
+                if (targetPlayer) {
+                    // Spectate mode: Use interpolated position for smooth following
+                    const id = `player_${targetPlayer.id || targetPlayer.username}`;
+                    const interpolated = getInterpolatedPosition(id);
+                    const targetPos = interpolated ? { x: interpolated.x, y: interpolated.y } : { x: targetPlayer.x, y: targetPlayer.y };
+                    renderer.setCamera(targetPos.x, targetPos.y, 1.5);
+                } else {
+                    // Target not found, fallback to dynamic camera
+                    calculateDynamicDungeonCamera(gameState.players, renderer);
+                }
+            } else {
+                // Default dungeon view: Dynamic camera that fits all players
+                calculateDynamicDungeonCamera(gameState.players, renderer);
+            }
+        } else {
+            // Default: Fixed camera view - show entire 1920x1080 game area
+            renderer.setCamera(960, 540, 1);
+        }
 
         // Create combined array of all renderable objects with z-index
         const allRenderables = [];

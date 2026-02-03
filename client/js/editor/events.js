@@ -54,10 +54,27 @@ export const events = {
             this.saveState();
         });
 
+        document.getElementById('levelType').addEventListener('change', (e) => {
+            this.level.levelType = e.target.value;
+            this.updateLevelTypeVisibility();
+            this.saveState();
+        });
+
         document.getElementById('backgroundImage').addEventListener('input', (e) => {
             this.level.backgroundImage = e.target.value;
             this.loadBackgroundImage();
             this.render();
+            this.saveState();
+        });
+
+        // Level size controls for dungeon worlds
+        document.getElementById('levelWidth').addEventListener('input', (e) => {
+            this.level.levelWidth = parseInt(e.target.value);
+            this.saveState();
+        });
+
+        document.getElementById('levelHeight').addEventListener('input', (e) => {
+            this.level.levelHeight = parseInt(e.target.value);
             this.saveState();
         });
 
@@ -107,6 +124,11 @@ export const events = {
 
         document.getElementById('emoteRestitution').addEventListener('input', (e) => {
             this.level.emote.restitution = parseFloat(e.target.value);
+            this.saveState();
+        });
+
+        document.getElementById('emoteMaxActive').addEventListener('input', (e) => {
+            this.level.emote.maxActiveEmotes = parseInt(e.target.value);
             this.saveState();
         });
 
