@@ -427,6 +427,7 @@
                 <button class="tool-button active" data-tool="select">Select</button>
                 <button class="tool-button" data-tool="rectangle">Rectangle</button>
                 <button class="tool-button" data-tool="circle">Circle</button>
+                <button class="tool-button" data-tool="triangle">Triangle</button>
                 <button class="tool-button" data-tool="connect">Connect</button>
                 <button class="tool-button" data-tool="delete">Delete</button>
             </div>
@@ -739,6 +740,22 @@
                         </span>
                     </label>
                     <input type="number" id="objectRadius" value="25" min="5" max="200">
+                </div>
+                <div class="property-group">
+                    <label>Triangle Vertices (relative to center):
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Triangle vertex positions relative to the object center. Edit to reshape the triangle.</span>
+                        </span>
+                    </label>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
+                        <input type="number" id="objectVertexAX" value="0" step="1" placeholder="Ax">
+                        <input type="number" id="objectVertexAY" value="-40" step="1" placeholder="Ay">
+                        <input type="number" id="objectVertexBX" value="-35" step="1" placeholder="Bx">
+                        <input type="number" id="objectVertexBY" value="30" step="1" placeholder="By">
+                        <input type="number" id="objectVertexCX" value="35" step="1" placeholder="Cx">
+                        <input type="number" id="objectVertexCY" value="30" step="1" placeholder="Cy">
+                    </div>
                 </div>
                 <div class="property-group">
                     <label>Friction:

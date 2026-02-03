@@ -53,6 +53,7 @@ class GameState {
         width: obj.width,
         height: obj.height,
         radius: obj.radius,
+        vertices: obj.vertices,
         color: obj.color,
         backgroundImage: obj.backgroundImage,
         isStatic: obj.isStatic,

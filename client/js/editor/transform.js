@@ -10,6 +10,7 @@ export const transform = {
             width: this.selectedObject.width,
             height: this.selectedObject.height,
             radius: this.selectedObject.radius,
+            vertices: this.selectedObject.vertices ? this.selectedObject.vertices.map(vertex => ({ ...vertex })) : null,
             x: this.selectedObject.x,
             y: this.selectedObject.y
         };
@@ -77,6 +78,66 @@ export const transform = {
                 // For circles, resize based on distance from center to mouse
                 const distance = Math.sqrt(Math.pow(x - original.x, 2) + Math.pow(y - original.y, 2));
                 obj.radius = Math.max(5, Math.round(distance));
+            } else if (obj.shape === 'triangle') {
+                const originalVertices = original.vertices || [];
+                if (originalVertices.length === 3) {
+                    const xs = originalVertices.map(vertex => vertex.x);
+                    const ys = originalVertices.map(vertex => vertex.y);
+                    const minX = Math.min(...xs);
+                    const maxX = Math.max(...xs);
+                    const minY = Math.min(...ys);
+                    const maxY = Math.max(...ys);
+                    const originalWidth = Math.max(10, maxX - minX);
+                    const originalHeight = Math.max(10, maxY - minY);
+
+                    let targetX = x - original.x;
+                    let targetY = y - original.y;
+
+                    if (obj.rotation && obj.rotation !== 0) {
+                        const cos = Math.cos(-obj.rotation);
+                        const sin = Math.sin(-obj.rotation);
+                        const rotatedX = targetX * cos - targetY * sin;
+                        const rotatedY = targetX * sin + targetY * cos;
+                        targetX = rotatedX;
+                        targetY = rotatedY;
+                    }
+
+                    let scaleX = 1;
+                    let scaleY = 1;
+
+                    switch (this.resizeCorner) {
+                        case 'nw':
+                            scaleX = (maxX - targetX) / originalWidth;
+                            scaleY = (maxY - targetY) / originalHeight;
+                            break;
+                        case 'ne':
+                            scaleX = (targetX - minX) / originalWidth;
+                            scaleY = (maxY - targetY) / originalHeight;
+                            break;
+                        case 'sw':
+                            scaleX = (maxX - targetX) / originalWidth;
+                            scaleY = (targetY - minY) / originalHeight;
+                            break;
+                        case 'se':
+                            scaleX = (targetX - minX) / originalWidth;
+                            scaleY = (targetY - minY) / originalHeight;
+                            break;
+                    }
+
+                    scaleX = Math.max(0.1, scaleX);
+                    scaleY = Math.max(0.1, scaleY);
+
+                    if (preserveAspectRatio) {
+                        const uniformScale = Math.min(scaleX, scaleY);
+                        scaleX = uniformScale;
+                        scaleY = uniformScale;
+                    }
+
+                    obj.vertices = originalVertices.map(vertex => ({
+                        x: vertex.x * scaleX,
+                        y: vertex.y * scaleY
+                    }));
+                }
             }
 
             // Update property inputs with error handling
@@ -99,6 +160,20 @@ export const transform = {
             } else if (obj.shape === 'circle') {
                 const radiusInput = document.getElementById('objectRadius');
                 if (radiusInput) radiusInput.value = obj.radius;
+            } else if (obj.shape === 'triangle') {
+                const [a, b, c] = obj.vertices || [];
+                if (a) {
+                    document.getElementById('objectVertexAX').value = Math.round(a.x);
+                    document.getElementById('objectVertexAY').value = Math.round(a.y);
+                }
+                if (b) {
+                    document.getElementById('objectVertexBX').value = Math.round(b.x);
+                    document.getElementById('objectVertexBY').value = Math.round(b.y);
+                }
+                if (c) {
+                    document.getElementById('objectVertexCX').value = Math.round(c.x);
+                    document.getElementById('objectVertexCY').value = Math.round(c.y);
+                }
             }
         } catch (error) {
             console.error('Error updating property inputs:', error);

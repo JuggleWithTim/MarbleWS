@@ -184,6 +184,7 @@ export const events = {
         // Property inputs
         const propertyInputs = [
             'objectColor', 'objectAlpha', 'objectBackgroundImage', 'objectWidth', 'objectHeight', 'objectRadius',
+            'objectVertexAX', 'objectVertexAY', 'objectVertexBX', 'objectVertexBY', 'objectVertexCX', 'objectVertexCY',
             'objectFriction', 'objectRestitution', 'objectDensity', 'objectRotation', 'objectStatic',
             'objectSpawnpoint', 'objectPlayerspawn', 'objectEmotespawn', 'objectGoal', 'objectNextLevel', 'objectTeleporter', 'objectTeleporterTarget', 'objectChair', 'objectChairNumber', 'objectSolid', 'objectZIndex',
             'objectActive', 'objectPointAX', 'objectPointAY', 'objectPointBX', 'objectPointBY', 'objectTimeToA', 'objectTimeFromA', 'objectSpeedToB', 'objectSpeedFromB',

@@ -52,6 +52,7 @@ export function generateUniqueObjectName(baseName, existingObjects) {
 export function updateObjectCounters(level) {
     let maxRectId = 0;
     let maxCircleId = 0;
+    let maxTriangleId = 0;
     let maxConnectionId = 0;
 
     // Scan existing objects to find highest IDs
@@ -65,6 +66,11 @@ export function updateObjectCounters(level) {
             const idNum = parseInt(obj.id.replace('circle_', ''));
             if (!isNaN(idNum) && idNum > maxCircleId) {
                 maxCircleId = idNum;
+            }
+        } else if (obj.id.startsWith('triangle_')) {
+            const idNum = parseInt(obj.id.replace('triangle_', ''));
+            if (!isNaN(idNum) && idNum > maxTriangleId) {
+                maxTriangleId = idNum;
             }
         }
     });
@@ -82,7 +88,7 @@ export function updateObjectCounters(level) {
     }
 
     return {
-        objectIdCounter: Math.max(maxRectId, maxCircleId) + 1,
+        objectIdCounter: Math.max(maxRectId, maxCircleId, maxTriangleId) + 1,
         connectionIdCounter: maxConnectionId + 1
     };
 }
@@ -102,7 +108,7 @@ export function validateAndFixDuplicateIds(level) {
 
     // Fix duplicates by generating new unique names
     duplicates.forEach(obj => {
-        const baseName = obj.shape; // 'rectangle' or 'circle'
+        const baseName = obj.shape; // 'rectangle', 'circle', or 'triangle'
         const newId = generateUniqueObjectName(baseName, level.objects);
         console.warn(`Fixed duplicate ID: ${obj.id} -> ${newId}`);
         obj.id = newId;

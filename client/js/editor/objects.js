@@ -4,6 +4,68 @@ import { DEFAULT_OBJECT_PROPERTIES } from './constants.js';
 import { generateUniqueObjectName, createRgba, parseRgba, rgbToHex, hexToRgb, loadObjectImage } from './utils.js';
 
 export const objects = {
+    createTriangle(x, y) {
+        const backgroundImage = document.getElementById('objectBackgroundImage').value;
+        const hexColor = document.getElementById('objectColor').value;
+        const alpha = parseInt(document.getElementById('objectAlpha').value);
+
+        // Load the background image if provided
+        if (backgroundImage) {
+            loadObjectImage(backgroundImage, this.objectImages);
+        }
+
+        const vertexAX = parseFloat(document.getElementById('objectVertexAX').value);
+        const vertexAY = parseFloat(document.getElementById('objectVertexAY').value);
+        const vertexBX = parseFloat(document.getElementById('objectVertexBX').value);
+        const vertexBY = parseFloat(document.getElementById('objectVertexBY').value);
+        const vertexCX = parseFloat(document.getElementById('objectVertexCX').value);
+        const vertexCY = parseFloat(document.getElementById('objectVertexCY').value);
+
+        const obj = {
+            id: generateUniqueObjectName('triangle', this.level.objects),
+            shape: 'triangle',
+            x: x,
+            y: y,
+            vertices: [
+                { x: isNaN(vertexAX) ? 0 : vertexAX, y: isNaN(vertexAY) ? -40 : vertexAY },
+                { x: isNaN(vertexBX) ? -35 : vertexBX, y: isNaN(vertexBY) ? 30 : vertexBY },
+                { x: isNaN(vertexCX) ? 35 : vertexCX, y: isNaN(vertexCY) ? 30 : vertexCY }
+            ],
+            rotation: parseFloat(document.getElementById('objectRotation').value) * Math.PI / 180,
+            color: createRgba(hexColor, alpha),
+            backgroundImage: backgroundImage,
+            isStatic: document.getElementById('objectStatic').checked,
+            isSolid: document.getElementById('objectSolid').checked,
+            zIndex: parseInt(document.getElementById('objectZIndex').value),
+            friction: parseFloat(document.getElementById('objectFriction').value),
+            restitution: parseFloat(document.getElementById('objectRestitution').value),
+            density: parseFloat(document.getElementById('objectDensity').value),
+            properties: this.getSelectedProperties()
+        };
+
+        const nextLevel = this.getNextLevel();
+        if (nextLevel) {
+            obj.nextLevel = nextLevel;
+        }
+
+        const teleporterTarget = this.getTeleporterTarget();
+        if (teleporterTarget) {
+            obj.teleporterTarget = teleporterTarget;
+        }
+
+        const chairNumber = this.getChairNumber();
+        if (chairNumber !== null) {
+            obj.chair = chairNumber;
+        }
+
+        this.level.objects.push(obj);
+        this.saveState();
+        this.selectObject(obj);
+        this.updateObjectList();
+        this.render();
+        this.updateJsonDisplay();
+        this.updateStatus(`Created triangle: ${obj.id}`);
+    },
     createRectangle(x, y) {
         const backgroundImage = document.getElementById('objectBackgroundImage').value;
         const hexColor = document.getElementById('objectColor').value;
@@ -223,6 +285,20 @@ export const objects = {
                 document.getElementById('objectHeight').value = obj.height;
             } else if (obj.shape === 'circle') {
                 document.getElementById('objectRadius').value = obj.radius;
+            } else if (obj.shape === 'triangle') {
+                const [a, b, c] = obj.vertices || [];
+                if (a) {
+                    document.getElementById('objectVertexAX').value = a.x;
+                    document.getElementById('objectVertexAY').value = a.y;
+                }
+                if (b) {
+                    document.getElementById('objectVertexBX').value = b.x;
+                    document.getElementById('objectVertexBY').value = b.y;
+                }
+                if (c) {
+                    document.getElementById('objectVertexCX').value = c.x;
+                    document.getElementById('objectVertexCY').value = c.y;
+                }
             }
 
             // Update property checkboxes
@@ -311,6 +387,12 @@ export const objects = {
             document.getElementById('objectWidth').value = '';
             document.getElementById('objectHeight').value = '';
             document.getElementById('objectRadius').value = '';
+            document.getElementById('objectVertexAX').value = '';
+            document.getElementById('objectVertexAY').value = '';
+            document.getElementById('objectVertexBX').value = '';
+            document.getElementById('objectVertexBY').value = '';
+            document.getElementById('objectVertexCX').value = '';
+            document.getElementById('objectVertexCY').value = '';
             this.updateStatus(`Selected ${objects.length} objects`);
         } else {
             this.updateStatus('No object selected');
@@ -424,6 +506,12 @@ export const objects = {
         const widthValue = parseInt(document.getElementById('objectWidth').value);
         const heightValue = parseInt(document.getElementById('objectHeight').value);
         const radiusValue = parseInt(document.getElementById('objectRadius').value);
+        const vertexAX = parseFloat(document.getElementById('objectVertexAX').value);
+        const vertexAY = parseFloat(document.getElementById('objectVertexAY').value);
+        const vertexBX = parseFloat(document.getElementById('objectVertexBX').value);
+        const vertexBY = parseFloat(document.getElementById('objectVertexBY').value);
+        const vertexCX = parseFloat(document.getElementById('objectVertexCX').value);
+        const vertexCY = parseFloat(document.getElementById('objectVertexCY').value);
         if (!isNaN(widthValue)) {
             sharedProperties.width = widthValue;
         }
@@ -432,6 +520,13 @@ export const objects = {
         }
         if (!isNaN(radiusValue)) {
             sharedProperties.radius = radiusValue;
+        }
+        if (!isNaN(vertexAX) && !isNaN(vertexAY) && !isNaN(vertexBX) && !isNaN(vertexBY) && !isNaN(vertexCX) && !isNaN(vertexCY)) {
+            sharedProperties.vertices = [
+                { x: vertexAX, y: vertexAY },
+                { x: vertexBX, y: vertexBY },
+                { x: vertexCX, y: vertexCY }
+            ];
         }
 
         // Apply shared properties to all selected objects
@@ -450,6 +545,20 @@ export const objects = {
                 obj.height = parseInt(document.getElementById('objectHeight').value);
             } else if (obj.shape === 'circle') {
                 obj.radius = parseInt(document.getElementById('objectRadius').value);
+            } else if (obj.shape === 'triangle') {
+                const updatedVertexAX = parseFloat(document.getElementById('objectVertexAX').value);
+                const updatedVertexAY = parseFloat(document.getElementById('objectVertexAY').value);
+                const updatedVertexBX = parseFloat(document.getElementById('objectVertexBX').value);
+                const updatedVertexBY = parseFloat(document.getElementById('objectVertexBY').value);
+                const updatedVertexCX = parseFloat(document.getElementById('objectVertexCX').value);
+                const updatedVertexCY = parseFloat(document.getElementById('objectVertexCY').value);
+                if (!isNaN(updatedVertexAX) && !isNaN(updatedVertexAY) && !isNaN(updatedVertexBX) && !isNaN(updatedVertexBY) && !isNaN(updatedVertexCX) && !isNaN(updatedVertexCY)) {
+                    obj.vertices = [
+                        { x: updatedVertexAX, y: updatedVertexAY },
+                        { x: updatedVertexBX, y: updatedVertexBY },
+                        { x: updatedVertexCX, y: updatedVertexCY }
+                    ];
+                }
             }
 
             // Update properties
@@ -769,7 +878,7 @@ export const objects = {
             const newObj = JSON.parse(JSON.stringify(copiedObj));
 
             // Generate new unique ID
-            const baseName = newObj.shape === 'rectangle' ? 'rect' : 'circle';
+            const baseName = newObj.shape === 'rectangle' ? 'rect' : (newObj.shape === 'circle' ? 'circle' : 'triangle');
             newObj.id = generateUniqueObjectName(baseName, this.level.objects);
 
             // Offset position slightly so pasted objects are visible
