@@ -158,6 +158,15 @@ export const events = {
         document.getElementById('objectChair').addEventListener('change', (e) => {
             document.getElementById('chairNumberContainer').style.display =
                 e.target.checked ? 'block' : 'none';
+
+            if (e.target.checked) {
+                const chairInput = document.getElementById('objectChairNumber');
+                const currentValue = parseInt(chairInput.value);
+                if (isNaN(currentValue) || currentValue < 1) {
+                    chairInput.value = this.getNextChairNumber();
+                }
+                this.updateSelectedObject();
+            }
         });
 
         // Show/hide active options when active checkbox is toggled

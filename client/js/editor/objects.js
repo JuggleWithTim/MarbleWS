@@ -148,6 +148,22 @@ export const objects = {
         return '';
     },
 
+    getNextChairNumber() {
+        const usedNumbers = new Set();
+        this.level.objects.forEach(obj => {
+            if (typeof obj.chair === 'number' && obj.chair > 0) {
+                usedNumbers.add(obj.chair);
+            }
+        });
+
+        let nextNumber = 1;
+        while (usedNumbers.has(nextNumber)) {
+            nextNumber += 1;
+        }
+
+        return nextNumber;
+    },
+
     getChairNumber() {
         if (document.getElementById('objectChair').checked) {
             const num = parseInt(document.getElementById('objectChairNumber').value);
