@@ -123,19 +123,19 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
   });
 
   gameLogic.on('raceCheckpoint', (data) => {
-    io.emit('raceCheckpoint', data);
+    io.to(data.playerId).emit('raceCheckpoint', data);
   });
 
   gameLogic.on('raceLap', (data) => {
-    io.emit('raceLap', data);
+    io.to(data.playerId).emit('raceLap', data);
   });
 
   gameLogic.on('racePlayerEffect', (data) => {
-    io.emit('racePlayerEffect', data);
+    io.to(data.playerId).emit('racePlayerEffect', data);
   });
 
   gameLogic.on('raceFinished', (data) => {
-    io.emit('raceFinished', data);
+    io.to(data.playerId).emit('raceFinished', data);
   });
 
   gameLogic.on('raceEnd', (data) => {
