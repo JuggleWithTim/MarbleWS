@@ -332,6 +332,27 @@ export const rendering = {
             this.ctx.textAlign = 'center';
             this.ctx.fillText('TELEPORTER', obj.x, obj.y - 20);
         }
+
+        if (obj.properties.includes('checkpoint')) {
+            const checkpointLabel = obj.checkpointOrder !== undefined
+                ? `CP ${obj.checkpointOrder}`
+                : 'CHECKPOINT';
+            this.ctx.save();
+            this.ctx.fillStyle = '#4ecdc4';
+            this.ctx.font = '12px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText(checkpointLabel, obj.x, obj.y - 30);
+            this.ctx.restore();
+        }
+
+        if (obj.properties.includes('finish')) {
+            this.ctx.save();
+            this.ctx.fillStyle = '#ff6b6b';
+            this.ctx.font = 'bold 12px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText('FINISH', obj.x, obj.y - 35);
+            this.ctx.restore();
+        }
     },
 
     drawObjectOutline(obj) {

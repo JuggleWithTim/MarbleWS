@@ -54,36 +54,12 @@ class RaceRenderer {
 
         this.updateGameModeData(this.game.gameState.gameMode);
 
-        this.renderRaceObjects();
         this.renderHUD();
         this.renderCountdown();
         this.renderRaceEventBanner();
         if (this.showResults) {
             this.renderResultsScreen();
         }
-    }
-
-    renderRaceObjects() {
-        const highlight = (obj, color, label) => {
-            const screen = this.renderer.worldToScreen(obj.x, obj.y);
-            this.ctx.save();
-            this.ctx.strokeStyle = color;
-            this.ctx.lineWidth = 3;
-            this.ctx.beginPath();
-            this.ctx.arc(screen.x, screen.y, 30, 0, Math.PI * 2);
-            this.ctx.stroke();
-            this.ctx.fillStyle = color;
-            this.ctx.font = 'bold 12px Arial';
-            this.ctx.textAlign = 'center';
-            this.ctx.fillText(label, screen.x, screen.y - 35);
-            this.ctx.restore();
-        };
-
-        this.finishLines.forEach(line => highlight(line, '#ff6b6b', 'FINISH'));
-        this.checkpoints.forEach((cp, index) => {
-            const label = `CP ${index + 1}`;
-            highlight(cp, '#4ecdc4', label);
-        });
     }
 
     renderHUD() {
