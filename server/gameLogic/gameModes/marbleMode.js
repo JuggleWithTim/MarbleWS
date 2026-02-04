@@ -13,7 +13,9 @@ class MarbleMode extends BaseGameMode {
   // Most functionality is handled by the existing levelManager and physics engine
 
   getGameStateData() {
+    const baseData = super.getGameStateData();
     return {
+      ...baseData,
       mode: 'marble',
       // Include any marble-specific data if needed
     };

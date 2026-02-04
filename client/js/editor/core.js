@@ -395,7 +395,7 @@ export class LevelEditorCore {
         const levelType = this.level.levelType || 'Marble';
         const levelSizeGroup = document.getElementById('levelSizeGroup');
         if (levelSizeGroup) {
-            levelSizeGroup.style.display = levelType === 'Dungeon' ? 'block' : 'none';
+            levelSizeGroup.style.display = 'block';
         }
         const raceSettingsGroup = document.getElementById('raceSettingsGroup');
         if (raceSettingsGroup) {

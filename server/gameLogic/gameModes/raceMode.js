@@ -317,8 +317,10 @@ class RaceMode extends BaseGameMode {
   }
 
   getGameStateData() {
+    const baseData = super.getGameStateData();
     const positions = this.calculatePositions();
     return {
+      ...baseData,
       mode: 'race',
       raceState: this.raceState,
       laps: this.laps,

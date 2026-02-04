@@ -721,8 +721,8 @@ class Game {
                     break;
                 case 'player':
                     const color = renderable.data.color || '#4ecdc4';
-                    const isDungeonMode = this.gameState.gameMode && this.gameState.gameMode.mode === 'dungeon';
-                    const playerScale = isDungeonMode ? (this.gameState.gameMode.playerScale || 0.5) : 1;
+                    const isDungeonView = this.gameState.gameMode && this.gameState.gameMode.dungeonViewEnabled;
+                    const playerScale = isDungeonView ? (this.gameState.gameMode.playerScale || 1) : 1;
                     this.renderer.drawUFO(
                         renderable.data.x,
                         renderable.data.y,

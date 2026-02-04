@@ -216,7 +216,7 @@ class TransparentRenderer extends Renderer {
 
         // Apply camera based on game mode
         const gameModeData = gameState.gameMode;
-        if (gameModeData && gameModeData.mode === 'dungeon' && gameState.players && gameState.players.length > 0) {
+        if (gameModeData && gameModeData.dungeonViewEnabled && gameState.players && gameState.players.length > 0) {
             // Dungeon mode: Check if spectating a specific player
             if (gameModeData.followTarget) {
                 const targetPlayer = gameState.players.find(p =>

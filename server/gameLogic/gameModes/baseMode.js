@@ -5,12 +5,14 @@ class BaseGameMode {
     this.levelManager = levelManager;
     this.currentLevel = null;
     this.isActive = false;
+    this.dungeonViewEnabled = false;
   }
 
   // Initialize the game mode with level data
   init(levelData) {
     this.currentLevel = levelData;
     this.isActive = true;
+    this.updateDungeonViewFlag(levelData);
     console.log(`Initialized ${this.getModeName()} mode for level: ${levelData.name}`);
   }
 
@@ -43,7 +45,24 @@ class BaseGameMode {
 
   // Get mode-specific data for game state
   getGameStateData() {
-    return {};
+    const levelWidth = this.currentLevel?.levelWidth || 1920;
+    const levelHeight = this.currentLevel?.levelHeight || 1080;
+    return {
+      dungeonViewEnabled: this.dungeonViewEnabled,
+      cameraBounds: {
+        left: 0,
+        right: levelWidth,
+        top: 0,
+        bottom: levelHeight,
+        margin: 200
+      }
+    };
+  }
+
+  updateDungeonViewFlag(levelData) {
+    const levelWidth = levelData?.levelWidth || 1920;
+    const levelHeight = levelData?.levelHeight || 1080;
+    this.dungeonViewEnabled = levelWidth !== 1920 || levelHeight !== 1080;
   }
 
   // Handle player input (movement, beam, etc.)
