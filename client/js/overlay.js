@@ -35,6 +35,7 @@ class TransparentRenderer extends Renderer {
 
     // Color Rush renderer
     const colorRushRenderer = new window.ColorRushRenderer(renderer, gameWrapper);
+    const raceRenderer = new window.RaceRenderer(renderer, gameWrapper);
 
     // Load shared game configuration via API
     let gameData;
@@ -379,6 +380,10 @@ class TransparentRenderer extends Renderer {
         if (colorRushRenderer) {
             colorRushRenderer.render();
         }
+
+        if (raceRenderer) {
+            raceRenderer.render();
+        }
     }
 
     // Initialize overlay
@@ -428,6 +433,54 @@ class TransparentRenderer extends Renderer {
         networking.socket.on('colorRushPlayerDeath', (data) => {
             if (colorRushRenderer) {
                 colorRushRenderer.handlePlayerDeath(data);
+            }
+        });
+
+        networking.socket.on('raceCountdown', (data) => {
+            if (raceRenderer) {
+                raceRenderer.handleCountdown(data);
+            }
+        });
+
+        networking.socket.on('raceStart', (data) => {
+            if (raceRenderer) {
+                raceRenderer.handleRaceStart(data);
+            }
+        });
+
+        networking.socket.on('raceCheckpoint', (data) => {
+            if (raceRenderer) {
+                raceRenderer.handleCheckpoint(data);
+            }
+        });
+
+        networking.socket.on('raceLap', (data) => {
+            if (raceRenderer) {
+                raceRenderer.handleLap(data);
+            }
+        });
+
+        networking.socket.on('racePlayerEffect', (data) => {
+            if (raceRenderer) {
+                raceRenderer.handlePlayerEffect(data);
+            }
+        });
+
+        networking.socket.on('raceFinished', (data) => {
+            if (raceRenderer) {
+                raceRenderer.handleFinish(data);
+            }
+        });
+
+        networking.socket.on('raceEnd', (data) => {
+            if (raceRenderer) {
+                raceRenderer.handleRaceEnd(data);
+            }
+        });
+
+        networking.socket.on('raceNextRound', (data) => {
+            if (raceRenderer) {
+                raceRenderer.handleNextRace(data);
             }
         });
 
