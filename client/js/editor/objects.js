@@ -53,12 +53,12 @@ export const objects = {
             obj.teleporterTarget = teleporterTarget;
         }
 
-        const chairNumber = this.getChairNumber();
+        const chairNumber = this.getUniqueChairNumber();
         if (chairNumber !== null) {
             obj.chair = chairNumber;
         }
 
-        const checkpointOrder = this.getCheckpointOrder();
+        const checkpointOrder = this.getUniqueCheckpointOrder();
         if (checkpointOrder !== null) {
             obj.checkpointOrder = checkpointOrder;
         }
@@ -121,12 +121,12 @@ export const objects = {
         }
 
         // Add chair property for chair objects
-        const chairNumber = this.getChairNumber();
+        const chairNumber = this.getUniqueChairNumber();
         if (chairNumber !== null) {
             obj.chair = chairNumber;
         }
 
-        const checkpointOrder = this.getCheckpointOrder();
+        const checkpointOrder = this.getUniqueCheckpointOrder();
         if (checkpointOrder !== null) {
             obj.checkpointOrder = checkpointOrder;
         }
@@ -182,12 +182,12 @@ export const objects = {
         }
 
         // Add chair property for chair objects
-        const chairNumber = this.getChairNumber();
+        const chairNumber = this.getUniqueChairNumber();
         if (chairNumber !== null) {
             obj.chair = chairNumber;
         }
 
-        const checkpointOrder = this.getCheckpointOrder();
+        const checkpointOrder = this.getUniqueCheckpointOrder();
         if (checkpointOrder !== null) {
             obj.checkpointOrder = checkpointOrder;
         }
@@ -257,6 +257,26 @@ export const objects = {
         return null;
     },
 
+    isCheckpointOrderUsed(order) {
+        return this.level.objects.some(obj => obj.checkpointOrder === order);
+    },
+
+    getUniqueCheckpointOrder() {
+        if (!document.getElementById('objectCheckpoint').checked) {
+            return null;
+        }
+
+        const input = document.getElementById('objectCheckpointOrder');
+        const order = parseInt(input.value);
+        if (isNaN(order) || order < 1 || this.isCheckpointOrderUsed(order)) {
+            const nextOrder = this.getNextCheckpointOrder();
+            input.value = nextOrder;
+            return nextOrder;
+        }
+
+        return order;
+    },
+
     getNextCheckpointOrder() {
         const usedOrders = new Set();
         this.level.objects.forEach(obj => {
@@ -302,6 +322,26 @@ export const objects = {
             return isNaN(num) || num < 1 || num > 99 ? null : num;
         }
         return null;
+    },
+
+    isChairNumberUsed(number) {
+        return this.level.objects.some(obj => obj.chair === number);
+    },
+
+    getUniqueChairNumber() {
+        if (!document.getElementById('objectChair').checked) {
+            return null;
+        }
+
+        const input = document.getElementById('objectChairNumber');
+        const num = parseInt(input.value);
+        if (isNaN(num) || num < 1 || num > 99 || this.isChairNumberUsed(num)) {
+            const nextNumber = this.getNextChairNumber();
+            input.value = nextNumber;
+            return nextNumber;
+        }
+
+        return num;
     },
 
     selectObject(obj) {
