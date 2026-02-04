@@ -60,7 +60,9 @@ class GameState {
         isSolid: obj.isSolid !== false, // Default to true if not specified
         zIndex: obj.zIndex || 0,
         nextLevel: obj.nextLevel,
-        properties: obj.properties
+        properties: obj.properties,
+        checkpointOrder: obj.checkpointOrder,
+        itemType: obj.itemType
       })),
       connections: this.levelManager.constraints.map(constraint => ({
         id: constraint.id,

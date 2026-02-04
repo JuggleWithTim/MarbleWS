@@ -11,6 +11,9 @@ export const level = {
                 version: '1.0',
                 levelType: 'Marble',
                 backgroundImage: '',
+                race: {
+                    laps: 3
+                },
                 objects: [],
                 connections: []
             };
@@ -72,6 +75,10 @@ export const level = {
                 document.getElementById('backgroundImage').value = this.level.backgroundImage;
                 this.loadBackgroundImage();
 
+                if (this.level.race) {
+                    document.getElementById('raceLaps').value = this.level.race.laps || 3;
+                }
+
                 // Update world physics inputs
                 document.getElementById('worldGravity').value = this.level.world.gravity;
 
@@ -126,6 +133,8 @@ export const level = {
         this.level.description = document.getElementById('levelDescription').value;
         this.level.levelType = document.getElementById('levelType').value;
         this.level.backgroundImage = document.getElementById('backgroundImage').value;
+        this.level.race = this.level.race || { laps: 3 };
+        this.level.race.laps = parseInt(document.getElementById('raceLaps').value) || 3;
 
         // Save level size if specified
         const levelWidth = parseInt(document.getElementById('levelWidth').value);

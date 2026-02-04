@@ -395,6 +395,7 @@
                         <option value="Marble">Marble</option>
                         <option value="Color Rush">Color Rush</option>
                         <option value="Dungeon">Dungeon</option>
+                        <option value="Race">Race</option>
                     </select>
                 </div>
                 <div class="property-group" id="levelSizeGroup" style="display: none;">
@@ -410,6 +411,15 @@
                         <input type="number" id="levelHeight" value="1080" min="1080" max="10000" step="1">
                         <span>pixels</span>
                     </div>
+                </div>
+                <div class="property-group" id="raceSettingsGroup" style="display: none;">
+                    <label>Race Laps:
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Number of laps required to finish the race in Race mode levels.</span>
+                        </span>
+                    </label>
+                    <input type="number" id="raceLaps" value="3" min="1" max="20" step="1">
                 </div>
                 <div class="property-group">
                     <label>Level Background Image:
@@ -516,6 +526,64 @@
                         </span>
                     </label>
                     <input type="text" id="objectNextLevel" placeholder="Level to load when goal is reached">
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="objectCheckpoint">
+                    <label for="objectCheckpoint">Race Checkpoint
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Marks a checkpoint in Race mode. Players must pass checkpoints in order before a lap counts.</span>
+                        </span>
+                    </label>
+                </div>
+                <div class="property-group" id="checkpointOrderContainer" style="display: none;">
+                    <label>Checkpoint Order:
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Order of this checkpoint in the race track (lower numbers are earlier). Leave empty to auto-sort by ID.</span>
+                        </span>
+                    </label>
+                    <input type="number" id="objectCheckpointOrder" placeholder="1" min="1" max="99">
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="objectFinish">
+                    <label for="objectFinish">Race Finish Line
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Defines the finish line in Race mode. Players must cross it after completing all checkpoints for each lap.</span>
+                        </span>
+                    </label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="objectBoostPad">
+                    <label for="objectBoostPad">Boost Pad
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Applies a temporary speed boost when players touch it.</span>
+                        </span>
+                    </label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="objectItemSpawn">
+                    <label for="objectItemSpawn">Item Spawn
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Gives racers a random item or a specific item when touched.</span>
+                        </span>
+                    </label>
+                </div>
+                <div class="property-group" id="itemSpawnTypeContainer" style="display: none;">
+                    <label>Item Type:
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Select a specific item to grant, or leave as Random for a random pick.</span>
+                        </span>
+                    </label>
+                    <select id="objectItemType">
+                        <option value="">Random</option>
+                        <option value="turbo">Turbo Boost</option>
+                        <option value="slow">Slowdown</option>
+                    </select>
                 </div>
                 <div class="checkbox-group">
                     <input type="checkbox" id="objectTeleporter">

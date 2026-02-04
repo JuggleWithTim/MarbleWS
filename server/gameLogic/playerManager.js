@@ -134,7 +134,9 @@ class PlayerManager {
       level: savedData.level,
       coins: savedData.coins,
       targetX: spawnX,
-      targetY: spawnY
+      targetY: spawnY,
+      speedMultiplier: 1,
+      speedBoostExpiresAt: 0
     };
 
     this.players.set(socketId, player);
@@ -226,6 +228,8 @@ class PlayerManager {
         // Reset beam state to ensure clean start
         player.beamActive = false;
         player.beamTarget = null;
+        player.speedMultiplier = 1;
+        player.speedBoostExpiresAt = 0;
       }
     });
   }
@@ -241,7 +245,8 @@ class PlayerManager {
   applyPlayerInputs() {
     this.players.forEach(player => {
       if (player.input && player.body) {
-        const forceAmount = 0.003; // Similar to reference game's 0.0035
+        const speedMultiplier = player.speedMultiplier || 1;
+        const forceAmount = 0.003 * speedMultiplier; // Similar to reference game's 0.0035
         let fx = 0, fy = 0;
 
         if (player.input.up) fy -= forceAmount;
@@ -268,6 +273,23 @@ class PlayerManager {
         player.beamTarget = null;
       }
     }
+  }
+
+  applySpeedBoost(playerId, multiplier, durationMs) {
+    const player = this.players.get(playerId);
+    if (!player) return;
+
+    player.speedMultiplier = multiplier;
+    player.speedBoostExpiresAt = Date.now() + durationMs;
+  }
+
+  updateSpeedBoosts(now = Date.now()) {
+    this.players.forEach(player => {
+      if (player.speedBoostExpiresAt && player.speedBoostExpiresAt <= now) {
+        player.speedMultiplier = 1;
+        player.speedBoostExpiresAt = 0;
+      }
+    });
   }
 
   updatePlayerAppearance(socketId, appearance) {

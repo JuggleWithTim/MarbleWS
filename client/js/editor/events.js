@@ -60,6 +60,18 @@ export const events = {
             this.saveState();
         });
 
+        const raceLapsInput = document.getElementById('raceLaps');
+        if (raceLapsInput) {
+            raceLapsInput.addEventListener('input', (e) => {
+                const laps = parseInt(e.target.value);
+                if (!this.level.race) {
+                    this.level.race = { laps: 3 };
+                }
+                this.level.race.laps = isNaN(laps) ? 3 : laps;
+                this.saveState();
+            });
+        }
+
         document.getElementById('backgroundImage').addEventListener('input', (e) => {
             this.level.backgroundImage = e.target.value;
             this.loadBackgroundImage();
@@ -148,6 +160,26 @@ export const events = {
                 e.target.checked ? 'block' : 'none';
         });
 
+        // Show/hide checkpoint order field when checkpoint checkbox is toggled
+        document.getElementById('objectCheckpoint').addEventListener('change', (e) => {
+            document.getElementById('checkpointOrderContainer').style.display =
+                e.target.checked ? 'block' : 'none';
+
+            if (e.target.checked) {
+                this.updateSelectedObject();
+            }
+        });
+
+        // Show/hide item type field when item spawn checkbox is toggled
+        document.getElementById('objectItemSpawn').addEventListener('change', (e) => {
+            document.getElementById('itemSpawnTypeContainer').style.display =
+                e.target.checked ? 'block' : 'none';
+
+            if (e.target.checked) {
+                this.updateSelectedObject();
+            }
+        });
+
         // Show/hide teleporterTarget field when teleporter checkbox is toggled
         document.getElementById('objectTeleporter').addEventListener('change', (e) => {
             document.getElementById('teleporterTargetContainer').style.display =
@@ -186,7 +218,10 @@ export const events = {
             'objectColor', 'objectAlpha', 'objectBackgroundImage', 'objectWidth', 'objectHeight', 'objectRadius',
             'objectVertexAX', 'objectVertexAY', 'objectVertexBX', 'objectVertexBY', 'objectVertexCX', 'objectVertexCY',
             'objectFriction', 'objectRestitution', 'objectDensity', 'objectRotation', 'objectStatic',
-            'objectSpawnpoint', 'objectPlayerspawn', 'objectEmotespawn', 'objectGoal', 'objectNextLevel', 'objectTeleporter', 'objectTeleporterTarget', 'objectChair', 'objectChairNumber', 'objectSolid', 'objectZIndex',
+            'objectSpawnpoint', 'objectPlayerspawn', 'objectEmotespawn', 'objectGoal', 'objectNextLevel',
+            'objectCheckpoint', 'objectCheckpointOrder', 'objectFinish', 'objectBoostPad',
+            'objectItemSpawn', 'objectItemType',
+            'objectTeleporter', 'objectTeleporterTarget', 'objectChair', 'objectChairNumber', 'objectSolid', 'objectZIndex',
             'objectActive', 'objectPointAX', 'objectPointAY', 'objectPointBX', 'objectPointBY', 'objectTimeToA', 'objectTimeFromA', 'objectSpeedToB', 'objectSpeedFromB',
             'objectRotationA', 'objectRotationB', 'objectRotationPointX', 'objectRotationPointY', 'objectAdvancedRotation', 'objectRotationSpeedToB', 'objectRotationSpeedFromB'
         ];

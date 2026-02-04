@@ -120,6 +120,12 @@ export class LevelEditorCore {
 
     // Ensure level has all required properties with defaults
     ensureLevelDefaults(level) {
+        if (!level.race) {
+            level.race = { ...DEFAULT_LEVEL.race };
+        } else {
+            level.race.laps = level.race.laps || DEFAULT_LEVEL.race.laps;
+        }
+
         // Ensure marble properties exist
         if (!level.marble) {
             level.marble = { ...DEFAULT_LEVEL.marble };
@@ -324,6 +330,10 @@ export class LevelEditorCore {
             this.loadBackgroundImage();
         }
 
+        if (document.getElementById('raceLaps')) {
+            document.getElementById('raceLaps').value = this.level.race?.laps || DEFAULT_LEVEL.race.laps;
+        }
+
         // Level size controls (show/hide based on level type)
         this.updateLevelTypeVisibility();
         if (document.getElementById('levelWidth')) {
@@ -386,6 +396,10 @@ export class LevelEditorCore {
         const levelSizeGroup = document.getElementById('levelSizeGroup');
         if (levelSizeGroup) {
             levelSizeGroup.style.display = levelType === 'Dungeon' ? 'block' : 'none';
+        }
+        const raceSettingsGroup = document.getElementById('raceSettingsGroup');
+        if (raceSettingsGroup) {
+            raceSettingsGroup.style.display = levelType === 'Race' ? 'block' : 'none';
         }
         if (document.getElementById('levelType')) {
             document.getElementById('levelType').value = levelType;

@@ -6,6 +6,9 @@ export const DEFAULT_LEVEL = {
     version: '1.0',
     levelType: 'Marble',
     backgroundImage: '',
+    race: {
+        laps: 3
+    },
     world: {
         gravity: 0.8
     },

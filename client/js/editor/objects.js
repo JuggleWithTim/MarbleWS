@@ -58,6 +58,16 @@ export const objects = {
             obj.chair = chairNumber;
         }
 
+        const checkpointOrder = this.getCheckpointOrder();
+        if (checkpointOrder !== null) {
+            obj.checkpointOrder = checkpointOrder;
+        }
+
+        const itemType = this.getItemType();
+        if (itemType) {
+            obj.itemType = itemType;
+        }
+
         this.level.objects.push(obj);
         this.saveState();
         this.selectObject(obj);
@@ -116,6 +126,16 @@ export const objects = {
             obj.chair = chairNumber;
         }
 
+        const checkpointOrder = this.getCheckpointOrder();
+        if (checkpointOrder !== null) {
+            obj.checkpointOrder = checkpointOrder;
+        }
+
+        const itemType = this.getItemType();
+        if (itemType) {
+            obj.itemType = itemType;
+        }
+
         this.level.objects.push(obj);
         this.saveState();
         this.selectObject(obj);
@@ -167,6 +187,16 @@ export const objects = {
             obj.chair = chairNumber;
         }
 
+        const checkpointOrder = this.getCheckpointOrder();
+        if (checkpointOrder !== null) {
+            obj.checkpointOrder = checkpointOrder;
+        }
+
+        const itemType = this.getItemType();
+        if (itemType) {
+            obj.itemType = itemType;
+        }
+
         this.level.objects.push(obj);
         this.saveState();
         this.selectObject(obj);
@@ -190,6 +220,18 @@ export const objects = {
         if (document.getElementById('objectGoal').checked) {
             properties.push('goal');
         }
+        if (document.getElementById('objectCheckpoint').checked) {
+            properties.push('checkpoint');
+        }
+        if (document.getElementById('objectFinish').checked) {
+            properties.push('finish');
+        }
+        if (document.getElementById('objectBoostPad').checked) {
+            properties.push('boostpad');
+        }
+        if (document.getElementById('objectItemSpawn').checked) {
+            properties.push('itemspawn');
+        }
         if (document.getElementById('objectTeleporter').checked) {
             properties.push('teleporter');
         }
@@ -206,6 +248,21 @@ export const objects = {
     getTeleporterTarget() {
         if (document.getElementById('objectTeleporter').checked) {
             return document.getElementById('objectTeleporterTarget').value.trim();
+        }
+        return '';
+    },
+
+    getCheckpointOrder() {
+        if (document.getElementById('objectCheckpoint').checked) {
+            const order = parseInt(document.getElementById('objectCheckpointOrder').value);
+            return isNaN(order) ? null : order;
+        }
+        return null;
+    },
+
+    getItemType() {
+        if (document.getElementById('objectItemSpawn').checked) {
+            return document.getElementById('objectItemType').value.trim();
         }
         return '';
     },
@@ -306,12 +363,24 @@ export const objects = {
             document.getElementById('objectPlayerspawn').checked = obj.properties.includes('playerspawn');
             document.getElementById('objectEmotespawn').checked = obj.properties.includes('emotespawn');
             document.getElementById('objectGoal').checked = obj.properties.includes('goal');
+            document.getElementById('objectCheckpoint').checked = obj.properties.includes('checkpoint');
+            document.getElementById('objectFinish').checked = obj.properties.includes('finish');
+            document.getElementById('objectBoostPad').checked = obj.properties.includes('boostpad');
+            document.getElementById('objectItemSpawn').checked = obj.properties.includes('itemspawn');
             document.getElementById('objectTeleporter').checked = obj.properties.includes('teleporter');
             document.getElementById('objectChair').checked = obj.chair !== undefined;
 
             // Show/hide nextLevel field based on goal property
             document.getElementById('nextLevelContainer').style.display =
                 obj.properties.includes('goal') ? 'block' : 'none';
+
+            // Show/hide checkpoint order field based on checkpoint property
+            document.getElementById('checkpointOrderContainer').style.display =
+                obj.properties.includes('checkpoint') ? 'block' : 'none';
+
+            // Show/hide item type field based on item spawn property
+            document.getElementById('itemSpawnTypeContainer').style.display =
+                obj.properties.includes('itemspawn') ? 'block' : 'none';
 
             // Show/hide teleporterTarget field based on teleporter property
             document.getElementById('teleporterTargetContainer').style.display =
@@ -323,6 +392,12 @@ export const objects = {
 
             // Set nextLevel value if it exists
             document.getElementById('objectNextLevel').value = obj.nextLevel || '';
+
+            // Set checkpoint order value if it exists
+            document.getElementById('objectCheckpointOrder').value = obj.checkpointOrder || '';
+
+            // Set item type value if it exists
+            document.getElementById('objectItemType').value = obj.itemType || '';
 
             // Set teleporterTarget value if it exists
             document.getElementById('objectTeleporterTarget').value = obj.teleporterTarget || '';
@@ -570,6 +645,22 @@ export const objects = {
                 obj.nextLevel = nextLevel;
             } else if (obj.nextLevel) {
                 delete obj.nextLevel;
+            }
+
+            // Update checkpoint order for race checkpoints
+            const checkpointOrderInput = parseInt(document.getElementById('objectCheckpointOrder').value);
+            if (obj.properties.includes('checkpoint') && !isNaN(checkpointOrderInput)) {
+                obj.checkpointOrder = checkpointOrderInput;
+            } else if (obj.checkpointOrder !== undefined) {
+                delete obj.checkpointOrder;
+            }
+
+            // Update item type for item spawns
+            const itemType = document.getElementById('objectItemType').value;
+            if (obj.properties.includes('itemspawn') && itemType) {
+                obj.itemType = itemType;
+            } else if (obj.itemType !== undefined) {
+                delete obj.itemType;
             }
 
             // Update teleporterTarget property for teleporter objects

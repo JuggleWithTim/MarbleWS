@@ -46,6 +46,32 @@ const gameConfig = {
   // Color Rush reward data (per player contribution to reward pot)
   colorRushReward: { xp: 5, coins: 10 },
 
+  // Race mode configuration
+  raceMode: {
+    laps: 3,
+    countdownSeconds: 3,
+    boostPad: {
+      speedMultiplier: 1.8,
+      durationMs: 1500,
+      cooldownMs: 1200
+    },
+    resultsDurationMs: 15000,
+    itemPickup: {
+      pickupCooldownMs: 2000,
+      maxActiveItems: 1
+    },
+    items: {
+      turbo: {
+        speedMultiplier: 1.8,
+        durationMs: 1200
+      },
+      slow: {
+        speedMultiplier: 0.6,
+        durationMs: 1500
+      }
+    }
+  },
+
   // Twitch chat announcements configuration
   announcements: {
     twitch: {
@@ -74,6 +100,13 @@ const gameConfig = {
       colorRushEnd: {
         enabled: true,
         message: "Top {count} Color Rush players: {players}",
+        maxPlayers: 3
+      },
+
+      // Race finish announcements
+      raceFinish: {
+        enabled: true,
+        message: "Race finished! Top {count}: {players}",
         maxPlayers: 3
       },
 
