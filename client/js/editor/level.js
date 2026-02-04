@@ -71,6 +71,7 @@ export const level = {
                 document.getElementById('levelName').value = this.level.name;
                 document.getElementById('levelDescription').value = this.level.description;
                 document.getElementById('levelType').value = this.level.levelType || 'Marble';
+                this.updateLevelTypeVisibility();
 
                 document.getElementById('backgroundImage').value = this.level.backgroundImage;
                 this.loadBackgroundImage();
