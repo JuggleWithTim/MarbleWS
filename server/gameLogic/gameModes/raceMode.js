@@ -246,6 +246,7 @@ class RaceMode extends BaseGameMode {
     this.raceState = 'finished';
     this.resultsStartTime = Date.now();
     this.playerManager.clearAllInputs();
+    this.playerManager.awardXPAndCoinsForRace(this.finishOrder);
     this.eventEmitter.emit('raceEnd', {
       results: this.finishOrder,
       resultsStartTime: this.resultsStartTime,

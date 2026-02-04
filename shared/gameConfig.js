@@ -46,6 +46,9 @@ const gameConfig = {
   // Color Rush reward data (per player contribution to reward pot)
   colorRushReward: { xp: 5, coins: 10 },
 
+  // Race reward data (per player contribution to reward pot)
+  raceReward: { xp: 5, coins: 10 },
+
   // Race mode configuration
   raceMode: {
     laps: 3,

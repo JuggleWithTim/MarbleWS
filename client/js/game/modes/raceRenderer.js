@@ -178,8 +178,12 @@ class RaceRenderer {
             const finishTime = result.finishTime !== null && result.finishTime !== undefined
                 ? `${(result.finishTime / 1000).toFixed(2)}s`
                 : 'DNF';
+            let rewardText = '';
+            if (result.xpReward !== undefined && result.coinReward !== undefined) {
+                rewardText = ` (+${result.xpReward} XP, ${result.coinReward} coins)`;
+            }
             this.ctx.fillStyle = index === 0 ? '#ffd166' : '#ffffff';
-            this.ctx.fillText(`${rank}. ${player.username} - ${finishTime}`, this.canvas.width / 2 - 250, y);
+            this.ctx.fillText(`${rank}. ${player.username} - ${finishTime}${rewardText}`, this.canvas.width / 2 - 250, y);
         });
 
         const elapsed = Date.now() - this.resultsStartTime;
