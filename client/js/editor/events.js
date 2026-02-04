@@ -166,6 +166,11 @@ export const events = {
                 e.target.checked ? 'block' : 'none';
 
             if (e.target.checked) {
+                const checkpointOrderInput = document.getElementById('objectCheckpointOrder');
+                const currentValue = parseInt(checkpointOrderInput.value);
+                if (isNaN(currentValue) || currentValue < 1) {
+                    checkpointOrderInput.value = this.getNextCheckpointOrder();
+                }
                 this.updateSelectedObject();
             }
         });

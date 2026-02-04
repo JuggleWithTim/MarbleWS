@@ -257,6 +257,22 @@ export const objects = {
         return null;
     },
 
+    getNextCheckpointOrder() {
+        const usedOrders = new Set();
+        this.level.objects.forEach(obj => {
+            if (typeof obj.checkpointOrder === 'number' && obj.checkpointOrder > 0) {
+                usedOrders.add(obj.checkpointOrder);
+            }
+        });
+
+        let nextOrder = 1;
+        while (usedOrders.has(nextOrder)) {
+            nextOrder += 1;
+        }
+
+        return nextOrder;
+    },
+
     getItemType() {
         if (document.getElementById('objectPlayerEffect').checked) {
             return document.getElementById('objectEffectType').value.trim();
