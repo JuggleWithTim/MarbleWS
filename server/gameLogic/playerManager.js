@@ -741,6 +741,12 @@ class PlayerManager {
   setGameMode(gameMode) {
     this.gameMode = gameMode;
   }
+
+  clearAllInputs() {
+    this.players.forEach(player => {
+      player.input = null;
+    });
+  }
 }
 
 module.exports = PlayerManager;
