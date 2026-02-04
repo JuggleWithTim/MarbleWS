@@ -154,9 +154,9 @@ export const events = {
             this.saveState();
         });
 
-        // Show/hide nextLevel field when goal checkbox is toggled
-        document.getElementById('objectGoal').addEventListener('change', (e) => {
-            document.getElementById('nextLevelContainer').style.display =
+        // Show/hide player effect type field when player effect checkbox is toggled
+        document.getElementById('objectPlayerEffect').addEventListener('change', (e) => {
+            document.getElementById('playerEffectTypeContainer').style.display =
                 e.target.checked ? 'block' : 'none';
         });
 
@@ -170,9 +170,9 @@ export const events = {
             }
         });
 
-        // Show/hide item type field when item spawn checkbox is toggled
-        document.getElementById('objectItemSpawn').addEventListener('change', (e) => {
-            document.getElementById('itemSpawnTypeContainer').style.display =
+        // Show/hide nextLevel field when goal checkbox is toggled
+        document.getElementById('objectGoal').addEventListener('change', (e) => {
+            document.getElementById('nextLevelContainer').style.display =
                 e.target.checked ? 'block' : 'none';
 
             if (e.target.checked) {
@@ -219,8 +219,8 @@ export const events = {
             'objectVertexAX', 'objectVertexAY', 'objectVertexBX', 'objectVertexBY', 'objectVertexCX', 'objectVertexCY',
             'objectFriction', 'objectRestitution', 'objectDensity', 'objectRotation', 'objectStatic',
             'objectSpawnpoint', 'objectPlayerspawn', 'objectEmotespawn', 'objectGoal', 'objectNextLevel',
-            'objectCheckpoint', 'objectCheckpointOrder', 'objectFinish', 'objectBoostPad',
-            'objectItemSpawn', 'objectItemType',
+            'objectCheckpoint', 'objectCheckpointOrder', 'objectFinish', 'objectPlayerEffect',
+            'objectEffectType',
             'objectTeleporter', 'objectTeleporterTarget', 'objectChair', 'objectChairNumber', 'objectSolid', 'objectZIndex',
             'objectActive', 'objectPointAX', 'objectPointAY', 'objectPointBX', 'objectPointBY', 'objectTimeToA', 'objectTimeFromA', 'objectSpeedToB', 'objectSpeedFromB',
             'objectRotationA', 'objectRotationB', 'objectRotationPointX', 'objectRotationPointY', 'objectAdvancedRotation', 'objectRotationSpeedToB', 'objectRotationSpeedFromB'

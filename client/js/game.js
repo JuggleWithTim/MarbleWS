@@ -291,15 +291,9 @@ class Game {
             }
         });
 
-        this.networking.socket.on('raceBoost', (data) => {
+        this.networking.socket.on('racePlayerEffect', (data) => {
             if (this.raceRenderer) {
-                this.raceRenderer.handleBoost(data);
-            }
-        });
-
-        this.networking.socket.on('raceItemPickup', (data) => {
-            if (this.raceRenderer) {
-                this.raceRenderer.handleItemPickup(data);
+                this.raceRenderer.handlePlayerEffect(data);
             }
         });
 

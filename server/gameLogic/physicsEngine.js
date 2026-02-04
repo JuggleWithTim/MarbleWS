@@ -6,8 +6,7 @@ class PhysicsEngine {
     this.teleportCooldowns = new Map(); // Track teleport cooldowns per object
     this.goalCooldowns = new Map(); // Track goal cooldowns per object
     this.activeObjects = new Map(); // Track active object movement state
-    this.boostCooldowns = new Map(); // Track boost pad cooldowns
-    this.itemCooldowns = new Map(); // Track item spawn cooldowns
+    this.playerEffectCooldowns = new Map(); // Track player effect spawn cooldowns
   }
 
   startPhysicsLoop() {
@@ -36,9 +35,8 @@ class PhysicsEngine {
     // Update speed boost expiry timers
     this.playerManager.updateSpeedBoosts();
 
-    // Handle boost pads and item pickups (available in all modes)
-    this.applyBoostPads();
-    this.handleItemPickups();
+    // Handle player effects (available in all modes)
+    this.handlePlayerEffects();
 
     // Check win condition
     const winResult = this.checkWinCondition();
@@ -579,67 +577,34 @@ class PhysicsEngine {
     });
   }
 
-  applyBoostPads() {
-    const boostPads = this.levelManager.levelObjects.filter(obj =>
-      obj.properties && obj.properties.includes('boostpad')
+  handlePlayerEffects() {
+    const effectSpawns = this.levelManager.levelObjects.filter(obj =>
+      obj.properties && obj.properties.includes('playereffect')
     );
 
-    if (boostPads.length === 0) return;
-
-    const now = Date.now();
-    const config = require('../../shared/gameConfig').raceMode?.boostPad || {};
-    const cooldownMs = config.cooldownMs || 1200;
-    const durationMs = config.durationMs || 1500;
-    const speedMultiplier = config.speedMultiplier || 1.5;
-
-    boostPads.forEach(pad => {
-      for (const [playerId, player] of this.playerManager.players) {
-        if (!this.isPlayerCollidingWithObject(player, pad)) continue;
-
-        const cooldownKey = `${playerId}-${pad.id}`;
-        const lastBoost = this.boostCooldowns.get(cooldownKey);
-        if (lastBoost && now - lastBoost < cooldownMs) {
-          continue;
-        }
-
-        this.playerManager.applySpeedBoost(playerId, speedMultiplier, durationMs);
-        this.boostCooldowns.set(cooldownKey, now);
-        this.eventEmitter.emit('raceBoost', {
-          playerId,
-          padId: pad.id
-        });
-      }
-    });
-  }
-
-  handleItemPickups() {
-    const itemSpawns = this.levelManager.levelObjects.filter(obj =>
-      obj.properties && obj.properties.includes('itemspawn')
-    );
-
-    if (itemSpawns.length === 0) return;
+    if (effectSpawns.length === 0) return;
 
     const now = Date.now();
     const config = require('../../shared/gameConfig').raceMode || {};
-    const pickupCooldownMs = config.itemPickup?.pickupCooldownMs || 2000;
+    const pickupCooldownMs = config.playerEffect?.pickupCooldownMs || 2000;
 
-    itemSpawns.forEach(spawn => {
+    effectSpawns.forEach(spawn => {
       for (const [playerId, player] of this.playerManager.players) {
         if (!this.isPlayerCollidingWithObject(player, spawn)) continue;
 
         const cooldownKey = `${playerId}-${spawn.id}`;
-        const lastPickup = this.itemCooldowns.get(cooldownKey);
+        const lastPickup = this.playerEffectCooldowns.get(cooldownKey);
         if (lastPickup && now - lastPickup < pickupCooldownMs) {
           continue;
         }
 
-        const item = this.pickItemForSpawn(spawn, config.items || { turbo: {}, slow: {} });
-        this.itemCooldowns.set(cooldownKey, now);
-        this.applyItemEffect(playerId, item, config.items || {});
+        const effect = this.pickItemForSpawn(spawn, config.items || { turbo: {}, slow: {} });
+        this.playerEffectCooldowns.set(cooldownKey, now);
+        this.applyItemEffect(playerId, effect, config.items || {});
 
-        this.eventEmitter.emit('raceItemPickup', {
+        this.eventEmitter.emit('racePlayerEffect', {
           playerId,
-          item,
+          effect,
           spawnId: spawn.id
         });
       }

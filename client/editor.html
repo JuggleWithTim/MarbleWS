@@ -555,31 +555,22 @@
                     </label>
                 </div>
                 <div class="checkbox-group">
-                    <input type="checkbox" id="objectBoostPad">
-                    <label for="objectBoostPad">Boost Pad
+                    <input type="checkbox" id="objectPlayerEffect">
+                    <label for="objectPlayerEffect">Player Effect
                         <span class="tooltip-container">
                             <span class="tooltip-icon">?</span>
-                            <span class="tooltip-text">Applies a temporary speed boost when players touch it.</span>
+                            <span class="tooltip-text">Applies a player effect (random or specific) when touched.</span>
                         </span>
                     </label>
                 </div>
-                <div class="checkbox-group">
-                    <input type="checkbox" id="objectItemSpawn">
-                    <label for="objectItemSpawn">Item Spawn
+                <div class="property-group" id="playerEffectTypeContainer" style="display: none;">
+                    <label>Effect Type:
                         <span class="tooltip-container">
                             <span class="tooltip-icon">?</span>
-                            <span class="tooltip-text">Gives racers a random item or a specific item when touched.</span>
+                            <span class="tooltip-text">Select a specific effect to grant, or leave as Random for a random pick.</span>
                         </span>
                     </label>
-                </div>
-                <div class="property-group" id="itemSpawnTypeContainer" style="display: none;">
-                    <label>Item Type:
-                        <span class="tooltip-container">
-                            <span class="tooltip-icon">?</span>
-                            <span class="tooltip-text">Select a specific item to grant, or leave as Random for a random pick.</span>
-                        </span>
-                    </label>
-                    <select id="objectItemType">
+                    <select id="objectEffectType">
                         <option value="">Random</option>
                         <option value="turbo">Turbo Boost</option>
                         <option value="slow">Slowdown</option>

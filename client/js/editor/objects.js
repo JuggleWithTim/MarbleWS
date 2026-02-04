@@ -226,11 +226,8 @@ export const objects = {
         if (document.getElementById('objectFinish').checked) {
             properties.push('finish');
         }
-        if (document.getElementById('objectBoostPad').checked) {
-            properties.push('boostpad');
-        }
-        if (document.getElementById('objectItemSpawn').checked) {
-            properties.push('itemspawn');
+        if (document.getElementById('objectPlayerEffect').checked) {
+            properties.push('playereffect');
         }
         if (document.getElementById('objectTeleporter').checked) {
             properties.push('teleporter');
@@ -261,8 +258,8 @@ export const objects = {
     },
 
     getItemType() {
-        if (document.getElementById('objectItemSpawn').checked) {
-            return document.getElementById('objectItemType').value.trim();
+        if (document.getElementById('objectPlayerEffect').checked) {
+            return document.getElementById('objectEffectType').value.trim();
         }
         return '';
     },
@@ -365,8 +362,7 @@ export const objects = {
             document.getElementById('objectGoal').checked = obj.properties.includes('goal');
             document.getElementById('objectCheckpoint').checked = obj.properties.includes('checkpoint');
             document.getElementById('objectFinish').checked = obj.properties.includes('finish');
-            document.getElementById('objectBoostPad').checked = obj.properties.includes('boostpad');
-            document.getElementById('objectItemSpawn').checked = obj.properties.includes('itemspawn');
+            document.getElementById('objectPlayerEffect').checked = obj.properties.includes('playereffect');
             document.getElementById('objectTeleporter').checked = obj.properties.includes('teleporter');
             document.getElementById('objectChair').checked = obj.chair !== undefined;
 
@@ -379,8 +375,8 @@ export const objects = {
                 obj.properties.includes('checkpoint') ? 'block' : 'none';
 
             // Show/hide item type field based on item spawn property
-            document.getElementById('itemSpawnTypeContainer').style.display =
-                obj.properties.includes('itemspawn') ? 'block' : 'none';
+            document.getElementById('playerEffectTypeContainer').style.display =
+                obj.properties.includes('playereffect') ? 'block' : 'none';
 
             // Show/hide teleporterTarget field based on teleporter property
             document.getElementById('teleporterTargetContainer').style.display =
@@ -397,7 +393,7 @@ export const objects = {
             document.getElementById('objectCheckpointOrder').value = obj.checkpointOrder || '';
 
             // Set item type value if it exists
-            document.getElementById('objectItemType').value = obj.itemType || '';
+            document.getElementById('objectEffectType').value = obj.itemType || '';
 
             // Set teleporterTarget value if it exists
             document.getElementById('objectTeleporterTarget').value = obj.teleporterTarget || '';
@@ -656,8 +652,8 @@ export const objects = {
             }
 
             // Update item type for item spawns
-            const itemType = document.getElementById('objectItemType').value;
-            if (obj.properties.includes('itemspawn') && itemType) {
+            const itemType = document.getElementById('objectEffectType').value;
+            if (obj.properties.includes('playereffect') && itemType) {
                 obj.itemType = itemType;
             } else if (obj.itemType !== undefined) {
                 delete obj.itemType;

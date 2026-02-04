@@ -50,13 +50,8 @@ const gameConfig = {
   raceMode: {
     laps: 3,
     countdownSeconds: 3,
-    boostPad: {
-      speedMultiplier: 1.8,
-      durationMs: 1500,
-      cooldownMs: 1200
-    },
     resultsDurationMs: 15000,
-    itemPickup: {
+    playerEffect: {
       pickupCooldownMs: 2000,
       maxActiveItems: 1
     },

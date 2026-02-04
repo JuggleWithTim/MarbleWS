@@ -26,7 +26,6 @@ class RaceRenderer {
         this.lastRaceEventTime = 0;
         this.raceEventDuration = 3500;
 
-        this.boostFlash = new Map();
     }
 
     updateGameModeData(gameModeData) {
@@ -239,16 +238,10 @@ class RaceRenderer {
         this.setRaceEvent(`Lap ${data.lap - 1} complete!`);
     }
 
-    handleBoost(data) {
-        if (data.playerId) {
-            this.boostFlash.set(data.playerId, Date.now());
-        }
-        this.setRaceEvent('Boost activated!');
-    }
 
-    handleItemPickup(data) {
-        const item = data.itemType || data.item || 'Item';
-        this.setRaceEvent(`${item.toUpperCase()} picked up!`);
+    handlePlayerEffect(data) {
+        const effect = data.effectType || data.effect || data.itemType || data.item || 'Effect';
+        this.setRaceEvent(`${effect.toUpperCase()} activated!`);
     }
 
     handleFinish(data) {

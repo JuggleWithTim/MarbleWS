@@ -130,12 +130,8 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
     io.emit('raceLap', data);
   });
 
-  gameLogic.on('raceBoost', (data) => {
-    io.emit('raceBoost', data);
-  });
-
-  gameLogic.on('raceItemPickup', (data) => {
-    io.emit('raceItemPickup', data);
+  gameLogic.on('racePlayerEffect', (data) => {
+    io.emit('racePlayerEffect', data);
   });
 
   gameLogic.on('raceFinished', (data) => {
