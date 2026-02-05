@@ -4,6 +4,78 @@ import { DEFAULT_OBJECT_PROPERTIES } from './constants.js';
 import { generateUniqueObjectName, createRgba, parseRgba, rgbToHex, hexToRgb, loadObjectImage } from './utils.js';
 
 export const objects = {
+    createTriangle(x, y) {
+        const backgroundImage = document.getElementById('objectBackgroundImage').value;
+        const hexColor = document.getElementById('objectColor').value;
+        const alpha = parseInt(document.getElementById('objectAlpha').value);
+
+        // Load the background image if provided
+        if (backgroundImage) {
+            loadObjectImage(backgroundImage, this.objectImages);
+        }
+
+        const vertexAX = parseFloat(document.getElementById('objectVertexAX').value);
+        const vertexAY = parseFloat(document.getElementById('objectVertexAY').value);
+        const vertexBX = parseFloat(document.getElementById('objectVertexBX').value);
+        const vertexBY = parseFloat(document.getElementById('objectVertexBY').value);
+        const vertexCX = parseFloat(document.getElementById('objectVertexCX').value);
+        const vertexCY = parseFloat(document.getElementById('objectVertexCY').value);
+
+        const obj = {
+            id: generateUniqueObjectName('triangle', this.level.objects),
+            shape: 'triangle',
+            x: x,
+            y: y,
+            vertices: [
+                { x: isNaN(vertexAX) ? 0 : vertexAX, y: isNaN(vertexAY) ? -40 : vertexAY },
+                { x: isNaN(vertexBX) ? -35 : vertexBX, y: isNaN(vertexBY) ? 30 : vertexBY },
+                { x: isNaN(vertexCX) ? 35 : vertexCX, y: isNaN(vertexCY) ? 30 : vertexCY }
+            ],
+            rotation: parseFloat(document.getElementById('objectRotation').value) * Math.PI / 180,
+            color: createRgba(hexColor, alpha),
+            backgroundImage: backgroundImage,
+            isStatic: document.getElementById('objectStatic').checked,
+            isSolid: document.getElementById('objectSolid').checked,
+            zIndex: parseInt(document.getElementById('objectZIndex').value),
+            friction: parseFloat(document.getElementById('objectFriction').value),
+            restitution: parseFloat(document.getElementById('objectRestitution').value),
+            density: parseFloat(document.getElementById('objectDensity').value),
+            properties: this.getSelectedProperties()
+        };
+
+        const nextLevel = this.getNextLevel();
+        if (nextLevel) {
+            obj.nextLevel = nextLevel;
+        }
+
+        const teleporterTarget = this.getTeleporterTarget();
+        if (teleporterTarget) {
+            obj.teleporterTarget = teleporterTarget;
+        }
+
+        const chairNumber = this.getUniqueChairNumber();
+        if (chairNumber !== null) {
+            obj.chair = chairNumber;
+        }
+
+        const checkpointOrder = this.getUniqueCheckpointOrder();
+        if (checkpointOrder !== null) {
+            obj.checkpointOrder = checkpointOrder;
+        }
+
+        const itemType = this.getItemType();
+        if (itemType) {
+            obj.itemType = itemType;
+        }
+
+        this.level.objects.push(obj);
+        this.saveState();
+        this.selectObject(obj);
+        this.updateObjectList();
+        this.render();
+        this.updateJsonDisplay();
+        this.updateStatus(`Created triangle: ${obj.id}`);
+    },
     createRectangle(x, y) {
         const backgroundImage = document.getElementById('objectBackgroundImage').value;
         const hexColor = document.getElementById('objectColor').value;
@@ -49,9 +121,19 @@ export const objects = {
         }
 
         // Add chair property for chair objects
-        const chairNumber = this.getChairNumber();
+        const chairNumber = this.getUniqueChairNumber();
         if (chairNumber !== null) {
             obj.chair = chairNumber;
+        }
+
+        const checkpointOrder = this.getUniqueCheckpointOrder();
+        if (checkpointOrder !== null) {
+            obj.checkpointOrder = checkpointOrder;
+        }
+
+        const itemType = this.getItemType();
+        if (itemType) {
+            obj.itemType = itemType;
         }
 
         this.level.objects.push(obj);
@@ -100,9 +182,19 @@ export const objects = {
         }
 
         // Add chair property for chair objects
-        const chairNumber = this.getChairNumber();
+        const chairNumber = this.getUniqueChairNumber();
         if (chairNumber !== null) {
             obj.chair = chairNumber;
+        }
+
+        const checkpointOrder = this.getUniqueCheckpointOrder();
+        if (checkpointOrder !== null) {
+            obj.checkpointOrder = checkpointOrder;
+        }
+
+        const itemType = this.getItemType();
+        if (itemType) {
+            obj.itemType = itemType;
         }
 
         this.level.objects.push(obj);
@@ -128,6 +220,15 @@ export const objects = {
         if (document.getElementById('objectGoal').checked) {
             properties.push('goal');
         }
+        if (document.getElementById('objectCheckpoint').checked) {
+            properties.push('checkpoint');
+        }
+        if (document.getElementById('objectFinish').checked) {
+            properties.push('finish');
+        }
+        if (document.getElementById('objectPlayerEffect').checked) {
+            properties.push('playereffect');
+        }
         if (document.getElementById('objectTeleporter').checked) {
             properties.push('teleporter');
         }
@@ -148,12 +249,99 @@ export const objects = {
         return '';
     },
 
+    getCheckpointOrder() {
+        if (document.getElementById('objectCheckpoint').checked) {
+            const order = parseInt(document.getElementById('objectCheckpointOrder').value);
+            return isNaN(order) ? null : order;
+        }
+        return null;
+    },
+
+    isCheckpointOrderUsed(order) {
+        return this.level.objects.some(obj => obj.checkpointOrder === order);
+    },
+
+    getUniqueCheckpointOrder() {
+        if (!document.getElementById('objectCheckpoint').checked) {
+            return null;
+        }
+
+        const input = document.getElementById('objectCheckpointOrder');
+        const order = parseInt(input.value);
+        if (isNaN(order) || order < 1 || this.isCheckpointOrderUsed(order)) {
+            const nextOrder = this.getNextCheckpointOrder();
+            input.value = nextOrder;
+            return nextOrder;
+        }
+
+        return order;
+    },
+
+    getNextCheckpointOrder() {
+        const usedOrders = new Set();
+        this.level.objects.forEach(obj => {
+            if (typeof obj.checkpointOrder === 'number' && obj.checkpointOrder > 0) {
+                usedOrders.add(obj.checkpointOrder);
+            }
+        });
+
+        let nextOrder = 1;
+        while (usedOrders.has(nextOrder)) {
+            nextOrder += 1;
+        }
+
+        return nextOrder;
+    },
+
+    getItemType() {
+        if (document.getElementById('objectPlayerEffect').checked) {
+            return document.getElementById('objectEffectType').value.trim();
+        }
+        return '';
+    },
+
+    getNextChairNumber() {
+        const usedNumbers = new Set();
+        this.level.objects.forEach(obj => {
+            if (typeof obj.chair === 'number' && obj.chair > 0) {
+                usedNumbers.add(obj.chair);
+            }
+        });
+
+        let nextNumber = 1;
+        while (usedNumbers.has(nextNumber)) {
+            nextNumber += 1;
+        }
+
+        return nextNumber;
+    },
+
     getChairNumber() {
         if (document.getElementById('objectChair').checked) {
             const num = parseInt(document.getElementById('objectChairNumber').value);
             return isNaN(num) || num < 1 || num > 99 ? null : num;
         }
         return null;
+    },
+
+    isChairNumberUsed(number) {
+        return this.level.objects.some(obj => obj.chair === number);
+    },
+
+    getUniqueChairNumber() {
+        if (!document.getElementById('objectChair').checked) {
+            return null;
+        }
+
+        const input = document.getElementById('objectChairNumber');
+        const num = parseInt(input.value);
+        if (isNaN(num) || num < 1 || num > 99 || this.isChairNumberUsed(num)) {
+            const nextNumber = this.getNextChairNumber();
+            input.value = nextNumber;
+            return nextNumber;
+        }
+
+        return num;
     },
 
     selectObject(obj) {
@@ -207,6 +395,20 @@ export const objects = {
                 document.getElementById('objectHeight').value = obj.height;
             } else if (obj.shape === 'circle') {
                 document.getElementById('objectRadius').value = obj.radius;
+            } else if (obj.shape === 'triangle') {
+                const [a, b, c] = obj.vertices || [];
+                if (a) {
+                    document.getElementById('objectVertexAX').value = a.x;
+                    document.getElementById('objectVertexAY').value = a.y;
+                }
+                if (b) {
+                    document.getElementById('objectVertexBX').value = b.x;
+                    document.getElementById('objectVertexBY').value = b.y;
+                }
+                if (c) {
+                    document.getElementById('objectVertexCX').value = c.x;
+                    document.getElementById('objectVertexCY').value = c.y;
+                }
             }
 
             // Update property checkboxes
@@ -214,12 +416,23 @@ export const objects = {
             document.getElementById('objectPlayerspawn').checked = obj.properties.includes('playerspawn');
             document.getElementById('objectEmotespawn').checked = obj.properties.includes('emotespawn');
             document.getElementById('objectGoal').checked = obj.properties.includes('goal');
+            document.getElementById('objectCheckpoint').checked = obj.properties.includes('checkpoint');
+            document.getElementById('objectFinish').checked = obj.properties.includes('finish');
+            document.getElementById('objectPlayerEffect').checked = obj.properties.includes('playereffect');
             document.getElementById('objectTeleporter').checked = obj.properties.includes('teleporter');
             document.getElementById('objectChair').checked = obj.chair !== undefined;
 
             // Show/hide nextLevel field based on goal property
             document.getElementById('nextLevelContainer').style.display =
                 obj.properties.includes('goal') ? 'block' : 'none';
+
+            // Show/hide checkpoint order field based on checkpoint property
+            document.getElementById('checkpointOrderContainer').style.display =
+                obj.properties.includes('checkpoint') ? 'block' : 'none';
+
+            // Show/hide item type field based on item spawn property
+            document.getElementById('playerEffectTypeContainer').style.display =
+                obj.properties.includes('playereffect') ? 'block' : 'none';
 
             // Show/hide teleporterTarget field based on teleporter property
             document.getElementById('teleporterTargetContainer').style.display =
@@ -231,6 +444,12 @@ export const objects = {
 
             // Set nextLevel value if it exists
             document.getElementById('objectNextLevel').value = obj.nextLevel || '';
+
+            // Set checkpoint order value if it exists
+            document.getElementById('objectCheckpointOrder').value = obj.checkpointOrder || '';
+
+            // Set item type value if it exists
+            document.getElementById('objectEffectType').value = obj.itemType || '';
 
             // Set teleporterTarget value if it exists
             document.getElementById('objectTeleporterTarget').value = obj.teleporterTarget || '';
@@ -295,6 +514,12 @@ export const objects = {
             document.getElementById('objectWidth').value = '';
             document.getElementById('objectHeight').value = '';
             document.getElementById('objectRadius').value = '';
+            document.getElementById('objectVertexAX').value = '';
+            document.getElementById('objectVertexAY').value = '';
+            document.getElementById('objectVertexBX').value = '';
+            document.getElementById('objectVertexBY').value = '';
+            document.getElementById('objectVertexCX').value = '';
+            document.getElementById('objectVertexCY').value = '';
             this.updateStatus(`Selected ${objects.length} objects`);
         } else {
             this.updateStatus('No object selected');
@@ -408,6 +633,12 @@ export const objects = {
         const widthValue = parseInt(document.getElementById('objectWidth').value);
         const heightValue = parseInt(document.getElementById('objectHeight').value);
         const radiusValue = parseInt(document.getElementById('objectRadius').value);
+        const vertexAX = parseFloat(document.getElementById('objectVertexAX').value);
+        const vertexAY = parseFloat(document.getElementById('objectVertexAY').value);
+        const vertexBX = parseFloat(document.getElementById('objectVertexBX').value);
+        const vertexBY = parseFloat(document.getElementById('objectVertexBY').value);
+        const vertexCX = parseFloat(document.getElementById('objectVertexCX').value);
+        const vertexCY = parseFloat(document.getElementById('objectVertexCY').value);
         if (!isNaN(widthValue)) {
             sharedProperties.width = widthValue;
         }
@@ -416,6 +647,13 @@ export const objects = {
         }
         if (!isNaN(radiusValue)) {
             sharedProperties.radius = radiusValue;
+        }
+        if (!isNaN(vertexAX) && !isNaN(vertexAY) && !isNaN(vertexBX) && !isNaN(vertexBY) && !isNaN(vertexCX) && !isNaN(vertexCY)) {
+            sharedProperties.vertices = [
+                { x: vertexAX, y: vertexAY },
+                { x: vertexBX, y: vertexBY },
+                { x: vertexCX, y: vertexCY }
+            ];
         }
 
         // Apply shared properties to all selected objects
@@ -434,6 +672,20 @@ export const objects = {
                 obj.height = parseInt(document.getElementById('objectHeight').value);
             } else if (obj.shape === 'circle') {
                 obj.radius = parseInt(document.getElementById('objectRadius').value);
+            } else if (obj.shape === 'triangle') {
+                const updatedVertexAX = parseFloat(document.getElementById('objectVertexAX').value);
+                const updatedVertexAY = parseFloat(document.getElementById('objectVertexAY').value);
+                const updatedVertexBX = parseFloat(document.getElementById('objectVertexBX').value);
+                const updatedVertexBY = parseFloat(document.getElementById('objectVertexBY').value);
+                const updatedVertexCX = parseFloat(document.getElementById('objectVertexCX').value);
+                const updatedVertexCY = parseFloat(document.getElementById('objectVertexCY').value);
+                if (!isNaN(updatedVertexAX) && !isNaN(updatedVertexAY) && !isNaN(updatedVertexBX) && !isNaN(updatedVertexBY) && !isNaN(updatedVertexCX) && !isNaN(updatedVertexCY)) {
+                    obj.vertices = [
+                        { x: updatedVertexAX, y: updatedVertexAY },
+                        { x: updatedVertexBX, y: updatedVertexBY },
+                        { x: updatedVertexCX, y: updatedVertexCY }
+                    ];
+                }
             }
 
             // Update properties
@@ -445,6 +697,22 @@ export const objects = {
                 obj.nextLevel = nextLevel;
             } else if (obj.nextLevel) {
                 delete obj.nextLevel;
+            }
+
+            // Update checkpoint order for race checkpoints
+            const checkpointOrderInput = parseInt(document.getElementById('objectCheckpointOrder').value);
+            if (obj.properties.includes('checkpoint') && !isNaN(checkpointOrderInput)) {
+                obj.checkpointOrder = checkpointOrderInput;
+            } else if (obj.checkpointOrder !== undefined) {
+                delete obj.checkpointOrder;
+            }
+
+            // Update item type for item spawns
+            const itemType = document.getElementById('objectEffectType').value;
+            if (obj.properties.includes('playereffect') && itemType) {
+                obj.itemType = itemType;
+            } else if (obj.itemType !== undefined) {
+                delete obj.itemType;
             }
 
             // Update teleporterTarget property for teleporter objects
@@ -753,7 +1021,7 @@ export const objects = {
             const newObj = JSON.parse(JSON.stringify(copiedObj));
 
             // Generate new unique ID
-            const baseName = newObj.shape === 'rectangle' ? 'rect' : 'circle';
+            const baseName = newObj.shape === 'rectangle' ? 'rect' : (newObj.shape === 'circle' ? 'circle' : 'triangle');
             newObj.id = generateUniqueObjectName(baseName, this.level.objects);
 
             // Offset position slightly so pasted objects are visible

@@ -111,6 +111,22 @@ class Renderer {
         this.ctx.restore();
     }
 
+    drawTriangle(x, y, vertices, color, angle = 0) {
+        const screenPos = this.worldToScreen(x, y);
+
+        this.ctx.save();
+        this.ctx.translate(screenPos.x, screenPos.y);
+        this.ctx.rotate(angle);
+        this.ctx.fillStyle = color;
+        this.ctx.beginPath();
+        this.ctx.moveTo(vertices[0].x * this.camera.zoom, vertices[0].y * this.camera.zoom);
+        this.ctx.lineTo(vertices[1].x * this.camera.zoom, vertices[1].y * this.camera.zoom);
+        this.ctx.lineTo(vertices[2].x * this.camera.zoom, vertices[2].y * this.camera.zoom);
+        this.ctx.closePath();
+        this.ctx.fill();
+        this.ctx.restore();
+    }
+
     async drawImage(imageUrl, x, y, width, height, angle = 0) {
         const img = await this.loadImage(imageUrl);
         if (!img) return;
@@ -389,6 +405,30 @@ class Renderer {
                         obj.radius * 2 * this.camera.zoom, obj.radius * 2 * this.camera.zoom);
 
                     this.ctx.restore();
+                } else if (obj.shape === 'triangle') {
+                    const screenPos = this.worldToScreen(obj.x, obj.y);
+                    const vertices = obj.vertices || [];
+                    if (vertices.length === 3) {
+                        this.ctx.save();
+                        this.ctx.translate(screenPos.x, screenPos.y);
+                        this.ctx.rotate(obj.angle || 0);
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(vertices[0].x * this.camera.zoom, vertices[0].y * this.camera.zoom);
+                        this.ctx.lineTo(vertices[1].x * this.camera.zoom, vertices[1].y * this.camera.zoom);
+                        this.ctx.lineTo(vertices[2].x * this.camera.zoom, vertices[2].y * this.camera.zoom);
+                        this.ctx.closePath();
+                        this.ctx.clip();
+
+                        const xs = vertices.map(vertex => vertex.x);
+                        const ys = vertices.map(vertex => vertex.y);
+                        const minX = Math.min(...xs) * this.camera.zoom;
+                        const maxX = Math.max(...xs) * this.camera.zoom;
+                        const minY = Math.min(...ys) * this.camera.zoom;
+                        const maxY = Math.max(...ys) * this.camera.zoom;
+
+                        this.ctx.drawImage(cachedImage, minX, minY, maxX - minX, maxY - minY);
+                        this.ctx.restore();
+                    }
                 }
             } else {
                 // Image not loaded yet or failed, draw color fallback and start loading
@@ -401,6 +441,10 @@ class Renderer {
                     this.drawRectangle(obj.x, obj.y, obj.width, obj.height, obj.color, obj.angle);
                 } else if (obj.shape === 'circle') {
                     this.drawCircle(obj.x, obj.y, obj.radius, obj.color, obj.angle);
+                } else if (obj.shape === 'triangle') {
+                    if (obj.vertices && obj.vertices.length === 3) {
+                        this.drawTriangle(obj.x, obj.y, obj.vertices, obj.color, obj.angle);
+                    }
                 }
             }
         } else {
@@ -409,6 +453,10 @@ class Renderer {
                 this.drawRectangle(obj.x, obj.y, obj.width, obj.height, obj.color, obj.angle);
             } else if (obj.shape === 'circle') {
                 this.drawCircle(obj.x, obj.y, obj.radius, obj.color, obj.angle);
+            } else if (obj.shape === 'triangle') {
+                if (obj.vertices && obj.vertices.length === 3) {
+                    this.drawTriangle(obj.x, obj.y, obj.vertices, obj.color, obj.angle);
+                }
             }
         }
 

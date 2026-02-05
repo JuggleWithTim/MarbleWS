@@ -37,6 +37,7 @@ class Game {
         // Game mode renderers
         this.colorRushRenderer = null;
         this.dungeonRenderer = null;
+        this.raceRenderer = null;
     }
 
     // Linear interpolation function
@@ -139,6 +140,7 @@ class Game {
             this.renderer = new Renderer(this.canvas, this);
             this.colorRushRenderer = new window.ColorRushRenderer(this.renderer, this);
             this.dungeonRenderer = new window.DungeonRenderer(this.renderer, this);
+            this.raceRenderer = new window.RaceRenderer(this.renderer, this);
             this.controls.setupCanvasControls(this.canvas, this);
         }
 
@@ -262,6 +264,54 @@ class Game {
         this.networking.socket.on('colorRushPlayerDeath', (data) => {
             if (this.colorRushRenderer) {
                 this.colorRushRenderer.handlePlayerDeath(data);
+            }
+        });
+
+        this.networking.socket.on('raceCountdown', (data) => {
+            if (this.raceRenderer) {
+                this.raceRenderer.handleCountdown(data);
+            }
+        });
+
+        this.networking.socket.on('raceStart', (data) => {
+            if (this.raceRenderer) {
+                this.raceRenderer.handleRaceStart(data);
+            }
+        });
+
+        this.networking.socket.on('raceCheckpoint', (data) => {
+            if (this.raceRenderer) {
+                this.raceRenderer.handleCheckpoint(data);
+            }
+        });
+
+        this.networking.socket.on('raceLap', (data) => {
+            if (this.raceRenderer) {
+                this.raceRenderer.handleLap(data);
+            }
+        });
+
+        this.networking.socket.on('racePlayerEffect', (data) => {
+            if (this.raceRenderer) {
+                this.raceRenderer.handlePlayerEffect(data);
+            }
+        });
+
+        this.networking.socket.on('raceFinished', (data) => {
+            if (this.raceRenderer) {
+                this.raceRenderer.handleFinish(data);
+            }
+        });
+
+        this.networking.socket.on('raceEnd', (data) => {
+            if (this.raceRenderer) {
+                this.raceRenderer.handleRaceEnd(data);
+            }
+        });
+
+        this.networking.socket.on('raceNextRound', (data) => {
+            if (this.raceRenderer) {
+                this.raceRenderer.handleNextRace(data);
             }
         });
     }
@@ -665,8 +715,8 @@ class Game {
                     break;
                 case 'player':
                     const color = renderable.data.color || '#4ecdc4';
-                    const isDungeonMode = this.gameState.gameMode && this.gameState.gameMode.mode === 'dungeon';
-                    const playerScale = isDungeonMode ? (this.gameState.gameMode.playerScale || 0.5) : 1;
+                    const isDungeonView = this.gameState.gameMode && this.gameState.gameMode.dungeonViewEnabled;
+                    const playerScale = isDungeonView ? (this.gameState.gameMode.playerScale || 1) : 1;
                     this.renderer.drawUFO(
                         renderable.data.x,
                         renderable.data.y,
@@ -702,6 +752,10 @@ class Game {
 
         if (this.dungeonRenderer) {
             this.dungeonRenderer.render();
+        }
+
+        if (this.raceRenderer) {
+            this.raceRenderer.render();
         }
 
         // Debug info (optional)

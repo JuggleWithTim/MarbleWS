@@ -26,7 +26,7 @@ class DungeonRenderer {
 
     // Update Dungeon Mode specific data
     updateGameModeData(gameModeData) {
-        if (!gameModeData || gameModeData.mode !== 'dungeon') return;
+        if (!gameModeData || !gameModeData.dungeonViewEnabled) return;
 
         // Update configuration from server
         this.playerScale = gameModeData.playerScale || 1.0;
@@ -52,7 +52,7 @@ class DungeonRenderer {
 
     // Apply camera for Dungeon Mode (called from game.js render loop)
     applyCamera(gameModeData) {
-        if (!gameModeData || gameModeData.mode !== 'dungeon') {
+        if (!gameModeData || !gameModeData.dungeonViewEnabled) {
             // Not dungeon mode, use default camera
             this.renderer.setCamera(960, 540, 1);
             return;
@@ -61,9 +61,9 @@ class DungeonRenderer {
         // Update dungeon mode data
         this.updateGameModeData(gameModeData);
 
-        // Smoothly interpolate camera position
-        this.currentCameraX += (this.targetCameraX - this.currentCameraX) * this.cameraLerpSpeed;
-        this.currentCameraY += (this.targetCameraY - this.currentCameraY) * this.cameraLerpSpeed;
+        // Follow interpolated target directly (avoid extra smoothing lag)
+        this.currentCameraX = this.targetCameraX;
+        this.currentCameraY = this.targetCameraY;
 
         // Apply camera bounds to prevent going outside level
         const zoom = this.cameraZoom;

@@ -395,13 +395,14 @@
                         <option value="Marble">Marble</option>
                         <option value="Color Rush">Color Rush</option>
                         <option value="Dungeon">Dungeon</option>
+                        <option value="Race">Race</option>
                     </select>
                 </div>
-                <div class="property-group" id="levelSizeGroup" style="display: none;">
-                    <label>Level Size (Dungeon worlds only):
+                <div class="property-group" id="levelSizeGroup">
+                    <label>Level Size:
                         <span class="tooltip-container">
                             <span class="tooltip-icon">?</span>
-                            <span class="tooltip-text">The width and height of the world boundaries for dungeon levels. Larger sizes allow for bigger exploration areas. The camera stays within these bounds and follows players around.</span>
+                            <span class="tooltip-text">The width and height of the world boundaries. Any size other than 1920x1080 enables the dungeon-style zoomed camera that follows players (in all game modes).</span>
                         </span>
                     </label>
                     <div style="display: flex; gap: 10px; align-items: center;">
@@ -410,6 +411,22 @@
                         <input type="number" id="levelHeight" value="1080" min="1080" max="10000" step="1">
                         <span>pixels</span>
                     </div>
+                </div>
+                <div class="property-group" id="raceSettingsGroup" style="display: none;">
+                    <label>Race Laps:
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Number of laps required to finish the race in Race mode levels.</span>
+                        </span>
+                    </label>
+                    <input type="number" id="raceLaps" value="3" min="1" max="20" step="1">
+                    <label style="margin-top: 12px;">Max Race Time (seconds):
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Maximum duration for a race before unfinished players are marked DNF.</span>
+                        </span>
+                    </label>
+                    <input type="number" id="raceMaxTime" value="300" min="30" max="3600" step="10">
                 </div>
                 <div class="property-group">
                     <label>Level Background Image:
@@ -427,6 +444,7 @@
                 <button class="tool-button active" data-tool="select">Select</button>
                 <button class="tool-button" data-tool="rectangle">Rectangle</button>
                 <button class="tool-button" data-tool="circle">Circle</button>
+                <button class="tool-button" data-tool="triangle">Triangle</button>
                 <button class="tool-button" data-tool="connect">Connect</button>
                 <button class="tool-button" data-tool="delete">Delete</button>
             </div>
@@ -515,6 +533,55 @@
                         </span>
                     </label>
                     <input type="text" id="objectNextLevel" placeholder="Level to load when goal is reached">
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="objectCheckpoint">
+                    <label for="objectCheckpoint">Race Checkpoint
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Marks a checkpoint in Race mode. Players must pass checkpoints in order before a lap counts.</span>
+                        </span>
+                    </label>
+                </div>
+                <div class="property-group" id="checkpointOrderContainer" style="display: none;">
+                    <label>Checkpoint Order:
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Order of this checkpoint in the race track (lower numbers are earlier). Leave empty to auto-sort by ID.</span>
+                        </span>
+                    </label>
+                    <input type="number" id="objectCheckpointOrder" placeholder="1" min="1" max="99">
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="objectFinish">
+                    <label for="objectFinish">Race Finish Line
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Defines the finish line in Race mode. Players must cross it after completing all checkpoints for each lap.</span>
+                        </span>
+                    </label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="objectPlayerEffect">
+                    <label for="objectPlayerEffect">Player Effect
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Applies a player effect (random or specific) when touched.</span>
+                        </span>
+                    </label>
+                </div>
+                <div class="property-group" id="playerEffectTypeContainer" style="display: none;">
+                    <label>Effect Type:
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Select a specific effect to grant, or leave as Random for a random pick.</span>
+                        </span>
+                    </label>
+                    <select id="objectEffectType">
+                        <option value="">Random</option>
+                        <option value="turbo">Turbo Boost</option>
+                        <option value="slow">Slowdown</option>
+                    </select>
                 </div>
                 <div class="checkbox-group">
                     <input type="checkbox" id="objectTeleporter">
@@ -739,6 +806,22 @@
                         </span>
                     </label>
                     <input type="number" id="objectRadius" value="25" min="5" max="200">
+                </div>
+                <div class="property-group">
+                    <label>Triangle Vertices (relative to center):
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Triangle vertex positions relative to the object center. Edit to reshape the triangle.</span>
+                        </span>
+                    </label>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
+                        <input type="number" id="objectVertexAX" value="0" step="1" placeholder="Ax">
+                        <input type="number" id="objectVertexAY" value="-40" step="1" placeholder="Ay">
+                        <input type="number" id="objectVertexBX" value="-35" step="1" placeholder="Bx">
+                        <input type="number" id="objectVertexBY" value="30" step="1" placeholder="By">
+                        <input type="number" id="objectVertexCX" value="35" step="1" placeholder="Cx">
+                        <input type="number" id="objectVertexCY" value="30" step="1" placeholder="Cy">
+                    </div>
                 </div>
                 <div class="property-group">
                     <label>Friction:

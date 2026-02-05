@@ -11,6 +11,10 @@ export const level = {
                 version: '1.0',
                 levelType: 'Marble',
                 backgroundImage: '',
+                race: {
+                    laps: 3,
+                    maxTimeSeconds: 300
+                },
                 objects: [],
                 connections: []
             };
@@ -68,9 +72,17 @@ export const level = {
                 document.getElementById('levelName').value = this.level.name;
                 document.getElementById('levelDescription').value = this.level.description;
                 document.getElementById('levelType').value = this.level.levelType || 'Marble';
+                this.updateLevelTypeVisibility();
 
                 document.getElementById('backgroundImage').value = this.level.backgroundImage;
                 this.loadBackgroundImage();
+
+                if (this.level.race) {
+                    document.getElementById('raceLaps').value = this.level.race.laps || 3;
+                    if (document.getElementById('raceMaxTime')) {
+                        document.getElementById('raceMaxTime').value = this.level.race.maxTimeSeconds || 300;
+                    }
+                }
 
                 // Update world physics inputs
                 document.getElementById('worldGravity').value = this.level.world.gravity;
@@ -126,6 +138,9 @@ export const level = {
         this.level.description = document.getElementById('levelDescription').value;
         this.level.levelType = document.getElementById('levelType').value;
         this.level.backgroundImage = document.getElementById('backgroundImage').value;
+        this.level.race = this.level.race || { laps: 3 };
+        this.level.race.laps = parseInt(document.getElementById('raceLaps').value) || 3;
+        this.level.race.maxTimeSeconds = parseInt(document.getElementById('raceMaxTime').value) || 300;
 
         // Save level size if specified
         const levelWidth = parseInt(document.getElementById('levelWidth').value);

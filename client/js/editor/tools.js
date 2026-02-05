@@ -17,6 +17,7 @@ export const tools = {
                 break;
             case 'rectangle':
             case 'circle':
+            case 'triangle':
                 this.canvas.style.cursor = 'crosshair';
                 break;
             case 'connect':
@@ -74,6 +75,7 @@ export const tools = {
             switch (this.currentTool) {
                 case 'rectangle':
                 case 'circle':
+                case 'triangle':
                     cursor = 'crosshair';
                     break;
                 case 'connect':

@@ -134,7 +134,9 @@ class PlayerManager {
       level: savedData.level,
       coins: savedData.coins,
       targetX: spawnX,
-      targetY: spawnY
+      targetY: spawnY,
+      speedMultiplier: 1,
+      speedBoostExpiresAt: 0
     };
 
     this.players.set(socketId, player);
@@ -226,6 +228,8 @@ class PlayerManager {
         // Reset beam state to ensure clean start
         player.beamActive = false;
         player.beamTarget = null;
+        player.speedMultiplier = 1;
+        player.speedBoostExpiresAt = 0;
       }
     });
   }
@@ -241,7 +245,8 @@ class PlayerManager {
   applyPlayerInputs() {
     this.players.forEach(player => {
       if (player.input && player.body) {
-        const forceAmount = 0.003; // Similar to reference game's 0.0035
+        const speedMultiplier = player.speedMultiplier || 1;
+        const forceAmount = 0.003 * speedMultiplier; // Similar to reference game's 0.0035
         let fx = 0, fy = 0;
 
         if (player.input.up) fy -= forceAmount;
@@ -268,6 +273,23 @@ class PlayerManager {
         player.beamTarget = null;
       }
     }
+  }
+
+  applySpeedBoost(playerId, multiplier, durationMs) {
+    const player = this.players.get(playerId);
+    if (!player) return;
+
+    player.speedMultiplier = multiplier;
+    player.speedBoostExpiresAt = Date.now() + durationMs;
+  }
+
+  updateSpeedBoosts(now = Date.now()) {
+    this.players.forEach(player => {
+      if (player.speedBoostExpiresAt && player.speedBoostExpiresAt <= now) {
+        player.speedMultiplier = 1;
+        player.speedBoostExpiresAt = 0;
+      }
+    });
   }
 
   updatePlayerAppearance(socketId, appearance) {
@@ -706,6 +728,75 @@ class PlayerManager {
     });
   }
 
+  awardXPAndCoinsForRace(finishOrder) {
+    if (!finishOrder || finishOrder.length === 0) return;
+
+    const finishers = finishOrder.filter(result => result.finishTime !== null && result.finishTime !== undefined);
+    if (finishers.length === 0) return;
+
+    const playerCount = finishers.length;
+    const raceRewardConfig = gameConfig.raceReward || gameConfig.colorRushReward;
+    const baseXP = raceRewardConfig.xp;
+    const baseCoins = raceRewardConfig.coins;
+
+    // Calculate total reward pot
+    const totalXP = playerCount * baseXP;
+    const totalCoins = playerCount * baseCoins;
+
+    console.log(`Race ended with ${playerCount} players. Reward pot: ${totalXP} XP, ${totalCoins} coins`);
+
+    // Calculate normalized weights for fair distribution
+    const weights = [];
+    let totalWeight = 0;
+
+    for (let i = 0; i < playerCount; i++) {
+      const weight = Math.pow(0.7, i);
+      weights.push(weight);
+      totalWeight += weight;
+    }
+
+    // Distribute rewards based on normalized weights
+    finishers.forEach((result, index) => {
+      const placement = index + 1;
+      const player = Array.from(this.players.values()).find(p => p.id === result.playerId);
+
+      if (!player) return;
+
+      const normalizedWeight = weights[index] / totalWeight;
+      const xpReward = Math.max(1, Math.round(totalXP * normalizedWeight));
+      const coinReward = Math.max(1, Math.round(totalCoins * normalizedWeight));
+
+      const oldLevel = player.level;
+      player.xp += xpReward;
+      player.coins += coinReward;
+
+      result.xpReward = xpReward;
+      result.coinReward = coinReward;
+
+      const newLevel = this.calculateLevelFromXP(player.xp);
+      let leveledUp = false;
+
+      if (newLevel > oldLevel) {
+        player.level = newLevel;
+        const levelUpCoins = oldLevel * 100;
+        player.coins += levelUpCoins;
+        console.log(`Player ${player.username} leveled up to ${player.level} and gained ${levelUpCoins} coins from Race!`);
+        leveledUp = true;
+
+        this.eventEmitter.emit('playerLeveledUp', {
+          playerId: player.id,
+          username: player.username,
+          newLevel: player.level,
+          coinReward: levelUpCoins
+        });
+      }
+
+      this.savePlayerData(player.userId, player.ufoAppearance, player.level, player.xp, player.coins, player.unlockedUFOs, player.unlockedPassengers, player.unlockedHats, player.username);
+
+      console.log(`Player ${player.username} (#${placement}) gained ${xpReward} XP and ${coinReward} coins from Race!`);
+    });
+  }
+
   // Set references to external dependencies
   setWorld(world) {
     this.world = world;
@@ -718,6 +809,12 @@ class PlayerManager {
   // Set reference to current game mode
   setGameMode(gameMode) {
     this.gameMode = gameMode;
+  }
+
+  clearAllInputs() {
+    this.players.forEach(player => {
+      player.input = null;
+    });
   }
 }
 

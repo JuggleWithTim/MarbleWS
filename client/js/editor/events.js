@@ -60,6 +60,30 @@ export const events = {
             this.saveState();
         });
 
+        const raceLapsInput = document.getElementById('raceLaps');
+        if (raceLapsInput) {
+            raceLapsInput.addEventListener('input', (e) => {
+                const laps = parseInt(e.target.value);
+                if (!this.level.race) {
+                    this.level.race = { laps: 3 };
+                }
+                this.level.race.laps = isNaN(laps) ? 3 : laps;
+                this.saveState();
+            });
+        }
+
+        const raceMaxTimeInput = document.getElementById('raceMaxTime');
+        if (raceMaxTimeInput) {
+            raceMaxTimeInput.addEventListener('input', (e) => {
+                const maxTime = parseInt(e.target.value);
+                if (!this.level.race) {
+                    this.level.race = { laps: 3, maxTimeSeconds: 300 };
+                }
+                this.level.race.maxTimeSeconds = isNaN(maxTime) ? 300 : maxTime;
+                this.saveState();
+            });
+        }
+
         document.getElementById('backgroundImage').addEventListener('input', (e) => {
             this.level.backgroundImage = e.target.value;
             this.loadBackgroundImage();
@@ -142,10 +166,35 @@ export const events = {
             this.saveState();
         });
 
+        // Show/hide player effect type field when player effect checkbox is toggled
+        document.getElementById('objectPlayerEffect').addEventListener('change', (e) => {
+            document.getElementById('playerEffectTypeContainer').style.display =
+                e.target.checked ? 'block' : 'none';
+        });
+
+        // Show/hide checkpoint order field when checkpoint checkbox is toggled
+        document.getElementById('objectCheckpoint').addEventListener('change', (e) => {
+            document.getElementById('checkpointOrderContainer').style.display =
+                e.target.checked ? 'block' : 'none';
+
+            if (e.target.checked) {
+                const checkpointOrderInput = document.getElementById('objectCheckpointOrder');
+                const currentValue = parseInt(checkpointOrderInput.value);
+                if (isNaN(currentValue) || currentValue < 1) {
+                    checkpointOrderInput.value = this.getNextCheckpointOrder();
+                }
+                this.updateSelectedObject();
+            }
+        });
+
         // Show/hide nextLevel field when goal checkbox is toggled
         document.getElementById('objectGoal').addEventListener('change', (e) => {
             document.getElementById('nextLevelContainer').style.display =
                 e.target.checked ? 'block' : 'none';
+
+            if (e.target.checked) {
+                this.updateSelectedObject();
+            }
         });
 
         // Show/hide teleporterTarget field when teleporter checkbox is toggled
@@ -158,6 +207,15 @@ export const events = {
         document.getElementById('objectChair').addEventListener('change', (e) => {
             document.getElementById('chairNumberContainer').style.display =
                 e.target.checked ? 'block' : 'none';
+
+            if (e.target.checked) {
+                const chairInput = document.getElementById('objectChairNumber');
+                const currentValue = parseInt(chairInput.value);
+                if (isNaN(currentValue) || currentValue < 1) {
+                    chairInput.value = this.getNextChairNumber();
+                }
+                this.updateSelectedObject();
+            }
         });
 
         // Show/hide active options when active checkbox is toggled
@@ -175,8 +233,12 @@ export const events = {
         // Property inputs
         const propertyInputs = [
             'objectColor', 'objectAlpha', 'objectBackgroundImage', 'objectWidth', 'objectHeight', 'objectRadius',
+            'objectVertexAX', 'objectVertexAY', 'objectVertexBX', 'objectVertexBY', 'objectVertexCX', 'objectVertexCY',
             'objectFriction', 'objectRestitution', 'objectDensity', 'objectRotation', 'objectStatic',
-            'objectSpawnpoint', 'objectPlayerspawn', 'objectEmotespawn', 'objectGoal', 'objectNextLevel', 'objectTeleporter', 'objectTeleporterTarget', 'objectChair', 'objectChairNumber', 'objectSolid', 'objectZIndex',
+            'objectSpawnpoint', 'objectPlayerspawn', 'objectEmotespawn', 'objectGoal', 'objectNextLevel',
+            'objectCheckpoint', 'objectCheckpointOrder', 'objectFinish', 'objectPlayerEffect',
+            'objectEffectType',
+            'objectTeleporter', 'objectTeleporterTarget', 'objectChair', 'objectChairNumber', 'objectSolid', 'objectZIndex',
             'objectActive', 'objectPointAX', 'objectPointAY', 'objectPointBX', 'objectPointBY', 'objectTimeToA', 'objectTimeFromA', 'objectSpeedToB', 'objectSpeedFromB',
             'objectRotationA', 'objectRotationB', 'objectRotationPointX', 'objectRotationPointY', 'objectAdvancedRotation', 'objectRotationSpeedToB', 'objectRotationSpeedFromB'
         ];

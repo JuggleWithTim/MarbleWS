@@ -113,6 +113,45 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
     io.emit('colorRushPlayerDeath', data);
   });
 
+  // Listen for Race mode events
+  gameLogic.on('raceCountdown', (data) => {
+    io.emit('raceCountdown', data);
+  });
+
+  gameLogic.on('raceStart', (data) => {
+    io.emit('raceStart', data);
+  });
+
+  gameLogic.on('raceCheckpoint', (data) => {
+    io.to(data.playerId).emit('raceCheckpoint', data);
+  });
+
+  gameLogic.on('raceLap', (data) => {
+    io.to(data.playerId).emit('raceLap', data);
+  });
+
+  gameLogic.on('racePlayerEffect', (data) => {
+    io.to(data.playerId).emit('racePlayerEffect', data);
+  });
+
+  gameLogic.on('raceFinished', (data) => {
+    io.to(data.playerId).emit('raceFinished', data);
+  });
+
+  gameLogic.on('raceEnd', (data) => {
+    io.emit('raceEnd', data);
+
+    // Send race finish announcement to Twitch chat
+    gameLogic.eventEmitter.emit('sendAnnouncement', {
+      type: 'raceFinish',
+      data: data
+    });
+  });
+
+  gameLogic.on('raceNextRound', (data) => {
+    io.emit('raceNextRound', data);
+  });
+
   io.on('connection', (socket) => {
     // Get real client IP address from proxy headers
     const clientIP = getClientIP(socket);

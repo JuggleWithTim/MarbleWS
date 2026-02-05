@@ -311,6 +311,14 @@ class TwitchChat {
         const playerList = topPlayers.join(', ');
         message = message.replace('{count}', topPlayers.length).replace('{players}', playerList);
         break;
+      case 'raceFinish':
+        const raceMaxPlayers = config.maxPlayers || 3;
+        const raceTopPlayers = (data.results || []).slice(0, raceMaxPlayers).map(result => {
+          const player = Array.from(this.gameLogic.players.values()).find(p => p.id === result.playerId);
+          return player ? player.username : result.playerId;
+        });
+        message = message.replace('{count}', raceTopPlayers.length).replace('{players}', raceTopPlayers.join(', '));
+        break;
       case 'levelChange':
         message = message.replace('{levelName}', data.levelName);
         break;

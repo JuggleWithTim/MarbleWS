@@ -43,7 +43,9 @@ class DungeonMode extends BaseGameMode {
 
   // Override to provide mode-specific game state
   getGameStateData() {
+    const baseData = super.getGameStateData();
     return {
+      ...baseData,
       mode: 'dungeon',
       playerScale: this.playerScale,
       ignoreCameraMoves: this.ignoreCameraMoves,

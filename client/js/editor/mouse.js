@@ -46,6 +46,9 @@ export const mouse = {
             case 'circle':
                 this.createCircle(this.mousePos.x, this.mousePos.y);
                 break;
+            case 'triangle':
+                this.createTriangle(this.mousePos.x, this.mousePos.y);
+                break;
             case 'connect':
                 this.handleConnect(this.mousePos.x, this.mousePos.y);
                 break;
@@ -291,6 +294,12 @@ export const mouse = {
             const distance = Math.sqrt(Math.pow(obj.x - closestX, 2) + Math.pow(obj.y - closestY, 2));
 
             return distance <= obj.radius;
+        } else if (obj.shape === 'triangle') {
+            const vertices = this.getTriangleWorldVertices(obj);
+            return vertices.some(vertex =>
+                vertex.x >= rectX1 && vertex.x <= rectX2 &&
+                vertex.y >= rectY1 && vertex.y <= rectY2
+            );
         }
 
         return false;
@@ -361,6 +370,11 @@ export const mouse = {
                 if (distance <= obj.radius) {
                     return obj;
                 }
+            } else if (obj.shape === 'triangle') {
+                const localPoint = this.getTriangleLocalPoint(obj, x, y);
+                if (this.isPointInTriangle(localPoint, obj.vertices || [])) {
+                    return obj;
+                }
             }
         }
 
@@ -396,7 +410,12 @@ export const mouse = {
 
         // Check rotation handle first - need to account for object rotation
         let rotationHandleX = obj.x;
-        let rotationHandleY = obj.y - Math.max(obj.width || obj.radius * 2, obj.height || obj.radius * 2) / 2 - 30;
+        let rotationHandleHeight = Math.max(obj.width || obj.radius * 2, obj.height || obj.radius * 2);
+        if (obj.shape === 'triangle') {
+            const bounds = this.getTriangleBoundsLocal(obj);
+            rotationHandleHeight = bounds.maxY - bounds.minY;
+        }
+        let rotationHandleY = obj.y - rotationHandleHeight / 2 - 30;
 
         // If object has rotation, we need to transform the mouse coordinates
         // by the inverse rotation to check against the handle position
@@ -462,9 +481,86 @@ export const mouse = {
                 checkY >= handleY - handleSize && checkY <= handleY + handleSize) {
                 return 'radius';
             }
+        } else if (obj.shape === 'triangle') {
+            const bounds = this.getTriangleBoundsLocal(obj);
+            const corners = [
+                { name: 'nw', x: bounds.minX, y: bounds.minY },
+                { name: 'ne', x: bounds.maxX, y: bounds.minY },
+                { name: 'sw', x: bounds.minX, y: bounds.maxY },
+                { name: 'se', x: bounds.maxX, y: bounds.maxY }
+            ];
+
+            for (const corner of corners) {
+                if (checkX >= corner.x - handleSize && checkX <= corner.x + handleSize &&
+                    checkY >= corner.y - handleSize && checkY <= corner.y + handleSize) {
+                    return corner.name;
+                }
+            }
         }
 
         return null;
+    },
+
+    getTriangleLocalPoint(obj, x, y) {
+        let localX = x - obj.x;
+        let localY = y - obj.y;
+
+        if (obj.rotation && obj.rotation !== 0) {
+            const cos = Math.cos(-obj.rotation);
+            const sin = Math.sin(-obj.rotation);
+            const rotatedX = localX * cos - localY * sin;
+            const rotatedY = localX * sin + localY * cos;
+            localX = rotatedX;
+            localY = rotatedY;
+        }
+
+        return { x: localX, y: localY };
+    },
+
+    getTriangleWorldVertices(obj) {
+        const vertices = obj.vertices || [];
+        return vertices.map(vertex => {
+            let vx = vertex.x;
+            let vy = vertex.y;
+
+            if (obj.rotation && obj.rotation !== 0) {
+                const cos = Math.cos(obj.rotation);
+                const sin = Math.sin(obj.rotation);
+                const rotatedX = vx * cos - vy * sin;
+                const rotatedY = vx * sin + vy * cos;
+                vx = rotatedX;
+                vy = rotatedY;
+            }
+
+            return { x: obj.x + vx, y: obj.y + vy };
+        });
+    },
+
+    getTriangleBoundsLocal(obj) {
+        const vertices = obj.vertices || [];
+        const xs = vertices.map(vertex => obj.x + vertex.x);
+        const ys = vertices.map(vertex => obj.y + vertex.y);
+        return {
+            minX: Math.min(...xs),
+            maxX: Math.max(...xs),
+            minY: Math.min(...ys),
+            maxY: Math.max(...ys)
+        };
+    },
+
+    isPointInTriangle(point, vertices) {
+        if (!vertices || vertices.length < 3) return false;
+
+        const [a, b, c] = vertices;
+        const area = (p1, p2, p3) =>
+            Math.abs((p1.x * (p2.y - p3.y) + p2.x * (p3.y - p1.y) + p3.x * (p1.y - p2.y)) / 2);
+
+        const totalArea = area(a, b, c);
+        const area1 = area(point, b, c);
+        const area2 = area(a, point, c);
+        const area3 = area(a, b, point);
+
+        return Math.abs(totalArea - (area1 + area2 + area3)) < 0.5;
     },
 
     createConnection(objA, objB, pointA, pointB) {

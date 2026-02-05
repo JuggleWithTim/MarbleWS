@@ -348,7 +348,9 @@ class ColorRushMode extends BaseGameMode {
   }
 
   getGameStateData() {
+    const baseData = super.getGameStateData();
     return {
+      ...baseData,
       mode: 'colorRush',
       roundState: this.roundState,
       currentRound: this.currentRound,

@@ -6,6 +6,7 @@ class PhysicsEngine {
     this.teleportCooldowns = new Map(); // Track teleport cooldowns per object
     this.goalCooldowns = new Map(); // Track goal cooldowns per object
     this.activeObjects = new Map(); // Track active object movement state
+    this.playerEffectCooldowns = new Map(); // Track player effect spawn cooldowns
   }
 
   startPhysicsLoop() {
@@ -30,6 +31,12 @@ class PhysicsEngine {
       player.x = player.body.position.x;
       player.y = player.body.position.y;
     });
+
+    // Update speed boost expiry timers
+    this.playerManager.updateSpeedBoosts();
+
+    // Handle player effects (available in all modes)
+    this.handlePlayerEffects();
 
     // Check win condition
     const winResult = this.checkWinCondition();
@@ -568,6 +575,83 @@ class PhysicsEngine {
         }
       });
     });
+  }
+
+  handlePlayerEffects() {
+    const effectSpawns = this.levelManager.levelObjects.filter(obj =>
+      obj.properties && obj.properties.includes('playereffect')
+    );
+
+    if (effectSpawns.length === 0) return;
+
+    const now = Date.now();
+    const config = require('../../shared/gameConfig').raceMode || {};
+    const pickupCooldownMs = config.playerEffect?.pickupCooldownMs || 2000;
+
+    effectSpawns.forEach(spawn => {
+      for (const [playerId, player] of this.playerManager.players) {
+        if (!this.isPlayerCollidingWithObject(player, spawn)) continue;
+
+        const cooldownKey = `${playerId}-${spawn.id}`;
+        const lastPickup = this.playerEffectCooldowns.get(cooldownKey);
+        if (lastPickup && now - lastPickup < pickupCooldownMs) {
+          continue;
+        }
+
+        const effect = this.pickItemForSpawn(spawn, config.items || { turbo: {}, slow: {} });
+        this.playerEffectCooldowns.set(cooldownKey, now);
+        this.applyItemEffect(playerId, effect, config.items || {});
+
+        this.eventEmitter.emit('racePlayerEffect', {
+          playerId,
+          effect,
+          spawnId: spawn.id
+        });
+      }
+    });
+  }
+
+  pickItemForSpawn(spawn, itemsConfig) {
+    if (spawn.itemType && itemsConfig[spawn.itemType]) {
+      return spawn.itemType;
+    }
+
+    const items = Object.keys(itemsConfig);
+    return items[Math.floor(Math.random() * items.length)] || 'turbo';
+  }
+
+  applyItemEffect(playerId, item, itemsConfig) {
+    const itemConfig = itemsConfig[item] || {};
+    const multiplier = itemConfig.speedMultiplier || 1;
+    const durationMs = itemConfig.durationMs || 1000;
+
+    if (multiplier !== 1) {
+      this.playerManager.applySpeedBoost(playerId, multiplier, durationMs);
+    }
+  }
+
+  isPlayerCollidingWithObject(player, obj) {
+    if (!player.body || !obj) return false;
+    const playerX = player.body.position.x;
+    const playerY = player.body.position.y;
+
+    const objX = obj.body ? obj.body.position.x : obj.x;
+    const objY = obj.body ? obj.body.position.y : obj.y;
+
+    if (obj.shape === 'circle') {
+      const radius = obj.radius || 50;
+      const distance = Math.hypot(playerX - objX, playerY - objY);
+      return distance <= radius + 25;
+    }
+
+    const halfWidth = (obj.width || 100) / 2;
+    const halfHeight = (obj.height || 100) / 2;
+    return (
+      playerX >= objX - halfWidth &&
+      playerX <= objX + halfWidth &&
+      playerY >= objY - halfHeight &&
+      playerY <= objY + halfHeight
+    );
   }
 
   updateIndependentRotation(obj) {

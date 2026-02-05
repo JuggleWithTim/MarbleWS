@@ -192,6 +192,25 @@ export const rendering = {
                         obj.radius * 2
                     );
                     this.ctx.restore();
+                } else if (obj.shape === 'triangle') {
+                    const vertices = this.getTriangleWorldVertices(obj);
+                    this.ctx.save();
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(vertices[0].x, vertices[0].y);
+                    this.ctx.lineTo(vertices[1].x, vertices[1].y);
+                    this.ctx.lineTo(vertices[2].x, vertices[2].y);
+                    this.ctx.closePath();
+                    this.ctx.clip();
+
+                    const bounds = this.getTriangleBounds(obj);
+                    this.ctx.drawImage(
+                        image,
+                        bounds.minX,
+                        bounds.minY,
+                        bounds.maxX - bounds.minX,
+                        bounds.maxY - bounds.minY
+                    );
+                    this.ctx.restore();
                 }
             } else {
                 // Image is still loading or failed to load, use color as fallback
@@ -207,6 +226,9 @@ export const rendering = {
                 } else if (obj.shape === 'circle') {
                     this.ctx.beginPath();
                     this.ctx.arc(obj.x, obj.y, obj.radius, 0, Math.PI * 2);
+                    this.ctx.fill();
+                } else if (obj.shape === 'triangle') {
+                    this.drawTrianglePath(obj);
                     this.ctx.fill();
                 }
             }
@@ -242,6 +264,9 @@ export const rendering = {
                 this.ctx.beginPath();
                 this.ctx.arc(obj.x, obj.y, obj.radius, 0, Math.PI * 2);
                 this.ctx.fill();
+            } else if (obj.shape === 'triangle') {
+                this.drawTrianglePath(obj);
+                this.ctx.fill();
             }
         }
 
@@ -261,6 +286,9 @@ export const rendering = {
             } else if (obj.shape === 'circle') {
                 this.ctx.beginPath();
                 this.ctx.arc(obj.x, obj.y, obj.radius, 0, Math.PI * 2);
+                this.ctx.stroke();
+            } else if (obj.shape === 'triangle') {
+                this.drawTrianglePath(obj);
                 this.ctx.stroke();
             }
 
@@ -303,6 +331,27 @@ export const rendering = {
             this.ctx.font = '12px Arial';
             this.ctx.textAlign = 'center';
             this.ctx.fillText('TELEPORTER', obj.x, obj.y - 20);
+        }
+
+        if (obj.properties.includes('checkpoint')) {
+            const checkpointLabel = obj.checkpointOrder !== undefined
+                ? `CP ${obj.checkpointOrder}`
+                : 'CHECKPOINT';
+            this.ctx.save();
+            this.ctx.fillStyle = '#4ecdc4';
+            this.ctx.font = '12px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText(checkpointLabel, obj.x, obj.y - 30);
+            this.ctx.restore();
+        }
+
+        if (obj.properties.includes('finish')) {
+            this.ctx.save();
+            this.ctx.fillStyle = '#ff6b6b';
+            this.ctx.font = 'bold 12px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText('FINISH', obj.x, obj.y - 35);
+            this.ctx.restore();
         }
     },
 
@@ -367,6 +416,30 @@ export const rendering = {
                     handleSize
                 );
             }
+        } else if (obj.shape === 'triangle') {
+            this.drawTrianglePath(obj, 2);
+            this.ctx.stroke();
+
+            if (this.selectedObjects.length === 1) {
+                const bounds = this.getTriangleBounds(obj);
+                this.ctx.fillStyle = '#ff6b6b';
+                const handleSize = this.resizeHandleSize;
+                const corners = [
+                    { x: bounds.minX, y: bounds.minY },
+                    { x: bounds.maxX, y: bounds.minY },
+                    { x: bounds.minX, y: bounds.maxY },
+                    { x: bounds.maxX, y: bounds.maxY }
+                ];
+
+                corners.forEach(corner => {
+                    this.ctx.fillRect(
+                        corner.x - handleSize/2,
+                        corner.y - handleSize/2,
+                        handleSize,
+                        handleSize
+                    );
+                });
+            }
         }
 
         // Only draw rotation handle if this is the only selected object
@@ -374,7 +447,8 @@ export const rendering = {
             this.ctx.fillStyle = '#ff6b6b';
             const handleSize = this.resizeHandleSize;
             const rotationHandleX = obj.x;
-            const rotationHandleY = obj.y - Math.max(obj.width || obj.radius * 2, obj.height || obj.radius * 2) / 2 - 30;
+            const boundsForHandle = this.getObjectBounds(obj);
+            const rotationHandleY = obj.y - (boundsForHandle.maxY - boundsForHandle.minY) / 2 - 30;
 
             this.ctx.fillRect(
                 rotationHandleX - handleSize/2,
@@ -491,6 +565,65 @@ export const rendering = {
         }
 
         this.ctx.restore(); // Restore context state
+    },
+
+    getTriangleWorldVertices(obj) {
+        const vertices = obj.vertices || [];
+        return vertices.map(vertex => ({
+            x: obj.x + vertex.x,
+            y: obj.y + vertex.y
+        }));
+    },
+
+    getTriangleBounds(obj) {
+        const vertices = this.getTriangleWorldVertices(obj);
+        const xs = vertices.map(vertex => vertex.x);
+        const ys = vertices.map(vertex => vertex.y);
+        return {
+            minX: Math.min(...xs),
+            maxX: Math.max(...xs),
+            minY: Math.min(...ys),
+            maxY: Math.max(...ys)
+        };
+    },
+
+    getObjectBounds(obj) {
+        if (obj.shape === 'rectangle') {
+            return {
+                minX: obj.x - obj.width / 2,
+                maxX: obj.x + obj.width / 2,
+                minY: obj.y - obj.height / 2,
+                maxY: obj.y + obj.height / 2
+            };
+        }
+
+        if (obj.shape === 'circle') {
+            return {
+                minX: obj.x - obj.radius,
+                maxX: obj.x + obj.radius,
+                minY: obj.y - obj.radius,
+                maxY: obj.y + obj.radius
+            };
+        }
+
+        if (obj.shape === 'triangle') {
+            return this.getTriangleBounds(obj);
+        }
+
+        return { minX: obj.x, maxX: obj.x, minY: obj.y, maxY: obj.y };
+    },
+
+    drawTrianglePath(obj, inset = 0) {
+        const vertices = this.getTriangleWorldVertices(obj);
+        this.ctx.beginPath();
+        this.ctx.moveTo(vertices[0].x, vertices[0].y);
+        this.ctx.lineTo(vertices[1].x, vertices[1].y);
+        this.ctx.lineTo(vertices[2].x, vertices[2].y);
+        this.ctx.closePath();
+
+        if (inset !== 0) {
+            this.ctx.lineWidth = this.ctx.lineWidth + inset;
+        }
     },
 
     drawConnection(connection) {

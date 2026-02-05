@@ -123,6 +123,43 @@ class LevelManager {
             fillStyle: obj.color || '#888888'
           }
         });
+      } else if (obj.shape === 'triangle') {
+        const vertices = (obj.vertices || []).map(vertex => ({
+          x: vertex.x,
+          y: vertex.y
+        }));
+        if (vertices.length === 3) {
+          const centroid = {
+            x: (vertices[0].x + vertices[1].x + vertices[2].x) / 3,
+            y: (vertices[0].y + vertices[1].y + vertices[2].y) / 3
+          };
+          const centeredVertices = vertices.map(vertex => ({
+            x: vertex.x - centroid.x,
+            y: vertex.y - centroid.y
+          }));
+          const worldVertices = centeredVertices.map(vertex => ({
+            x: obj.x + vertex.x,
+            y: obj.y + vertex.y
+          }));
+
+          body = Matter.Bodies.fromVertices(obj.x, obj.y, worldVertices, {
+            isStatic: obj.isStatic,
+            friction: obj.friction || 0.3,
+            restitution: obj.restitution || 0.3,
+            density: obj.density || 0.001,
+            collisionFilter: collisionFilter,
+            render: {
+              fillStyle: obj.color || '#888888'
+            }
+          }, true);
+          if (body) {
+            Matter.Body.setPosition(body, { x: obj.x, y: obj.y });
+          }
+          obj = {
+            ...obj,
+            vertices: centeredVertices
+          };
+        }
       }
 
       if (body) {

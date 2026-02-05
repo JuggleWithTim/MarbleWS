@@ -2,6 +2,7 @@ const BaseGameMode = require('./baseMode');
 const MarbleMode = require('./marbleMode');
 const ColorRushMode = require('./colorRushMode');
 const DungeonMode = require('./dungeonMode');
+const RaceMode = require('./raceMode');
 
 class GameModeManager {
   constructor(eventEmitter, playerManager, levelManager) {
@@ -12,7 +13,8 @@ class GameModeManager {
     this.availableModes = {
       'Marble': MarbleMode,
       'Color Rush': ColorRushMode,
-      'Dungeon': DungeonMode
+      'Dungeon': DungeonMode,
+      'Race': RaceMode
     };
   }
 
