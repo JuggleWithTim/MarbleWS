@@ -91,6 +91,67 @@ class GameLogic {
     return this.playerManager.addCoinsToPlayer(userId, amount, reason);
   }
 
+  // Twitch chat movement helpers
+  handlePlayerJumpByUserId(userId) {
+    const player = Array.from(this.players.values()).find(p => p.userId === userId);
+    if (!player || !player.body) {
+      return { success: false, message: 'Player not found or offline' };
+    }
+
+    const Matter = require('matter-js');
+    const steps = 6; // up/down 3 times
+    const intervalMs = 150;
+    let step = 0;
+
+    const timer = setInterval(() => {
+      if (!player.body) {
+        clearInterval(timer);
+        return;
+      }
+
+      const isUp = step % 2 === 0;
+      const forceY = isUp ? -0.03 : 0.03;
+      Matter.Body.applyForce(player.body, player.body.position, { x: 0, y: forceY });
+      step += 1;
+
+      if (step >= steps) {
+        clearInterval(timer);
+      }
+    }, intervalMs);
+
+    return { success: true, message: 'Jumped!' };
+  }
+
+  handlePlayerWiggleByUserId(userId) {
+    const player = Array.from(this.players.values()).find(p => p.userId === userId);
+    if (!player || !player.body) {
+      return { success: false, message: 'Player not found or offline' };
+    }
+
+    const Matter = require('matter-js');
+    const steps = 8; // left/right 4 times
+    const intervalMs = 150;
+    let step = 0;
+
+    const timer = setInterval(() => {
+      if (!player.body) {
+        clearInterval(timer);
+        return;
+      }
+
+      const isLeft = step % 2 === 0;
+      const forceX = isLeft ? -0.03 : 0.03;
+      Matter.Body.applyForce(player.body, player.body.position, { x: forceX, y: 0 });
+      step += 1;
+
+      if (step >= steps) {
+        clearInterval(timer);
+      }
+    }, intervalMs);
+
+    return { success: true, message: 'Wiggled!' };
+  }
+
   // Chair sitting functionality
   handlePlayerSit(socketId, chairNumber) {
     const player = this.players.get(socketId);
