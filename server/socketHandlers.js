@@ -118,6 +118,11 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
     io.emit('raceCountdown', data);
   });
 
+  // Listen for Twitch chat messages to broadcast to clients
+  gameLogic.eventEmitter.on('twitchChatMessage', (data) => {
+    io.emit('twitchChatMessage', data);
+  });
+
   gameLogic.on('raceStart', (data) => {
     io.emit('raceStart', data);
   });

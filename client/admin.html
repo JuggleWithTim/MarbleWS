@@ -530,6 +530,12 @@
                     <input type="text" id="twitchChannelInput" placeholder="Enter new channel name" />
                     <button class="btn btn-primary" onclick="updateTwitchChannel()">Save & Reconnect</button>
                 </div>
+                <div class="channel-input" style="margin-top: 12px;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="twitchSpeechBubblesToggle" />
+                        <span>Enable Twitch chat speech bubbles</span>
+                    </label>
+                </div>
             </div>
         </div>
 
@@ -695,6 +701,46 @@
             } catch (error) {
                 console.error('Failed to update Twitch channel:', error);
                 showStatus('Failed to update channel', 'error');
+            }
+        }
+
+        // Fetch current Twitch speech bubble setting
+        async function fetchTwitchSpeechBubbles() {
+            try {
+                const response = await fetch(`${basePath}/api/admin/config/twitch-speech-bubbles`);
+                if (response.ok) {
+                    const data = await response.json();
+                    const toggle = document.getElementById('twitchSpeechBubblesToggle');
+                    if (toggle) {
+                        toggle.checked = Boolean(data.enabled);
+                    }
+                }
+            } catch (error) {
+                console.log('Could not fetch Twitch speech bubble setting:', error);
+            }
+        }
+
+        // Update Twitch speech bubble setting
+        async function updateTwitchSpeechBubbles(enabled) {
+            try {
+                const response = await fetch(`${basePath}/api/admin/config/twitch-speech-bubbles`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ enabled })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    showStatus(`Twitch speech bubbles ${data.enabled ? 'enabled' : 'disabled'}`, 'success');
+                } else {
+                    const error = await response.json();
+                    showStatus(error.error || 'Failed to update speech bubble setting', 'error');
+                }
+            } catch (error) {
+                console.error('Failed to update Twitch speech bubble setting:', error);
+                showStatus('Failed to update speech bubble setting', 'error');
             }
         }
 
@@ -1318,9 +1364,17 @@
             await loadConfig();
             fetchCurrentLevel();
             fetchTwitchChannel();
+            fetchTwitchSpeechBubbles();
             fetchLevels();
             fetchPlayers();
             fetchOnlinePlayers();
+
+            const toggle = document.getElementById('twitchSpeechBubblesToggle');
+            if (toggle) {
+                toggle.addEventListener('change', (event) => {
+                    updateTwitchSpeechBubbles(event.target.checked);
+                });
+            }
         });
     </script>
 </body>

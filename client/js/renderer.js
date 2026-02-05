@@ -492,6 +492,80 @@ class Renderer {
         this.ctx.fillText(name, screenPos.x, screenPos.y);
     }
 
+    drawSpeechBubble(x, y, text) {
+        const screenPos = this.worldToScreen(x, y - 60);
+        const paddingX = 10;
+        const paddingY = 6;
+        const maxWidth = 220;
+        const lineHeight = 16;
+        const radius = 8;
+
+        this.ctx.save();
+        this.ctx.font = '14px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+
+        const words = text.split(' ');
+        const lines = [];
+        let currentLine = '';
+
+        words.forEach(word => {
+            const testLine = currentLine ? `${currentLine} ${word}` : word;
+            const testWidth = this.ctx.measureText(testLine).width;
+
+            if (testWidth > maxWidth && currentLine) {
+                lines.push(currentLine);
+                currentLine = word;
+            } else {
+                currentLine = testLine;
+            }
+        });
+
+        if (currentLine) {
+            lines.push(currentLine);
+        }
+
+        const textWidth = Math.min(
+            maxWidth,
+            Math.max(...lines.map(line => this.ctx.measureText(line).width), 0)
+        );
+        const bubbleWidth = textWidth + paddingX * 2;
+        const bubbleHeight = lines.length * lineHeight + paddingY * 2;
+        const bubbleX = screenPos.x - bubbleWidth / 2;
+        const bubbleY = screenPos.y - bubbleHeight;
+
+        // Bubble background
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+        this.ctx.lineWidth = 2;
+
+        this.ctx.beginPath();
+        this.ctx.moveTo(bubbleX + radius, bubbleY);
+        this.ctx.lineTo(bubbleX + bubbleWidth - radius, bubbleY);
+        this.ctx.quadraticCurveTo(bubbleX + bubbleWidth, bubbleY, bubbleX + bubbleWidth, bubbleY + radius);
+        this.ctx.lineTo(bubbleX + bubbleWidth, bubbleY + bubbleHeight - radius);
+        this.ctx.quadraticCurveTo(bubbleX + bubbleWidth, bubbleY + bubbleHeight, bubbleX + bubbleWidth - radius, bubbleY + bubbleHeight);
+        this.ctx.lineTo(bubbleX + bubbleWidth / 2 + 8, bubbleY + bubbleHeight);
+        this.ctx.lineTo(bubbleX + bubbleWidth / 2, bubbleY + bubbleHeight + 10);
+        this.ctx.lineTo(bubbleX + bubbleWidth / 2 - 8, bubbleY + bubbleHeight);
+        this.ctx.lineTo(bubbleX + radius, bubbleY + bubbleHeight);
+        this.ctx.quadraticCurveTo(bubbleX, bubbleY + bubbleHeight, bubbleX, bubbleY + bubbleHeight - radius);
+        this.ctx.lineTo(bubbleX, bubbleY + radius);
+        this.ctx.quadraticCurveTo(bubbleX, bubbleY, bubbleX + radius, bubbleY);
+        this.ctx.closePath();
+        this.ctx.fill();
+        this.ctx.stroke();
+
+        // Text
+        this.ctx.fillStyle = '#ffffff';
+        lines.forEach((line, index) => {
+            const lineY = bubbleY + paddingY + lineHeight / 2 + index * lineHeight;
+            this.ctx.fillText(line, screenPos.x, lineY);
+        });
+
+        this.ctx.restore();
+    }
+
     drawDebugInfo(gameState) {
         this.ctx.fillStyle = '#ffffff';
         this.ctx.font = '12px monospace';

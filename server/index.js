@@ -604,6 +604,11 @@ app.get('/api/admin/config/twitch-channel', basicAuth, (req, res) => {
   res.json({ channel: process.env.TWITCH_CHANNEL || '' });
 });
 
+app.get('/api/admin/config/twitch-speech-bubbles', basicAuth, (req, res) => {
+  const gameConfig = require('../shared/gameConfig.js');
+  res.json({ enabled: Boolean(gameConfig.twitchSpeechBubbles?.enabled) });
+});
+
 app.put('/api/admin/config/twitch-channel', basicAuth, (req, res) => {
   const fs = require('fs');
   const { channel } = req.body;
@@ -641,6 +646,39 @@ app.put('/api/admin/config/twitch-channel', basicAuth, (req, res) => {
   } catch (error) {
     console.error('Failed to update Twitch channel:', error);
     res.status(500).json({ error: 'Failed to update channel configuration' });
+  }
+});
+
+app.put('/api/admin/config/twitch-speech-bubbles', basicAuth, (req, res) => {
+  const fs = require('fs');
+  const { enabled } = req.body;
+
+  if (typeof enabled !== 'boolean') {
+    return res.status(400).json({ error: 'Enabled flag must be boolean' });
+  }
+
+  try {
+    const envPath = path.join(__dirname, '../.env');
+    let envContent = fs.readFileSync(envPath, 'utf8');
+
+    const settingRegex = /^TWITCH_SPEECH_BUBBLES_ENABLED=.*/m;
+    const newSettingLine = `TWITCH_SPEECH_BUBBLES_ENABLED=${enabled ? 'true' : 'false'}`;
+
+    if (settingRegex.test(envContent)) {
+      envContent = envContent.replace(settingRegex, newSettingLine);
+    } else {
+      envContent += `\n${newSettingLine}`;
+    }
+
+    fs.writeFileSync(envPath, envContent);
+
+    const gameConfig = require('../shared/gameConfig.js');
+    gameConfig.twitchSpeechBubbles.enabled = enabled;
+
+    res.json({ success: true, enabled });
+  } catch (error) {
+    console.error('Failed to update Twitch speech bubble config:', error);
+    res.status(500).json({ error: 'Failed to update speech bubble configuration' });
   }
 });
 

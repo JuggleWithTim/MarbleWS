@@ -57,6 +57,7 @@ class TwitchChat {
 
     const username = context['display-name'] || context.username;
     const userId = context['user-id'];
+    const gameConfig = require('../shared/gameConfig.js');
 
     // Check for !sit command
     if (msg.toLowerCase().startsWith('!sit')) {
@@ -187,6 +188,16 @@ class TwitchChat {
           await this.spawnEmoteInGame(emote.id, emote.name);
         }
       }
+    }
+
+    // Emit twitch chat message for speech bubbles
+    if (gameConfig.twitchSpeechBubbles?.enabled && userId) {
+      this.gameLogic.eventEmitter.emit('twitchChatMessage', {
+        userId,
+        username,
+        message: msg,
+        timestamp: Date.now()
+      });
     }
   }
 
