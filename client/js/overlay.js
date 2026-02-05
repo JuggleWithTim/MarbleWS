@@ -27,6 +27,9 @@ class TransparentRenderer extends Renderer {
     const renderer = new TransparentRenderer(canvas);
     const networking = new Networking();
 
+    const speechBubbles = new Map();
+    const speechBubbleDurationMs = 10000;
+
     // Create game-like wrapper for ColorRushRenderer
     const gameWrapper = {
         gameState: null,
@@ -372,6 +375,26 @@ class TransparentRenderer extends Renderer {
             });
         }
 
+        // Draw Twitch speech bubbles above players
+        if (gameData?.twitchSpeechBubbles?.enabled && gameState.players) {
+            const now = Date.now();
+            gameState.players.forEach(player => {
+                const bubble = speechBubbles.get(player.userId);
+                if (!bubble) return;
+
+                if (now - bubble.timestamp > speechBubbleDurationMs) {
+                    speechBubbles.delete(player.userId);
+                    return;
+                }
+
+                const id = `player_${player.id || player.username}`;
+                const interpolated = getInterpolatedPosition(id);
+                const bubbleX = interpolated ? interpolated.x : player.x;
+                const bubbleY = interpolated ? interpolated.y : player.y;
+                renderer.drawSpeechBubble(bubbleX, bubbleY, bubble.text);
+            });
+        }
+
         // Update and draw goal particles
         renderer.updateGoalParticles(deltaTime);
 
@@ -403,6 +426,14 @@ class TransparentRenderer extends Renderer {
         // Listen for emote goal events to trigger particle effects
         networking.on('emoteInGoal', (data) => {
             renderer.triggerGoalParticles(data.goalX, data.goalY);
+        });
+
+        networking.on('twitchChatMessage', (data) => {
+            if (!data || !data.userId || !data.message) return;
+            speechBubbles.set(data.userId, {
+                text: data.message,
+                timestamp: data.timestamp || Date.now()
+            });
         });
 
         // Add Color Rush event handlers
