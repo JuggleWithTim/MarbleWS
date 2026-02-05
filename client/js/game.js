@@ -765,7 +765,7 @@ class Game {
                 const interpolated = this.getInterpolatedPosition(`player_${player.id}`);
                 const bubbleX = interpolated ? interpolated.x : player.x;
                 const bubbleY = interpolated ? interpolated.y : player.y;
-                this.renderer.drawSpeechBubble(bubbleX, bubbleY, bubble.text);
+                this.renderer.drawSpeechBubble(bubbleX, bubbleY, bubble.text, bubble.emotes);
             });
         }
 
@@ -853,7 +853,8 @@ class Game {
         this.speechBubbles.set(data.userId, {
             text: data.message,
             timestamp: data.timestamp || Date.now(),
-            username: data.username || ''
+            username: data.username || '',
+            emotes: data.emotes || []
         });
     }
 

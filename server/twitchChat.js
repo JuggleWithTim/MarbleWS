@@ -58,6 +58,7 @@ class TwitchChat {
     const username = context['display-name'] || context.username;
     const userId = context['user-id'];
     const gameConfig = require('../shared/gameConfig.js');
+    let parsedEmotes = [];
 
     // Check for !sit command
     if (msg.toLowerCase().startsWith('!sit')) {
@@ -171,6 +172,7 @@ class TwitchChat {
     if (context.emotes) {
       // Parse emotes from the message
       const emotes = this.parseEmotes(msg, context.emotes);
+      parsedEmotes = emotes;
 
       if (emotes.length > 0) {
         // Check level setting for spawnAll
@@ -196,7 +198,8 @@ class TwitchChat {
         userId,
         username,
         message: msg,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        emotes: parsedEmotes
       });
     }
   }
@@ -241,7 +244,9 @@ class TwitchChat {
         emotes.push({
           id: emoteId,
           name: emoteName,
-          url: `https://static-cdn.jtvnw.net/emoticons/v2/${emoteId}/default/dark/3.0`
+          url: `https://static-cdn.jtvnw.net/emoticons/v2/${emoteId}/default/dark/3.0`,
+          start,
+          end
         });
       }
     }

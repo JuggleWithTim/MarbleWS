@@ -492,42 +492,70 @@ class Renderer {
         this.ctx.fillText(name, screenPos.x, screenPos.y);
     }
 
-    drawSpeechBubble(x, y, text) {
+    drawSpeechBubble(x, y, text, emotes = []) {
         const screenPos = this.worldToScreen(x, y - 60);
         const paddingX = 10;
         const paddingY = 6;
         const maxWidth = 220;
         const lineHeight = 16;
         const radius = 8;
+        const emoteSize = 18;
 
         this.ctx.save();
         this.ctx.font = '14px Arial';
-        this.ctx.textAlign = 'center';
+        this.ctx.textAlign = 'left';
         this.ctx.textBaseline = 'middle';
 
-        const words = text.split(' ');
+        const tokens = this.buildSpeechTokens(text || '', emotes || []);
         const lines = [];
-        let currentLine = '';
+        let currentLine = [];
+        let currentWidth = 0;
 
-        words.forEach(word => {
-            const testLine = currentLine ? `${currentLine} ${word}` : word;
-            const testWidth = this.ctx.measureText(testLine).width;
-
-            if (testWidth > maxWidth && currentLine) {
-                lines.push(currentLine);
-                currentLine = word;
-            } else {
-                currentLine = testLine;
+        const flushLine = () => {
+            if (currentLine.length) {
+                lines.push({ tokens: currentLine, width: currentWidth });
+                currentLine = [];
+                currentWidth = 0;
             }
+        };
+
+        tokens.forEach(token => {
+            const tokenWidth = token.type === 'emote'
+                ? emoteSize
+                : this.ctx.measureText(token.text).width;
+
+            if (token.type === 'space') {
+                if (currentLine.length === 0) {
+                    return;
+                }
+
+                if (currentWidth + tokenWidth > maxWidth) {
+                    flushLine();
+                    return;
+                }
+
+                currentLine.push(token);
+                currentWidth += tokenWidth;
+                return;
+            }
+
+            if (currentWidth + tokenWidth > maxWidth && currentLine.length > 0) {
+                flushLine();
+            }
+
+            currentLine.push(token);
+            currentWidth += tokenWidth;
         });
 
-        if (currentLine) {
-            lines.push(currentLine);
+        flushLine();
+
+        if (lines.length === 0) {
+            lines.push({ tokens: [{ type: 'text', text: '' }], width: 0 });
         }
 
         const textWidth = Math.min(
             maxWidth,
-            Math.max(...lines.map(line => this.ctx.measureText(line).width), 0)
+            Math.max(...lines.map(line => line.width), 0)
         );
         const bubbleWidth = textWidth + paddingX * 2;
         const bubbleHeight = lines.length * lineHeight + paddingY * 2;
@@ -560,10 +588,80 @@ class Renderer {
         this.ctx.fillStyle = '#ffffff';
         lines.forEach((line, index) => {
             const lineY = bubbleY + paddingY + lineHeight / 2 + index * lineHeight;
-            this.ctx.fillText(line, screenPos.x, lineY);
+            let cursorX = screenPos.x - line.width / 2;
+
+            line.tokens.forEach(token => {
+                if (token.type === 'space') {
+                    cursorX += this.ctx.measureText(token.text).width;
+                    return;
+                }
+
+                if (token.type === 'emote') {
+                    const img = this.images.get(token.url);
+                    if (img && img.complete) {
+                        this.ctx.drawImage(img, cursorX, lineY - emoteSize / 2, emoteSize, emoteSize);
+                    } else {
+                        if (!img) {
+                            this.loadImage(token.url);
+                        }
+                        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                        this.ctx.fillRect(cursorX, lineY - emoteSize / 2, emoteSize, emoteSize);
+                        this.ctx.fillStyle = '#ffffff';
+                    }
+                    cursorX += emoteSize;
+                    return;
+                }
+
+                this.ctx.fillText(token.text, cursorX, lineY);
+                cursorX += this.ctx.measureText(token.text).width;
+            });
         });
 
         this.ctx.restore();
+    }
+
+    buildSpeechTokens(text, emotes) {
+        if (!emotes || emotes.length === 0) {
+            return text.split(/(\s+)/).filter(part => part.length).map(part => {
+                if (/^\s+$/.test(part)) {
+                    return { type: 'space', text: part };
+                }
+                return { type: 'text', text: part };
+            });
+        }
+
+        const sortedEmotes = [...emotes].sort((a, b) => a.start - b.start);
+        const tokens = [];
+        let index = 0;
+
+        sortedEmotes.forEach(emote => {
+            if (emote.start > index) {
+                const segment = text.slice(index, emote.start);
+                segment.split(/(\s+)/).filter(part => part.length).forEach(part => {
+                    if (/^\s+$/.test(part)) {
+                        tokens.push({ type: 'space', text: part });
+                    } else {
+                        tokens.push({ type: 'text', text: part });
+                    }
+                });
+            }
+
+            tokens.push({ type: 'emote', url: emote.url, name: emote.name });
+            index = emote.end + 1;
+        });
+
+        if (index < text.length) {
+            const segment = text.slice(index);
+            segment.split(/(\s+)/).filter(part => part.length).forEach(part => {
+                if (/^\s+$/.test(part)) {
+                    tokens.push({ type: 'space', text: part });
+                } else {
+                    tokens.push({ type: 'text', text: part });
+                }
+            });
+        }
+
+        return tokens;
     }
 
     drawDebugInfo(gameState) {

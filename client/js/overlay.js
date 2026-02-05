@@ -391,7 +391,7 @@ class TransparentRenderer extends Renderer {
                 const interpolated = getInterpolatedPosition(id);
                 const bubbleX = interpolated ? interpolated.x : player.x;
                 const bubbleY = interpolated ? interpolated.y : player.y;
-                renderer.drawSpeechBubble(bubbleX, bubbleY, bubble.text);
+                renderer.drawSpeechBubble(bubbleX, bubbleY, bubble.text, bubble.emotes);
             });
         }
 
@@ -432,7 +432,8 @@ class TransparentRenderer extends Renderer {
             if (!data || !data.userId || !data.message) return;
             speechBubbles.set(data.userId, {
                 text: data.message,
-                timestamp: data.timestamp || Date.now()
+                timestamp: data.timestamp || Date.now(),
+                emotes: data.emotes || []
             });
         });
 
