@@ -124,6 +124,7 @@ export class LevelEditorCore {
             level.race = { ...DEFAULT_LEVEL.race };
         } else {
             level.race.laps = level.race.laps || DEFAULT_LEVEL.race.laps;
+            level.race.maxTimeSeconds = level.race.maxTimeSeconds || DEFAULT_LEVEL.race.maxTimeSeconds;
         }
 
         // Ensure marble properties exist
@@ -332,6 +333,9 @@ export class LevelEditorCore {
 
         if (document.getElementById('raceLaps')) {
             document.getElementById('raceLaps').value = this.level.race?.laps || DEFAULT_LEVEL.race.laps;
+        }
+        if (document.getElementById('raceMaxTime')) {
+            document.getElementById('raceMaxTime').value = this.level.race?.maxTimeSeconds || DEFAULT_LEVEL.race.maxTimeSeconds;
         }
 
         // Level size controls (show/hide based on level type)

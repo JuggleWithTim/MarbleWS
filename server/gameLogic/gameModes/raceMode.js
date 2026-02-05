@@ -14,6 +14,7 @@ class RaceMode extends BaseGameMode {
     this.finishLines = [];
     this.playerProgress = new Map();
     this.finishOrder = [];
+    this.maxRaceDurationMs = gameConfig.raceMode?.maxRaceDurationMs || 300000;
 
     this.resultsStartTime = 0;
     this.resultsDuration = gameConfig.raceMode?.resultsDurationMs || 15000;
@@ -26,6 +27,9 @@ class RaceMode extends BaseGameMode {
   init(levelData) {
     super.init(levelData);
     this.laps = levelData.race?.laps || gameConfig.raceMode?.laps || 3;
+    this.maxRaceDurationMs = (levelData.race?.maxTimeSeconds
+      ? levelData.race.maxTimeSeconds * 1000
+      : (gameConfig.raceMode?.maxRaceDurationMs || 300000));
     this.checkpoints = this.collectObjectsByProperty('checkpoint');
     this.finishLines = this.collectObjectsByProperty('finish');
     this.sortCheckpoints();
@@ -43,6 +47,7 @@ class RaceMode extends BaseGameMode {
     this.raceState = 'waiting';
     this.countdownStartTime = 0;
     this.raceStartTime = 0;
+    this.maxRaceEndTime = 0;
     this.playerProgress.clear();
     this.finishOrder = [];
     this.resultsStartTime = 0;
@@ -103,6 +108,11 @@ class RaceMode extends BaseGameMode {
 
     if (this.raceState !== 'active') return;
 
+    if (this.maxRaceEndTime && now >= this.maxRaceEndTime) {
+      this.endRaceDueToTimeout();
+      return;
+    }
+
     this.checkCheckpointProgress();
     this.checkFinishLine();
   }
@@ -141,6 +151,7 @@ class RaceMode extends BaseGameMode {
   startRace(now) {
     this.raceState = 'active';
     this.raceStartTime = now;
+    this.maxRaceEndTime = this.raceStartTime + this.maxRaceDurationMs;
     this.eventEmitter.emit('raceStart', {
       startTime: this.raceStartTime
     });
@@ -254,6 +265,23 @@ class RaceMode extends BaseGameMode {
     });
   }
 
+  endRaceDueToTimeout() {
+    if (this.raceState !== 'active') return;
+
+    for (const [playerId] of this.playerManager.players) {
+      const progress = this.playerProgress.get(playerId);
+      if (!progress || progress.finished) continue;
+      progress.finished = true;
+      progress.finishTime = null;
+      this.finishOrder.push({
+        playerId,
+        finishTime: null
+      });
+    }
+
+    this.endRace();
+  }
+
   startNextRace(now) {
     this.finishOrder = [];
     this.resetPlayerProgress();
@@ -329,6 +357,7 @@ class RaceMode extends BaseGameMode {
       raceStartTime: this.raceStartTime,
       resultsStartTime: this.resultsStartTime,
       resultsDuration: this.resultsDuration,
+      maxRaceDurationMs: this.maxRaceDurationMs,
       checkpoints: this.checkpoints.map(cp => ({ id: cp.id, x: cp.x, y: cp.y })),
       finishLines: this.finishLines.map(fl => ({ id: fl.id, x: fl.x, y: fl.y })),
       playerProgress: Object.fromEntries(this.playerProgress),
@@ -359,7 +388,9 @@ class RaceMode extends BaseGameMode {
 
     standings.sort((a, b) => {
       if (a.finished && b.finished) {
-        return a.finishTime - b.finishTime;
+        const aTime = a.finishTime !== null && a.finishTime !== undefined ? a.finishTime : Number.POSITIVE_INFINITY;
+        const bTime = b.finishTime !== null && b.finishTime !== undefined ? b.finishTime : Number.POSITIVE_INFINITY;
+        return aTime - bTime;
       }
       if (a.finished) return -1;
       if (b.finished) return 1;

@@ -7,7 +7,8 @@ export const DEFAULT_LEVEL = {
     levelType: 'Marble',
     backgroundImage: '',
     race: {
-        laps: 3
+        laps: 3,
+        maxTimeSeconds: 300
     },
     world: {
         gravity: 0.8

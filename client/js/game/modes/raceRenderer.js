@@ -9,6 +9,7 @@ class RaceRenderer {
         this.countdownStartTime = 0;
         this.raceStartTime = 0;
         this.laps = 3;
+        this.maxRaceDurationMs = 300000;
         this.playerProgress = {};
         this.positions = [];
         this.finishLines = [];
@@ -35,6 +36,7 @@ class RaceRenderer {
         this.countdownStartTime = gameModeData.countdownStartTime || 0;
         this.raceStartTime = gameModeData.raceStartTime || 0;
         this.laps = gameModeData.laps || 3;
+        this.maxRaceDurationMs = gameModeData.maxRaceDurationMs || this.maxRaceDurationMs;
         this.playerProgress = gameModeData.playerProgress || {};
         this.positions = gameModeData.positions || [];
         this.finishLines = gameModeData.finishLines || [];
@@ -70,7 +72,7 @@ class RaceRenderer {
         this.ctx.save();
 
         const panelWidth = 280;
-        const panelHeight = 90;
+        const panelHeight = 110;
         const x = 10;
         const y = 10;
 
@@ -85,6 +87,7 @@ class RaceRenderer {
         this.ctx.font = '14px Arial';
         this.ctx.fillText(`State: ${this.raceState.toUpperCase()}`, x + 12, y + 48);
         this.ctx.fillText(`Laps: ${this.laps}`, x + 12, y + 68);
+        this.ctx.fillText(`Time Left: ${this.getRaceTimeRemainingLabel()}`, x + 12, y + 88);
 
         const localProgress = this.getLocalPlayerProgress();
         if (localProgress) {
@@ -149,6 +152,19 @@ class RaceRenderer {
         this.ctx.textAlign = 'center';
         this.ctx.fillText(remaining > 0 ? remaining : 'GO!', this.canvas.width / 2, this.canvas.height / 2);
         this.ctx.restore();
+    }
+
+    getRaceTimeRemainingLabel() {
+        if (this.raceState !== 'active' || !this.raceStartTime) {
+            return '--:--';
+        }
+
+        const elapsed = Date.now() - this.raceStartTime;
+        const remaining = Math.max(0, this.maxRaceDurationMs - elapsed);
+        const totalSeconds = Math.ceil(remaining / 1000);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
     }
 
     renderResultsScreen() {

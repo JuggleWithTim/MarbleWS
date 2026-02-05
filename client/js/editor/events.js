@@ -72,6 +72,18 @@ export const events = {
             });
         }
 
+        const raceMaxTimeInput = document.getElementById('raceMaxTime');
+        if (raceMaxTimeInput) {
+            raceMaxTimeInput.addEventListener('input', (e) => {
+                const maxTime = parseInt(e.target.value);
+                if (!this.level.race) {
+                    this.level.race = { laps: 3, maxTimeSeconds: 300 };
+                }
+                this.level.race.maxTimeSeconds = isNaN(maxTime) ? 300 : maxTime;
+                this.saveState();
+            });
+        }
+
         document.getElementById('backgroundImage').addEventListener('input', (e) => {
             this.level.backgroundImage = e.target.value;
             this.loadBackgroundImage();

@@ -731,7 +731,10 @@ class PlayerManager {
   awardXPAndCoinsForRace(finishOrder) {
     if (!finishOrder || finishOrder.length === 0) return;
 
-    const playerCount = finishOrder.length;
+    const finishers = finishOrder.filter(result => result.finishTime !== null && result.finishTime !== undefined);
+    if (finishers.length === 0) return;
+
+    const playerCount = finishers.length;
     const raceRewardConfig = gameConfig.raceReward || gameConfig.colorRushReward;
     const baseXP = raceRewardConfig.xp;
     const baseCoins = raceRewardConfig.coins;
@@ -753,7 +756,7 @@ class PlayerManager {
     }
 
     // Distribute rewards based on normalized weights
-    finishOrder.forEach((result, index) => {
+    finishers.forEach((result, index) => {
       const placement = index + 1;
       const player = Array.from(this.players.values()).find(p => p.id === result.playerId);
 

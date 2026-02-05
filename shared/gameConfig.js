@@ -54,6 +54,7 @@ const gameConfig = {
     laps: 3,
     countdownSeconds: 3,
     resultsDurationMs: 15000,
+    maxRaceDurationMs: 300000,
     playerEffect: {
       pickupCooldownMs: 2000,
       maxActiveItems: 1
