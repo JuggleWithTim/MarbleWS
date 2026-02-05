@@ -82,6 +82,15 @@ class RaceMode extends BaseGameMode {
   }
 
   handlePlayerInput(playerId, input) {
+    const progress = this.playerProgress.get(playerId);
+    if (progress && progress.finished) {
+      const player = this.playerManager.players.get(playerId);
+      if (player) {
+        player.input = null;
+      }
+      return false;
+    }
+
     if (this.raceState === 'countdown') {
       return false;
     }
@@ -234,6 +243,9 @@ class RaceMode extends BaseGameMode {
         progress.finished = true;
         progress.finishTime = Date.now() - this.raceStartTime;
         const player = this.playerManager.players.get(playerId);
+        if (player) {
+          player.input = null;
+        }
         this.finishOrder.push({
           playerId,
           finishTime: progress.finishTime
