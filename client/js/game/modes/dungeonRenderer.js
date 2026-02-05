@@ -61,9 +61,9 @@ class DungeonRenderer {
         // Update dungeon mode data
         this.updateGameModeData(gameModeData);
 
-        // Smoothly interpolate camera position
-        this.currentCameraX += (this.targetCameraX - this.currentCameraX) * this.cameraLerpSpeed;
-        this.currentCameraY += (this.targetCameraY - this.currentCameraY) * this.cameraLerpSpeed;
+        // Follow interpolated target directly (avoid extra smoothing lag)
+        this.currentCameraX = this.targetCameraX;
+        this.currentCameraY = this.targetCameraY;
 
         // Apply camera bounds to prevent going outside level
         const zoom = this.cameraZoom;
