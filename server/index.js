@@ -427,6 +427,68 @@ app.get('/api/admin/players', basicAuth, (req, res) => {
   });
 });
 
+// Admin online player management endpoints
+app.get('/api/admin/online-players', basicAuth, (req, res) => {
+  const onlinePlayers = Array.from(gameLogic.playerManager.players.values()).map(player => ({
+    socketId: player.id,
+    userId: player.userId,
+    username: player.username,
+    x: player.x,
+    y: player.y
+  }));
+
+  res.json(onlinePlayers);
+});
+
+app.post('/api/admin/online-players/despawn', basicAuth, (req, res) => {
+  const { socketId, userId } = req.body || {};
+
+  if (!socketId && !userId) {
+    return res.status(400).json({ error: 'socketId or userId is required' });
+  }
+
+  const player = socketId
+    ? gameLogic.playerManager.players.get(socketId)
+    : Array.from(gameLogic.playerManager.players.values()).find(p => p.userId === userId);
+
+  if (!player) {
+    return res.status(404).json({ error: 'Online player not found' });
+  }
+
+  const targetSocketId = player.id;
+  const targetSocket = io.sockets.sockets.get(targetSocketId);
+
+  if (targetSocket) {
+    targetSocket.disconnect(true);
+  } else {
+    gameLogic.removePlayer(targetSocketId);
+    io.emit('playerLeft', { playerId: targetSocketId });
+  }
+
+  res.json({ success: true, playerId: targetSocketId, username: player.username });
+});
+
+app.post('/api/admin/online-players/despawn-all', basicAuth, (req, res) => {
+  const players = Array.from(gameLogic.playerManager.players.values());
+  let disconnectedCount = 0;
+
+  players.forEach(player => {
+    const targetSocketId = player.id;
+    const targetSocket = io.sockets.sockets.get(targetSocketId);
+
+    if (targetSocket) {
+      targetSocket.disconnect(true);
+      disconnectedCount += 1;
+    } else {
+      gameLogic.removePlayer(targetSocketId);
+      io.emit('playerLeft', { playerId: targetSocketId });
+      disconnectedCount += 1;
+    }
+  });
+
+  res.json({ success: true, count: disconnectedCount });
+});
+
 app.get('/api/admin/players/:userId', basicAuth, (req, res) => {
   const db = gameLogic.playerManager.db;
   const sql = 'SELECT * FROM players WHERE userId = ?';

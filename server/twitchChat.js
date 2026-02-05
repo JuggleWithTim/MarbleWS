@@ -100,6 +100,34 @@ class TwitchChat {
       return;
     }
 
+    // Check for !jump command
+    if (msg.toLowerCase() === '!jump') {
+      const result = this.gameLogic.handlePlayerJumpByUserId(userId);
+
+      if (result.success) {
+        console.log(`${username} jumped`);
+      } else {
+        console.log(`${username} failed to jump: ${result.message}`);
+      }
+
+      // Don't process emotes for commands
+      return;
+    }
+
+    // Check for !wiggle command
+    if (msg.toLowerCase() === '!wiggle') {
+      const result = this.gameLogic.handlePlayerWiggleByUserId(userId);
+
+      if (result.success) {
+        console.log(`${username} wiggled`);
+      } else {
+        console.log(`${username} failed to wiggle: ${result.message}`);
+      }
+
+      // Don't process emotes for commands
+      return;
+    }
+
     // Check for !spectate command (for Dungeon mode overlay)
     if (msg.toLowerCase().startsWith('!spectate')) {
       const parts = msg.trim().split(/\s+/);

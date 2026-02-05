@@ -288,6 +288,52 @@
             margin-bottom: 70px;
         }
 
+        .players-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .players-actions p {
+            margin: 0;
+            opacity: 0.8;
+            font-size: 0.9em;
+        }
+
+        .online-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .online-card {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .online-card:hover {
+            border-color: #4ecdc4;
+            box-shadow: 0 0 10px rgba(78, 205, 196, 0.2);
+        }
+
+        .online-meta {
+            font-size: 0.85em;
+            opacity: 0.7;
+            margin-bottom: 12px;
+        }
+
+        .online-actions {
+            display: flex;
+            justify-content: flex-end;
+        }
+
         .players-section h3 {
             color: #4ecdc4;
             font-size: 1.4em;
@@ -507,6 +553,11 @@
 
             <div class="players-section">
                 <h3>Player Management</h3>
+                <div class="players-actions">
+                    <p>Currently online players are listed below.</p>
+                    <button class="btn btn-danger" onclick="despawnAllPlayers()">Despawn All</button>
+                </div>
+                <div class="online-grid" id="onlinePlayersGrid"></div>
                 <div class="players-grid" id="playersGrid"></div>
             </div>
         </div>
@@ -1079,6 +1130,95 @@
             }
         }
 
+        async function fetchOnlinePlayers() {
+            try {
+                const response = await fetch(`${basePath}/api/admin/online-players`);
+                if (!response.ok) {
+                    console.error('Failed to fetch online players:', response.status, response.statusText);
+                    showStatus('Failed to load online players', 'error');
+                    return;
+                }
+
+                const players = await response.json();
+                const onlineGrid = document.getElementById('onlinePlayersGrid');
+                onlineGrid.innerHTML = '';
+
+                if (players.length === 0) {
+                    onlineGrid.innerHTML = '<p class="empty-state">No players online.</p>';
+                    return;
+                }
+
+                players.forEach(player => {
+                    const card = document.createElement('div');
+                    card.className = 'online-card';
+                    card.innerHTML = `
+                        <div class="player-name">${player.username}</div>
+                        <div class="online-meta">User ID: ${player.userId}</div>
+                        <div class="online-meta">Position: ${Math.round(player.x)} / ${Math.round(player.y)}</div>
+                        <div class="online-actions">
+                            <button class="btn btn-danger" onclick="despawnPlayer('${player.socketId}')">Despawn</button>
+                        </div>
+                    `;
+                    onlineGrid.appendChild(card);
+                });
+            } catch (error) {
+                console.error('Failed to fetch online players:', error);
+                showStatus('Failed to load online players', 'error');
+            }
+        }
+
+        async function despawnPlayer(socketId) {
+            if (!confirm('Despawn this player?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${basePath}/api/admin/online-players/despawn`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ socketId })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    showStatus(`Player "${result.username}" despawned`, 'success');
+                    fetchOnlinePlayers();
+                } else {
+                    const error = await response.json();
+                    showStatus(error.error || 'Failed to despawn player', 'error');
+                }
+            } catch (error) {
+                console.error('Failed to despawn player:', error);
+                showStatus('Failed to despawn player', 'error');
+            }
+        }
+
+        async function despawnAllPlayers() {
+            if (!confirm('Despawn all online players?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${basePath}/api/admin/online-players/despawn-all`, {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    showStatus(`Despawned ${result.count} players`, 'success');
+                    fetchOnlinePlayers();
+                } else {
+                    const error = await response.json();
+                    showStatus(error.error || 'Failed to despawn players', 'error');
+                }
+            } catch (error) {
+                console.error('Failed to despawn all players:', error);
+                showStatus('Failed to despawn players', 'error');
+            }
+        }
+
         // Open player edit modal
         async function openPlayerModal(userId) {
             try {
@@ -1180,6 +1320,7 @@
             fetchTwitchChannel();
             fetchLevels();
             fetchPlayers();
+            fetchOnlinePlayers();
         });
     </script>
 </body>
