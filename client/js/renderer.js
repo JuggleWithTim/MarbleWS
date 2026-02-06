@@ -492,6 +492,178 @@ class Renderer {
         this.ctx.fillText(name, screenPos.x, screenPos.y);
     }
 
+    drawSpeechBubble(x, y, text, emotes = []) {
+        const screenPos = this.worldToScreen(x, y - 60);
+        const paddingX = 10;
+        const paddingY = 6;
+        const maxWidth = 220;
+        const lineHeight = 16;
+        const radius = 8;
+        const emoteSize = 18;
+
+        this.ctx.save();
+        this.ctx.font = '14px Arial';
+        this.ctx.textAlign = 'left';
+        this.ctx.textBaseline = 'middle';
+
+        const tokens = this.buildSpeechTokens(text || '', emotes || []);
+        const lines = [];
+        let currentLine = [];
+        let currentWidth = 0;
+
+        const flushLine = () => {
+            if (currentLine.length) {
+                lines.push({ tokens: currentLine, width: currentWidth });
+                currentLine = [];
+                currentWidth = 0;
+            }
+        };
+
+        tokens.forEach(token => {
+            const tokenWidth = token.type === 'emote'
+                ? emoteSize
+                : this.ctx.measureText(token.text).width;
+
+            if (token.type === 'space') {
+                if (currentLine.length === 0) {
+                    return;
+                }
+
+                if (currentWidth + tokenWidth > maxWidth) {
+                    flushLine();
+                    return;
+                }
+
+                currentLine.push(token);
+                currentWidth += tokenWidth;
+                return;
+            }
+
+            if (currentWidth + tokenWidth > maxWidth && currentLine.length > 0) {
+                flushLine();
+            }
+
+            currentLine.push(token);
+            currentWidth += tokenWidth;
+        });
+
+        flushLine();
+
+        if (lines.length === 0) {
+            lines.push({ tokens: [{ type: 'text', text: '' }], width: 0 });
+        }
+
+        const textWidth = Math.min(
+            maxWidth,
+            Math.max(...lines.map(line => line.width), 0)
+        );
+        const bubbleWidth = textWidth + paddingX * 2;
+        const bubbleHeight = lines.length * lineHeight + paddingY * 2;
+        const bubbleX = screenPos.x - bubbleWidth / 2;
+        const bubbleY = screenPos.y - bubbleHeight;
+
+        // Bubble background
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+        this.ctx.lineWidth = 2;
+
+        this.ctx.beginPath();
+        this.ctx.moveTo(bubbleX + radius, bubbleY);
+        this.ctx.lineTo(bubbleX + bubbleWidth - radius, bubbleY);
+        this.ctx.quadraticCurveTo(bubbleX + bubbleWidth, bubbleY, bubbleX + bubbleWidth, bubbleY + radius);
+        this.ctx.lineTo(bubbleX + bubbleWidth, bubbleY + bubbleHeight - radius);
+        this.ctx.quadraticCurveTo(bubbleX + bubbleWidth, bubbleY + bubbleHeight, bubbleX + bubbleWidth - radius, bubbleY + bubbleHeight);
+        this.ctx.lineTo(bubbleX + bubbleWidth / 2 + 8, bubbleY + bubbleHeight);
+        this.ctx.lineTo(bubbleX + bubbleWidth / 2, bubbleY + bubbleHeight + 10);
+        this.ctx.lineTo(bubbleX + bubbleWidth / 2 - 8, bubbleY + bubbleHeight);
+        this.ctx.lineTo(bubbleX + radius, bubbleY + bubbleHeight);
+        this.ctx.quadraticCurveTo(bubbleX, bubbleY + bubbleHeight, bubbleX, bubbleY + bubbleHeight - radius);
+        this.ctx.lineTo(bubbleX, bubbleY + radius);
+        this.ctx.quadraticCurveTo(bubbleX, bubbleY, bubbleX + radius, bubbleY);
+        this.ctx.closePath();
+        this.ctx.fill();
+        this.ctx.stroke();
+
+        // Text
+        this.ctx.fillStyle = '#ffffff';
+        lines.forEach((line, index) => {
+            const lineY = bubbleY + paddingY + lineHeight / 2 + index * lineHeight;
+            let cursorX = screenPos.x - line.width / 2;
+
+            line.tokens.forEach(token => {
+                if (token.type === 'space') {
+                    cursorX += this.ctx.measureText(token.text).width;
+                    return;
+                }
+
+                if (token.type === 'emote') {
+                    const img = this.images.get(token.url);
+                    if (img && img.complete) {
+                        this.ctx.drawImage(img, cursorX, lineY - emoteSize / 2, emoteSize, emoteSize);
+                    } else {
+                        if (!img) {
+                            this.loadImage(token.url);
+                        }
+                        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                        this.ctx.fillRect(cursorX, lineY - emoteSize / 2, emoteSize, emoteSize);
+                        this.ctx.fillStyle = '#ffffff';
+                    }
+                    cursorX += emoteSize;
+                    return;
+                }
+
+                this.ctx.fillText(token.text, cursorX, lineY);
+                cursorX += this.ctx.measureText(token.text).width;
+            });
+        });
+
+        this.ctx.restore();
+    }
+
+    buildSpeechTokens(text, emotes) {
+        if (!emotes || emotes.length === 0) {
+            return text.split(/(\s+)/).filter(part => part.length).map(part => {
+                if (/^\s+$/.test(part)) {
+                    return { type: 'space', text: part };
+                }
+                return { type: 'text', text: part };
+            });
+        }
+
+        const sortedEmotes = [...emotes].sort((a, b) => a.start - b.start);
+        const tokens = [];
+        let index = 0;
+
+        sortedEmotes.forEach(emote => {
+            if (emote.start > index) {
+                const segment = text.slice(index, emote.start);
+                segment.split(/(\s+)/).filter(part => part.length).forEach(part => {
+                    if (/^\s+$/.test(part)) {
+                        tokens.push({ type: 'space', text: part });
+                    } else {
+                        tokens.push({ type: 'text', text: part });
+                    }
+                });
+            }
+
+            tokens.push({ type: 'emote', url: emote.url, name: emote.name });
+            index = emote.end + 1;
+        });
+
+        if (index < text.length) {
+            const segment = text.slice(index);
+            segment.split(/(\s+)/).filter(part => part.length).forEach(part => {
+                if (/^\s+$/.test(part)) {
+                    tokens.push({ type: 'space', text: part });
+                } else {
+                    tokens.push({ type: 'text', text: part });
+                }
+            });
+        }
+
+        return tokens;
+    }
+
     drawDebugInfo(gameState) {
         this.ctx.fillStyle = '#ffffff';
         this.ctx.font = '12px monospace';

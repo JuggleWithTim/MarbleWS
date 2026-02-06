@@ -106,6 +106,10 @@ class Networking {
             this.emit('chatMessage', data);
         });
 
+        this.socket.on('twitchChatMessage', (data) => {
+            this.emit('twitchChatMessage', data);
+        });
+
         this.socket.on('playerLeveledUp', (data) => {
             this.emit('playerLeveledUp', data);
         });

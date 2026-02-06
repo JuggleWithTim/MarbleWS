@@ -357,6 +357,10 @@
             cursor: pointer;
         }
 
+        .player-card.banned {
+            border-color: rgba(255, 107, 107, 0.8);
+        }
+
         .player-card:hover {
             border-color: #4ecdc4;
             box-shadow: 0 0 10px rgba(78, 205, 196, 0.2);
@@ -367,6 +371,33 @@
             font-weight: bold;
             color: #4ecdc4;
             margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .player-badge {
+            font-size: 0.75em;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-weight: bold;
+        }
+
+        .player-badge-banned {
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+            border: 1px solid rgba(255, 107, 107, 0.6);
+        }
+
+        .btn-warning {
+            background: #ff9f43;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #f08c28;
+            transform: translateY(-1px);
         }
 
         .player-info {
@@ -530,6 +561,12 @@
                     <input type="text" id="twitchChannelInput" placeholder="Enter new channel name" />
                     <button class="btn btn-primary" onclick="updateTwitchChannel()">Save & Reconnect</button>
                 </div>
+                <div class="channel-input" style="margin-top: 12px;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="twitchSpeechBubblesToggle" />
+                        <span>Enable Twitch chat speech bubbles</span>
+                    </label>
+                </div>
             </div>
         </div>
 
@@ -592,6 +629,7 @@
                 </div>
 
                 <div class="modal-actions">
+                    <button type="button" id="banToggleBtn" class="btn btn-warning" onclick="toggleBanStatus()">Ban Player</button>
                     <button type="button" class="btn btn-danger" onclick="closePlayerModal()">Cancel</button>
                     <button type="submit" class="btn btn-primary">Save Changes</button>
                 </div>
@@ -602,6 +640,7 @@
     <script>
         let currentLevelName = 'level1'; // Default
         let basePath = "__BASE_PATH__";
+        let currentModalPlayer = null;
 
         // Load client configuration
         async function loadConfig() {
@@ -695,6 +734,46 @@
             } catch (error) {
                 console.error('Failed to update Twitch channel:', error);
                 showStatus('Failed to update channel', 'error');
+            }
+        }
+
+        // Fetch current Twitch speech bubble setting
+        async function fetchTwitchSpeechBubbles() {
+            try {
+                const response = await fetch(`${basePath}/api/admin/config/twitch-speech-bubbles`);
+                if (response.ok) {
+                    const data = await response.json();
+                    const toggle = document.getElementById('twitchSpeechBubblesToggle');
+                    if (toggle) {
+                        toggle.checked = Boolean(data.enabled);
+                    }
+                }
+            } catch (error) {
+                console.log('Could not fetch Twitch speech bubble setting:', error);
+            }
+        }
+
+        // Update Twitch speech bubble setting
+        async function updateTwitchSpeechBubbles(enabled) {
+            try {
+                const response = await fetch(`${basePath}/api/admin/config/twitch-speech-bubbles`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ enabled })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    showStatus(`Twitch speech bubbles ${data.enabled ? 'enabled' : 'disabled'}`, 'success');
+                } else {
+                    const error = await response.json();
+                    showStatus(error.error || 'Failed to update speech bubble setting', 'error');
+                }
+            } catch (error) {
+                console.error('Failed to update Twitch speech bubble setting:', error);
+                showStatus('Failed to update speech bubble setting', 'error');
             }
         }
 
@@ -1109,11 +1188,12 @@
 
                 players.forEach(player => {
                     const playerCard = document.createElement('div');
-                    playerCard.className = 'player-card';
+                    const isBanned = Boolean(player.banned);
+                    playerCard.className = `player-card ${isBanned ? 'banned' : ''}`;
                     playerCard.onclick = () => openPlayerModal(player.userId);
 
                     playerCard.innerHTML = `
-                        <div class="player-name">${player.username}</div>
+                        <div class="player-name">${player.username} ${isBanned ? '<span class="player-badge player-badge-banned">BANNED</span>' : ''}</div>
                         <div class="player-info">User ID: ${player.userId}</div>
                         <div class="player-stats">
                             <span>Level ${player.level}</span>
@@ -1224,6 +1304,7 @@
             try {
                 const response = await fetch(`${basePath}/api/admin/players/${userId}`);
                 const player = await response.json();
+                currentModalPlayer = player;
 
                 // Populate player details
                 const detailsDiv = document.getElementById('playerDetails');
@@ -1248,12 +1329,17 @@
                         <span class="player-detail-label">Last Updated:</span>
                         <span class="player-detail-value">${new Date(player.lastUpdated).toLocaleString()}</span>
                     </div>
+                    <div class="player-detail-row">
+                        <span class="player-detail-label">Status:</span>
+                        <span id="playerBannedStatus" class="player-detail-value">${player.banned ? 'Banned' : 'Active'}</span>
+                    </div>
                 `;
 
                 // Populate form fields
                 document.getElementById('editLevel').value = player.level;
                 document.getElementById('editXP').value = player.xp;
                 document.getElementById('editCoins').value = player.coins;
+                updateBanButton(player.banned);
 
                 // Store current player ID for form submission
                 document.getElementById('playerEditForm').dataset.userId = userId;
@@ -1270,13 +1356,37 @@
         function closePlayerModal() {
             document.getElementById('playerModal').style.display = 'none';
             document.getElementById('playerEditForm').reset();
+            currentModalPlayer = null;
         }
 
-        // Handle player edit form submission
-        document.getElementById('playerEditForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
+        function updateBanButton(isBanned) {
+            const banButton = document.getElementById('banToggleBtn');
+            const status = document.getElementById('playerBannedStatus');
+            if (!banButton) return;
 
-            const userId = e.target.dataset.userId;
+            banButton.textContent = isBanned ? 'Unban Player' : 'Ban Player';
+            banButton.classList.remove('btn-warning', 'btn-primary');
+            banButton.classList.add(isBanned ? 'btn-primary' : 'btn-warning');
+
+            if (status) {
+                status.textContent = isBanned ? 'Banned' : 'Active';
+            }
+        }
+
+        async function toggleBanStatus() {
+            const form = document.getElementById('playerEditForm');
+            const userId = form.dataset.userId;
+            if (!userId || !currentModalPlayer) {
+                return;
+            }
+
+            const nextBannedState = !Boolean(currentModalPlayer.banned);
+            const actionLabel = nextBannedState ? 'ban' : 'unban';
+
+            if (!confirm(`Are you sure you want to ${actionLabel} this player?`)) {
+                return;
+            }
+
             const level = parseInt(document.getElementById('editLevel').value);
             const xp = parseInt(document.getElementById('editXP').value);
             const coins = parseInt(document.getElementById('editCoins').value);
@@ -1287,7 +1397,42 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ level, xp, coins })
+                    body: JSON.stringify({ level, xp, coins, banned: nextBannedState })
+                });
+
+                if (response.ok) {
+                    currentModalPlayer.banned = nextBannedState;
+                    updateBanButton(nextBannedState);
+                    showStatus(`Player has been ${nextBannedState ? 'banned' : 'unbanned'}`, 'success');
+                    fetchPlayers();
+                    fetchOnlinePlayers();
+                } else {
+                    const error = await response.json();
+                    showStatus(error.error || `Failed to ${actionLabel} player`, 'error');
+                }
+            } catch (error) {
+                console.error(`Failed to ${actionLabel} player:`, error);
+                showStatus(`Failed to ${actionLabel} player`, 'error');
+            }
+        }
+
+        // Handle player edit form submission
+        document.getElementById('playerEditForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const userId = e.target.dataset.userId;
+            const level = parseInt(document.getElementById('editLevel').value);
+            const xp = parseInt(document.getElementById('editXP').value);
+            const coins = parseInt(document.getElementById('editCoins').value);
+            const banned = Boolean(currentModalPlayer?.banned);
+
+            try {
+                const response = await fetch(`${basePath}/api/admin/players/${userId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ level, xp, coins, banned })
                 });
 
                 if (response.ok) {
@@ -1318,9 +1463,17 @@
             await loadConfig();
             fetchCurrentLevel();
             fetchTwitchChannel();
+            fetchTwitchSpeechBubbles();
             fetchLevels();
             fetchPlayers();
             fetchOnlinePlayers();
+
+            const toggle = document.getElementById('twitchSpeechBubblesToggle');
+            if (toggle) {
+                toggle.addEventListener('change', (event) => {
+                    updateTwitchSpeechBubbles(event.target.checked);
+                });
+            }
         });
     </script>
 </body>

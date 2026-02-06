@@ -34,6 +34,10 @@ class Game {
         this.passengerData = null;
         this.hatData = null;
 
+        // Twitch speech bubble tracking
+        this.speechBubbles = new Map();
+        this.speechBubbleDurationMs = 10000;
+
         // Game mode renderers
         this.colorRushRenderer = null;
         this.dungeonRenderer = null;
@@ -196,6 +200,10 @@ class Game {
         
         this.networking.on('chatMessage', (data) => {
             this.addChatMessage(data);
+        });
+
+        this.networking.on('twitchChatMessage', (data) => {
+            this.handleTwitchChatMessage(data);
         });
         
         this.networking.on('levelLoaded', (data) => {
@@ -742,6 +750,25 @@ class Game {
             }
         });
 
+        // Draw Twitch speech bubbles above players
+        if (this.gameConfig?.twitchSpeechBubbles?.enabled) {
+            const now = Date.now();
+            this.gameState.players.forEach(player => {
+                const bubble = this.speechBubbles.get(player.userId);
+                if (!bubble) return;
+
+                if (now - bubble.timestamp > this.speechBubbleDurationMs) {
+                    this.speechBubbles.delete(player.userId);
+                    return;
+                }
+
+                const interpolated = this.getInterpolatedPosition(`player_${player.id}`);
+                const bubbleX = interpolated ? interpolated.x : player.x;
+                const bubbleY = interpolated ? interpolated.y : player.y;
+                this.renderer.drawSpeechBubble(bubbleX, bubbleY, bubble.text, bubble.emotes);
+            });
+        }
+
         // Update and draw goal particles
         this.renderer.updateGoalParticles(deltaTime);
 
@@ -819,6 +846,16 @@ class Game {
         while (chatMessages.children.length > 50) {
             chatMessages.removeChild(chatMessages.firstChild);
         }
+    }
+
+    handleTwitchChatMessage(data) {
+        if (!data || !data.userId || !data.message) return;
+        this.speechBubbles.set(data.userId, {
+            text: data.message,
+            timestamp: data.timestamp || Date.now(),
+            username: data.username || '',
+            emotes: data.emotes || []
+        });
     }
 
     spawnTestEmote() {

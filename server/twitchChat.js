@@ -57,6 +57,8 @@ class TwitchChat {
 
     const username = context['display-name'] || context.username;
     const userId = context['user-id'];
+    const gameConfig = require('../shared/gameConfig.js');
+    let parsedEmotes = [];
 
     // Check for !sit command
     if (msg.toLowerCase().startsWith('!sit')) {
@@ -170,6 +172,7 @@ class TwitchChat {
     if (context.emotes) {
       // Parse emotes from the message
       const emotes = this.parseEmotes(msg, context.emotes);
+      parsedEmotes = emotes;
 
       if (emotes.length > 0) {
         // Check level setting for spawnAll
@@ -188,6 +191,17 @@ class TwitchChat {
         }
       }
     }
+
+    // Emit twitch chat message for speech bubbles
+    if (gameConfig.twitchSpeechBubbles?.enabled && userId) {
+      this.gameLogic.eventEmitter.emit('twitchChatMessage', {
+        userId,
+        username,
+        message: msg,
+        timestamp: Date.now(),
+        emotes: parsedEmotes
+      });
+    }
   }
 
   async onCheer(channel, userstate, message) {
@@ -204,7 +218,7 @@ class TwitchChat {
     console.log(`${username} (${userId}) cheered ${bits} bits!`);
 
     // Add coins to player (1:1 ratio)
-    const result = this.gameLogic.addCoinsToPlayer(userId, bits, 'cheer');
+    const result = await this.gameLogic.addCoinsToPlayer(userId, bits, 'cheer');
 
     if (result.success) {
       console.log(`Successfully added ${bits} coins to ${username}. New balance: ${result.newBalance}`);
@@ -230,7 +244,9 @@ class TwitchChat {
         emotes.push({
           id: emoteId,
           name: emoteName,
-          url: `https://static-cdn.jtvnw.net/emoticons/v2/${emoteId}/default/dark/3.0`
+          url: `https://static-cdn.jtvnw.net/emoticons/v2/${emoteId}/default/dark/3.0`,
+          start,
+          end
         });
       }
     }

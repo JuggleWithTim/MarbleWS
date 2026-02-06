@@ -118,6 +118,11 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
     io.emit('raceCountdown', data);
   });
 
+  // Listen for Twitch chat messages to broadcast to clients
+  gameLogic.eventEmitter.on('twitchChatMessage', (data) => {
+    io.emit('twitchChatMessage', data);
+  });
+
   gameLogic.on('raceStart', (data) => {
     io.emit('raceStart', data);
   });
@@ -222,6 +227,13 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
       }
 
       const { username, userId } = tokenData;
+
+      const isBanned = await gameLogic.playerManager.isUserBanned(userId.trim());
+      if (isBanned) {
+        socket.emit('error', { message: 'You are banned from this game.' });
+        socket.disconnect(true);
+        return;
+      }
 
       // Additional validation
       if (typeof username !== 'string' || username.length === 0 || username.length > 50 ||

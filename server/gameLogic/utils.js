@@ -1,5 +1,42 @@
 // Utility functions for game logic
 
+function componentToHex(value) {
+  const clamped = Math.max(0, Math.min(255, Number(value) || 0));
+  return clamped.toString(16).padStart(2, '0');
+}
+
+function rgbToHex(r, g, b) {
+  return `#${componentToHex(r)}${componentToHex(g)}${componentToHex(b)}`;
+}
+
+function normalizeColor(input, fallback = '#4ecdc4') {
+  if (typeof input !== 'string') {
+    return fallback;
+  }
+
+  const color = input.trim().toLowerCase();
+
+  // #rgb
+  const shortHexMatch = color.match(/^#([0-9a-f]{3})$/i);
+  if (shortHexMatch) {
+    const [r, g, b] = shortHexMatch[1].split('');
+    return `#${r}${r}${g}${g}${b}${b}`;
+  }
+
+  // #rrggbb
+  if (/^#[0-9a-f]{6}$/i.test(color)) {
+    return color;
+  }
+
+  // rgb()/rgba()
+  const rgbMatch = color.match(/^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})(?:\s*,\s*[\d.]+)?\s*\)$/i);
+  if (rgbMatch) {
+    return rgbToHex(parseInt(rgbMatch[1], 10), parseInt(rgbMatch[2], 10), parseInt(rgbMatch[3], 10));
+  }
+
+  return fallback;
+}
+
 // Generate a consistent random color based on a string seed
 function generateColorFromSeed(seed) {
   let hash = 0;
@@ -37,9 +74,10 @@ function generateColorFromSeed(seed) {
   const g = Math.round(hue2rgb(p, q, h) * 255);
   const b = Math.round(hue2rgb(p, q, h - 1/3) * 255);
 
-  return `rgb(${r}, ${g}, ${b})`;
+  return rgbToHex(r, g, b);
 }
 
 module.exports = {
-  generateColorFromSeed
+  generateColorFromSeed,
+  normalizeColor
 };
