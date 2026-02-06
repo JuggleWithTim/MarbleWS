@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Panel - MarbleWS</title>
+    <link rel="stylesheet" href="__BASE_PATH__/vendor/codemirror/codemirror.css">
+    <link rel="stylesheet" href="__BASE_PATH__/vendor/codemirror/material-darker.css">
     <style>
         :root {
             --bg: #0f172a;
@@ -157,12 +159,30 @@
 
         .config-editor {
             width: 100%;
-            min-height: 360px;
+            min-height: 420px;
             font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
             font-size: 0.85rem;
             line-height: 1.4;
             padding: 10px;
             resize: vertical;
+        }
+
+        .CodeMirror {
+            height: 420px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 0.85rem;
+            background: #0b1220;
+        }
+
+        .CodeMirror-scroll {
+            min-height: 420px;
+        }
+
+        .CodeMirror-gutters {
+            background: #0b1220;
+            border-right: 1px solid rgba(148, 163, 184, 0.2);
         }
 
         .modal {
@@ -343,11 +363,15 @@
         </div>
     </div>
 
+    <script src="__BASE_PATH__/vendor/codemirror/codemirror.js"></script>
+    <script src="__BASE_PATH__/vendor/codemirror/javascript.js"></script>
+
     <script>
         let basePath = '__BASE_PATH__';
         let adminSocket = null;
         let state = { levels: [], players: [], onlinePlayers: [], currentLevel: 'level1', twitchChannel: '', activities: [] };
         let modalPlayer = null;
+        let gameConfigEditor = null;
         const previewImageCache = new Map();
 
         function renderLevelPreview(canvas, objects, backgroundImage) {
@@ -678,20 +702,35 @@
             showStatus('Twitch channel updated');
         }
 
+        function initGameConfigEditor() {
+            const textarea = document.getElementById('gameConfigEditor');
+            if (!textarea || gameConfigEditor) return;
+            gameConfigEditor = CodeMirror.fromTextArea(textarea, {
+                mode: 'javascript',
+                theme: 'material-darker',
+                lineNumbers: true,
+                lineWrapping: true
+            });
+        }
+
         async function loadGameConfigRaw() {
-            const editor = document.getElementById('gameConfigEditor');
+            const editor = gameConfigEditor || document.getElementById('gameConfigEditor');
             if (!editor) return;
-            editor.placeholder = 'Loading shared/gameConfig.js...';
             const res = await fetch(`${basePath}/api/admin/config/game-config/raw`);
             if (!res.ok) return showStatus('Failed to load gameConfig.js', false);
             const data = await res.json();
-            editor.value = data.content || '';
+            const content = data.content || '';
+            if (gameConfigEditor) {
+                gameConfigEditor.setValue(content);
+            } else {
+                editor.value = content;
+            }
         }
 
         async function saveGameConfigRaw() {
-            const editor = document.getElementById('gameConfigEditor');
+            const editor = gameConfigEditor || document.getElementById('gameConfigEditor');
             if (!editor) return;
-            const content = editor.value || '';
+            const content = gameConfigEditor ? gameConfigEditor.getValue() : (editor.value || '');
             if (!content.trim()) return showStatus('gameConfig.js cannot be empty', false);
             if (!confirm('Save changes to shared/gameConfig.js?')) return;
 
@@ -755,6 +794,9 @@
                     const target = btn.dataset.section;
                     document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
                     document.getElementById(target).classList.add('active');
+                    if (target === 'twitch') {
+                        loadGameConfigRaw();
+                    }
                 });
             });
         }
@@ -776,6 +818,7 @@
         document.addEventListener('DOMContentLoaded', async () => {
             setupNav();
             bindUI();
+            initGameConfigEditor();
             await loadConfig();
             try {
                 await loadInitialSnapshot();
