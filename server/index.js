@@ -15,6 +15,7 @@ const server = http.createServer(app);
 
 // In-memory token store (use Redis or database in production)
 const validTokens = new Map();
+const adminRealtimeTokens = new Map();
 
 // Trust proxy for correct IP detection behind nginx
 app.set('trust proxy', 1);
@@ -105,8 +106,135 @@ if (fs.existsSync(defaultLevelPath)) {
 // Initialize Twitch chat integration
 const twitchChat = new TwitchChat(gameLogic);
 
+function createAdminRealtimeToken() {
+  const token = crypto.randomBytes(24).toString('hex');
+  adminRealtimeTokens.set(token, Date.now() + 10 * 60 * 1000); // 10 min
+  return token;
+}
+
+function isValidAdminRealtimeToken(token) {
+  const expiresAt = adminRealtimeTokens.get(token);
+  if (!expiresAt) return false;
+  if (expiresAt < Date.now()) {
+    adminRealtimeTokens.delete(token);
+    return false;
+  }
+
+  // One-time use token to reduce replay risks
+  adminRealtimeTokens.delete(token);
+  return true;
+}
+
+function getLevelsForAdmin() {
+  const levelsDir = path.join(__dirname, '../levels');
+
+  if (!fs.existsSync(levelsDir)) {
+    fs.mkdirSync(levelsDir, { recursive: true });
+  }
+
+  return fs.readdirSync(levelsDir)
+    .filter(file => file.endsWith('.json'))
+    .map(file => {
+      const levelName = file.replace('.json', '');
+      const levelPath = path.join(levelsDir, file);
+      const stats = fs.statSync(levelPath);
+
+      try {
+        const levelData = JSON.parse(fs.readFileSync(levelPath, 'utf8'));
+        return {
+          name: levelName,
+          modified: stats.mtime,
+          size: stats.size,
+          description: levelData.description || '',
+          backgroundImage: levelData.backgroundImage || '',
+          objects: levelData.objects || []
+        };
+      } catch (error) {
+        return {
+          name: levelName,
+          modified: stats.mtime,
+          size: stats.size,
+          description: '',
+          backgroundImage: '',
+          objects: []
+        };
+      }
+    });
+}
+
+function getPlayersForAdmin() {
+  return new Promise((resolve, reject) => {
+    const db = gameLogic.playerManager.db;
+    const sql = `
+      SELECT userId, username, level, xp, coins, banned, lastUpdated
+      FROM players
+      ORDER BY xp DESC
+    `;
+
+    db.all(sql, [], (err, rows) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      resolve(rows || []);
+    });
+  });
+}
+
+function getOnlinePlayersForAdmin() {
+  return Array.from(gameLogic.playerManager.players.values()).map(player => ({
+    socketId: player.id,
+    userId: player.userId,
+    username: player.username,
+    x: player.x,
+    y: player.y
+  }));
+}
+
+async function getAdminSnapshot() {
+  const levels = getLevelsForAdmin();
+  const players = await getPlayersForAdmin();
+  const onlinePlayers = getOnlinePlayersForAdmin();
+
+  const gameConfig = require('../shared/gameConfig.js');
+
+  return {
+    currentLevel: gameLogic.currentLevel?.name || 'level1',
+    twitchChannel: process.env.TWITCH_CHANNEL || '',
+    twitchSpeechBubblesEnabled: Boolean(gameConfig.twitchSpeechBubbles?.enabled),
+    levels,
+    players,
+    onlinePlayers,
+    generatedAt: Date.now()
+  };
+}
+
+function emitAdminActivity(type, message, payload = {}) {
+  io.to('admins').emit('admin:activity:event', {
+    type,
+    message,
+    payload,
+    at: Date.now()
+  });
+}
+
+async function emitAdminBootstrap() {
+  try {
+    const snapshot = await getAdminSnapshot();
+    io.to('admins').emit('admin:bootstrap', snapshot);
+  } catch (error) {
+    console.error('Failed to emit admin bootstrap snapshot:', error);
+  }
+}
+
 // Setup Socket.io handlers
-setupSocketHandlers(io, gameLogic, validTokens);
+setupSocketHandlers(io, gameLogic, validTokens, {
+  isValidAdminToken: isValidAdminRealtimeToken,
+  getAdminSnapshot,
+  emitAdminActivity,
+  emitAdminBootstrap,
+  getOnlinePlayersForAdmin
+});
 
 // Authenticated routes - must come BEFORE static middleware
 // Editor routes with authentication
@@ -342,47 +470,7 @@ app.post('/api/levels/:levelName', basicAuth, (req, res) => {
 
 // Admin API routes
 app.get('/api/admin/levels', basicAuth, (req, res) => {
-  const fs = require('fs');
-  const levelsDir = path.join(__dirname, '../levels');
-
-  if (!fs.existsSync(levelsDir)) {
-    fs.mkdirSync(levelsDir, { recursive: true });
-  }
-
-  const levels = fs.readdirSync(levelsDir)
-    .filter(file => file.endsWith('.json'))
-    .map(file => {
-      const levelName = file.replace('.json', '');
-      const levelPath = path.join(levelsDir, file);
-      const stats = fs.statSync(levelPath);
-
-      // Read full level data
-      let levelData = null;
-      try {
-        levelData = JSON.parse(fs.readFileSync(levelPath, 'utf8'));
-      } catch (error) {
-        console.warn(`Failed to read level data for ${levelName}:`, error.message);
-        // Return basic info if parsing fails
-        return {
-          name: levelName,
-          modified: stats.mtime,
-          size: stats.size,
-          description: '',
-          objects: []
-        };
-      }
-
-      return {
-        name: levelName,
-        modified: stats.mtime,
-        size: stats.size,
-        description: levelData.description || '',
-        backgroundImage: levelData.backgroundImage || '',
-        objects: levelData.objects || []
-      };
-    });
-
-  res.json(levels);
+  res.json(getLevelsForAdmin());
 });
 
 app.delete('/api/admin/levels/:levelName', basicAuth, (req, res) => {
@@ -401,6 +489,9 @@ app.delete('/api/admin/levels/:levelName', basicAuth, (req, res) => {
     const deletedPath = path.join(deletedDir, `${req.params.levelName}_${timestamp}.json`);
     fs.renameSync(levelPath, deletedPath);
 
+    emitAdminActivity('level', `Level deleted: ${req.params.levelName}`, { levelName: req.params.levelName });
+    emitAdminBootstrap();
+
     res.json({ success: true });
   } else {
     res.status(404).json({ error: 'Level not found' });
@@ -409,35 +500,33 @@ app.delete('/api/admin/levels/:levelName', basicAuth, (req, res) => {
 
 // Admin player management endpoints
 app.get('/api/admin/players', basicAuth, (req, res) => {
-  const db = gameLogic.playerManager.db;
-  const sql = `
-    SELECT userId, username, level, xp, coins, banned, lastUpdated
-    FROM players
-    ORDER BY xp DESC
-  `;
-
-  db.all(sql, [], (err, rows) => {
+  getPlayersForAdmin().then((rows) => {
+    res.json(rows);
+  }).catch((err) => {
     if (err) {
       console.error('Failed to fetch players:', err);
       res.status(500).json({ error: 'Failed to fetch players' });
-      return;
     }
-
-    res.json(rows);
   });
 });
 
 // Admin online player management endpoints
 app.get('/api/admin/online-players', basicAuth, (req, res) => {
-  const onlinePlayers = Array.from(gameLogic.playerManager.players.values()).map(player => ({
-    socketId: player.id,
-    userId: player.userId,
-    username: player.username,
-    x: player.x,
-    y: player.y
-  }));
+  res.json(getOnlinePlayersForAdmin());
+});
 
-  res.json(onlinePlayers);
+app.get('/api/admin/realtime-token', basicAuth, (req, res) => {
+  res.json({ token: createAdminRealtimeToken() });
+});
+
+app.get('/api/admin/snapshot', basicAuth, async (req, res) => {
+  try {
+    const snapshot = await getAdminSnapshot();
+    res.json(snapshot);
+  } catch (error) {
+    console.error('Failed to get admin snapshot:', error);
+    res.status(500).json({ error: 'Failed to load admin snapshot' });
+  }
 });
 
 app.post('/api/admin/online-players/despawn', basicAuth, (req, res) => {
@@ -465,6 +554,12 @@ app.post('/api/admin/online-players/despawn', basicAuth, (req, res) => {
     io.emit('playerLeft', { playerId: targetSocketId });
   }
 
+  emitAdminActivity('player', `Player despawned: ${player.username}`, {
+    userId: player.userId,
+    username: player.username
+  });
+  emitAdminBootstrap();
+
   res.json({ success: true, playerId: targetSocketId, username: player.username });
 });
 
@@ -485,6 +580,9 @@ app.post('/api/admin/online-players/despawn-all', basicAuth, (req, res) => {
       disconnectedCount += 1;
     }
   });
+
+  emitAdminActivity('player', `Despawned ${disconnectedCount} player(s)`, { count: disconnectedCount });
+  emitAdminBootstrap();
 
   res.json({ success: true, count: disconnectedCount });
 });
@@ -609,6 +707,9 @@ app.put('/api/admin/players/:userId', basicAuth, (req, res) => {
           coins,
           banned
         });
+
+        emitAdminActivity('player', `Player updated: ${userId}`, { userId, level, xp, coins, banned });
+        emitAdminBootstrap();
       });
     } catch (parseError) {
       console.error('Failed to parse existing player data:', parseError);
@@ -660,6 +761,9 @@ app.put('/api/admin/config/twitch-channel', basicAuth, (req, res) => {
     process.env.TWITCH_CHANNEL = newChannel;
     twitchChat.reconnect(newChannel);
 
+    emitAdminActivity('config', `Twitch channel changed to ${newChannel}`, { channel: newChannel });
+    emitAdminBootstrap();
+
     res.json({ success: true, channel: newChannel });
   } catch (error) {
     console.error('Failed to update Twitch channel:', error);
@@ -692,6 +796,9 @@ app.put('/api/admin/config/twitch-speech-bubbles', basicAuth, (req, res) => {
 
     const gameConfig = require('../shared/gameConfig.js');
     gameConfig.twitchSpeechBubbles.enabled = enabled;
+
+    emitAdminActivity('config', `Twitch speech bubbles ${enabled ? 'enabled' : 'disabled'}`, { enabled });
+    emitAdminBootstrap();
 
     res.json({ success: true, enabled });
   } catch (error) {
