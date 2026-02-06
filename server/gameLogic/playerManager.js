@@ -21,8 +21,8 @@ class PlayerManager {
     });
   }
 
-    initDatabase() {
-        const sql = `
+  initDatabase() {
+    const sql = `
       CREATE TABLE IF NOT EXISTS players (
         userId TEXT PRIMARY KEY,
         username TEXT,
@@ -30,6 +30,7 @@ class PlayerManager {
         level INTEGER DEFAULT 1,
         xp INTEGER DEFAULT 0,
         coins INTEGER DEFAULT 100,
+        banned INTEGER DEFAULT 0,
         unlockedUFOs TEXT,
         unlockedPassengers TEXT,
         unlockedHats TEXT,
@@ -42,7 +43,46 @@ class PlayerManager {
         console.error('Failed to create table:', err.message);
       } else {
         console.log('Players table ready.');
+        this.ensureBannedColumn();
       }
+    });
+  }
+
+  ensureBannedColumn() {
+    this.db.all('PRAGMA table_info(players)', (pragmaErr, columns) => {
+      if (pragmaErr) {
+        console.error('Failed to inspect players table:', pragmaErr.message);
+        return;
+      }
+
+      const hasBannedColumn = columns.some(column => column.name === 'banned');
+      if (hasBannedColumn) {
+        return;
+      }
+
+      this.db.run('ALTER TABLE players ADD COLUMN banned INTEGER DEFAULT 0', (alterErr) => {
+        if (alterErr) {
+          console.error('Failed to add banned column:', alterErr.message);
+          return;
+        }
+
+        console.log('Added banned column to players table.');
+      });
+    });
+  }
+
+  isUserBanned(userId) {
+    return new Promise((resolve) => {
+      const sql = 'SELECT banned FROM players WHERE userId = ?';
+      this.db.get(sql, [userId], (err, row) => {
+        if (err) {
+          console.error('Failed to check banned status:', err.message);
+          resolve(false);
+          return;
+        }
+
+        resolve(Boolean(row && row.banned));
+      });
     });
   }
 
@@ -136,7 +176,8 @@ class PlayerManager {
       targetX: spawnX,
       targetY: spawnY,
       speedMultiplier: 1,
-      speedBoostExpiresAt: 0
+      speedBoostExpiresAt: 0,
+      banned: savedData.banned
     };
 
     this.players.set(socketId, player);
@@ -157,7 +198,8 @@ class PlayerManager {
       beamTarget: null,
       xp: savedData.xp,
       level: savedData.level,
-      coins: savedData.coins
+      coins: savedData.coins,
+      banned: savedData.banned
     };
   }
 
@@ -320,7 +362,7 @@ class PlayerManager {
       player.color = appearance.color;
 
       // Save appearance and progress to persistent storage
-      this.savePlayerData(player.userId, appearance, player.level, player.xp, player.coins, player.unlockedUFOs, player.unlockedPassengers, player.unlockedHats, player.username);
+      this.savePlayerData(player.userId, appearance, player.level, player.xp, player.coins, player.unlockedUFOs, player.unlockedPassengers, player.unlockedHats, player.username, player.banned);
 
       console.log(`Player ${player.username} updated appearance:`, appearance);
     }
@@ -353,7 +395,7 @@ class PlayerManager {
     player.unlockedUFOs.push(ufoImage);
 
     // Save updated data
-    this.savePlayerData(player.userId, player.ufoAppearance, player.level, player.xp, player.coins, player.unlockedUFOs, player.unlockedPassengers, player.username);
+    this.savePlayerData(player.userId, player.ufoAppearance, player.level, player.xp, player.coins, player.unlockedUFOs, player.unlockedPassengers, player.unlockedHats, player.username, player.banned);
 
     console.log(`Player ${player.username} unlocked UFO ${ufoImage} for ${cost} coins`);
 
@@ -393,7 +435,7 @@ class PlayerManager {
     player.unlockedPassengers.push(passengerImage);
 
     // Save updated data
-    this.savePlayerData(player.userId, player.ufoAppearance, player.level, player.xp, player.coins, player.unlockedUFOs, player.unlockedPassengers, player.unlockedHats, player.username);
+    this.savePlayerData(player.userId, player.ufoAppearance, player.level, player.xp, player.coins, player.unlockedUFOs, player.unlockedPassengers, player.unlockedHats, player.username, player.banned);
 
     console.log(`Player ${player.username} unlocked passenger ${passengerImage} for ${cost} coins`);
 
@@ -433,7 +475,7 @@ class PlayerManager {
     player.unlockedHats.push(hatImage);
 
     // Save updated data
-    this.savePlayerData(player.userId, player.ufoAppearance, player.level, player.xp, player.coins, player.unlockedUFOs, player.unlockedPassengers, player.unlockedHats, player.username);
+    this.savePlayerData(player.userId, player.ufoAppearance, player.level, player.xp, player.coins, player.unlockedUFOs, player.unlockedPassengers, player.unlockedHats, player.username, player.banned);
 
     console.log(`Player ${player.username} unlocked hat ${hatImage} for ${cost} coins`);
 
@@ -446,11 +488,11 @@ class PlayerManager {
     };
   }
 
-  savePlayerData(userId, appearance, level = 1, xp = 0, coins = 100, unlockedUFOs = [], unlockedPassengers = [], unlockedHats = [], username = null) {
+  savePlayerData(userId, appearance, level = 1, xp = 0, coins = 100, unlockedUFOs = [], unlockedPassengers = [], unlockedHats = [], username = null, banned = false) {
     return new Promise((resolve, reject) => {
       const sql = `
-        INSERT OR REPLACE INTO players (userId, username, ufoAppearance, level, xp, coins, unlockedUFOs, unlockedPassengers, unlockedHats, lastUpdated)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT OR REPLACE INTO players (userId, username, ufoAppearance, level, xp, coins, banned, unlockedUFOs, unlockedPassengers, unlockedHats, lastUpdated)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
       const params = [
@@ -460,6 +502,7 @@ class PlayerManager {
         level,
         xp,
         coins,
+        banned ? 1 : 0,
         JSON.stringify(unlockedUFOs),
         JSON.stringify(unlockedPassengers),
         JSON.stringify(unlockedHats),
@@ -502,7 +545,9 @@ class PlayerManager {
         playerData.coins,
         playerData.unlockedUFOs,
         playerData.unlockedPassengers,
-        playerData.unlockedHats
+        playerData.unlockedHats,
+        null,
+        playerData.banned
       );
 
       // If player is online, update their in-memory state
@@ -551,6 +596,7 @@ class PlayerManager {
               level: row.level || 1,
               xp: row.xp || 0,
               coins: row.coins || 100,
+              banned: Boolean(row.banned),
               unlockedUFOs: JSON.parse(row.unlockedUFOs) || [],
               unlockedPassengers: JSON.parse(row.unlockedPassengers) || [],
               unlockedHats: JSON.parse(row.unlockedHats) || []
@@ -576,6 +622,7 @@ class PlayerManager {
       level: 1,
       xp: 0,
       coins: 100,
+      banned: false,
       unlockedUFOs: [],
       unlockedPassengers: [],
       unlockedHats: []
@@ -610,7 +657,7 @@ class PlayerManager {
       }
 
       // Save progress after XP gain (whether leveled up or not)
-      this.savePlayerData(player.userId, player.ufoAppearance, player.level, player.xp, player.coins, player.unlockedUFOs, player.unlockedPassengers, player.unlockedHats, player.username);
+      this.savePlayerData(player.userId, player.ufoAppearance, player.level, player.xp, player.coins, player.unlockedUFOs, player.unlockedPassengers, player.unlockedHats, player.username, player.banned);
 
       if (leveledUp) {
         console.log(`Player ${player.username} progress saved after leveling up`);
@@ -649,7 +696,7 @@ class PlayerManager {
       }
 
       // Save progress after XP gain (whether leveled up or not)
-      this.savePlayerData(player.userId, player.ufoAppearance, player.level, player.xp, player.coins, player.unlockedUFOs, player.unlockedPassengers, player.unlockedHats, player.username);
+      this.savePlayerData(player.userId, player.ufoAppearance, player.level, player.xp, player.coins, player.unlockedUFOs, player.unlockedPassengers, player.unlockedHats, player.username, player.banned);
 
       console.log(`Player ${player.username} gained ${xpAmount} XP and ${coinAmount} coins from emote goal!`);
     });
@@ -722,7 +769,7 @@ class PlayerManager {
       }
 
       // Save progress after XP gain (whether leveled up or not)
-      this.savePlayerData(player.userId, player.ufoAppearance, player.level, player.xp, player.coins, player.unlockedUFOs, player.unlockedPassengers, player.unlockedHats, player.username);
+      this.savePlayerData(player.userId, player.ufoAppearance, player.level, player.xp, player.coins, player.unlockedUFOs, player.unlockedPassengers, player.unlockedHats, player.username, player.banned);
 
       console.log(`Player ${player.username} (#${placement}) gained ${xpReward} XP and ${coinReward} coins from Color Rush!`);
     });
@@ -791,7 +838,7 @@ class PlayerManager {
         });
       }
 
-      this.savePlayerData(player.userId, player.ufoAppearance, player.level, player.xp, player.coins, player.unlockedUFOs, player.unlockedPassengers, player.unlockedHats, player.username);
+      this.savePlayerData(player.userId, player.ufoAppearance, player.level, player.xp, player.coins, player.unlockedUFOs, player.unlockedPassengers, player.unlockedHats, player.username, player.banned);
 
       console.log(`Player ${player.username} (#${placement}) gained ${xpReward} XP and ${coinReward} coins from Race!`);
     });

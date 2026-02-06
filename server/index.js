@@ -411,7 +411,7 @@ app.delete('/api/admin/levels/:levelName', basicAuth, (req, res) => {
 app.get('/api/admin/players', basicAuth, (req, res) => {
   const db = gameLogic.playerManager.db;
   const sql = `
-    SELECT userId, username, level, xp, coins, lastUpdated
+    SELECT userId, username, level, xp, coins, banned, lastUpdated
     FROM players
     ORDER BY xp DESC
   `;
@@ -512,9 +512,11 @@ app.get('/api/admin/players/:userId', basicAuth, (req, res) => {
         level: row.level || 1,
         xp: row.xp || 0,
         coins: row.coins || 100,
+        banned: Boolean(row.banned),
         ufoAppearance: JSON.parse(row.ufoAppearance),
         unlockedUFOs: JSON.parse(row.unlockedUFOs) || [],
         unlockedPassengers: JSON.parse(row.unlockedPassengers) || [],
+        unlockedHats: JSON.parse(row.unlockedHats) || [],
         lastUpdated: row.lastUpdated
       };
       res.json(playerData);
@@ -526,7 +528,7 @@ app.get('/api/admin/players/:userId', basicAuth, (req, res) => {
 });
 
 app.put('/api/admin/players/:userId', basicAuth, (req, res) => {
-  const { level, xp, coins } = req.body;
+  const { level, xp, coins, banned } = req.body;
   const userId = req.params.userId;
 
   // Validate input
@@ -538,6 +540,9 @@ app.put('/api/admin/players/:userId', basicAuth, (req, res) => {
   }
   if (typeof coins !== 'number' || coins < 0 || coins > 1000000) {
     return res.status(400).json({ error: 'Coins must be a number between 0 and 1,000,000' });
+  }
+  if (typeof banned !== 'boolean') {
+    return res.status(400).json({ error: 'Banned must be a boolean' });
   }
 
   const db = gameLogic.playerManager.db;
@@ -563,11 +568,11 @@ app.put('/api/admin/players/:userId', basicAuth, (req, res) => {
       // Update player data
       const updateSql = `
         UPDATE players
-        SET level = ?, xp = ?, coins = ?, lastUpdated = ?
+        SET level = ?, xp = ?, coins = ?, banned = ?, lastUpdated = ?
         WHERE userId = ?
       `;
 
-      db.run(updateSql, [level, xp, coins, new Date().toISOString(), userId], function(err) {
+      db.run(updateSql, [level, xp, coins, banned ? 1 : 0, new Date().toISOString(), userId], function(err) {
         if (err) {
           console.error('Failed to update player:', err);
           return res.status(500).json({ error: 'Failed to update player' });
@@ -581,7 +586,19 @@ app.put('/api/admin/players/:userId', basicAuth, (req, res) => {
           onlinePlayer.level = level;
           onlinePlayer.xp = xp;
           onlinePlayer.coins = coins;
+          onlinePlayer.banned = banned;
           console.log(`Updated online player ${onlinePlayer.username}'s data`);
+
+          if (banned) {
+            const targetSocket = io.sockets.sockets.get(onlinePlayer.id);
+            if (targetSocket) {
+              targetSocket.emit('error', { message: 'You are banned from this game.' });
+              targetSocket.disconnect(true);
+            } else {
+              gameLogic.removePlayer(onlinePlayer.id);
+              io.emit('playerLeft', { playerId: onlinePlayer.id });
+            }
+          }
         }
 
         res.json({
@@ -589,7 +606,8 @@ app.put('/api/admin/players/:userId', basicAuth, (req, res) => {
           userId,
           level,
           xp,
-          coins
+          coins,
+          banned
         });
       });
     } catch (parseError) {

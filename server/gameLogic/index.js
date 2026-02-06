@@ -214,6 +214,11 @@ class GameLogic {
   }
 
   async spawnPlayerAtChair(userId, username, chairNumber) {
+    const isBanned = await this.playerManager.isUserBanned(userId);
+    if (isBanned) {
+      return { success: false, message: 'You are banned from this game' };
+    }
+
     // Find available chairs in current level
     const chairs = this.levelManager.levelObjects.filter(obj => obj.chair !== undefined);
 

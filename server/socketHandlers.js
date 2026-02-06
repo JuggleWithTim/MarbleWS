@@ -228,6 +228,13 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
 
       const { username, userId } = tokenData;
 
+      const isBanned = await gameLogic.playerManager.isUserBanned(userId.trim());
+      if (isBanned) {
+        socket.emit('error', { message: 'You are banned from this game.' });
+        socket.disconnect(true);
+        return;
+      }
+
       // Additional validation
       if (typeof username !== 'string' || username.length === 0 || username.length > 50 ||
           typeof userId !== 'string' || userId.length === 0 || userId.length > 100) {
