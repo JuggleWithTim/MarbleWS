@@ -102,9 +102,15 @@ class Networking {
             this.emit('levelLoaded', data);
         });
 
+        // SECURITY HARDENING (2026-02): In-game chat event disabled.
+        // Reason: prior chat rendering path used unsafe innerHTML and enabled XSS.
+        // Keep this commented for future use. Re-enable only with strict sanitization
+        // and safe DOM rendering (textContent, never innerHTML).
+        /*
         this.socket.on('chatMessage', (data) => {
             this.emit('chatMessage', data);
         });
+        */
 
         this.socket.on('twitchChatMessage', (data) => {
             this.emit('twitchChatMessage', data);
@@ -166,11 +172,15 @@ class Networking {
         }
     }
 
+    // SECURITY HARDENING (2026-02): In-game chat send path disabled.
+    // Kept as comment for potential future re-enable after XSS-safe implementation.
+    /*
     sendChatMessage(message) {
         if (this.socket && this.connected) {
             this.socket.emit('chatMessage', { message });
         }
     }
+    */
 
     spawnTestEmote(emoteName) {
         if (this.socket && this.connected) {

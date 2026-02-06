@@ -54,9 +54,13 @@ class Controls {
             case 'Space':
                 this.emit('beamActivate');
                 break;
+            // SECURITY HARDENING (2026-02): In-game chat is disabled.
+            // Keep Enter->chatFocus behavior commented for future re-enable.
+            /*
             case 'Enter':
                 this.emit('chatFocus');
                 break;
+            */
             case 'Escape':
                 this.emit('escape');
                 break;
@@ -162,10 +166,15 @@ class Controls {
             });
         }
 
-        // Chat input
+        // SECURITY HARDENING (2026-02): In-game chat UI handlers disabled.
+        // Reason: historic chat rendering path used unsafe innerHTML (XSS risk).
+        // Keep this block commented for future use. Re-enable only after:
+        // 1) server-side validation/sanitization
+        // 2) client-side safe rendering with textContent (never innerHTML)
+        /*
         const messageInput = document.getElementById('messageInput');
         const sendBtn = document.getElementById('sendBtn');
-        
+
         if (messageInput && sendBtn) {
             const sendMessage = () => {
                 const message = messageInput.value.trim();
@@ -187,6 +196,7 @@ class Controls {
                 messageInput.focus();
             });
         }
+        */
 
         // Level select modal
         const levelSelectModal = document.getElementById('levelSelectModal');

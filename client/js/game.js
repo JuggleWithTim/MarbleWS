@@ -198,9 +198,15 @@ class Game {
             }
         });
         
+        // SECURITY HARDENING (2026-02): In-game chat receive path disabled.
+        // Reason: previous chat rendering path used innerHTML and enabled XSS.
+        // Keep this commented for future use. Re-enable only with safe rendering
+        // (textContent / createTextNode, never innerHTML).
+        /*
         this.networking.on('chatMessage', (data) => {
             this.addChatMessage(data);
         });
+        */
 
         this.networking.on('twitchChatMessage', (data) => {
             this.handleTwitchChatMessage(data);
@@ -366,18 +372,15 @@ class Game {
                 const devOnlyIds = [
                     'topBarActions',
                     'onlinePlayers',
-                    'chat',
+                    // SECURITY HARDENING (2026-02): Keep in-game chat hidden.
+                    // 'chat',
                     'gameUI'
                 ];
                 devOnlyIds.forEach(id => {
                     const el = document.getElementById(id);
                     if (el) {
                         // Use '' to revert to CSS default, or 'block' for block elements
-                        if (id === 'chat') {
-                            el.style.display = '';
-                        } else {
-                            el.style.display = '';
-                        }
+                        el.style.display = '';
                     }
                 });
             }
@@ -824,29 +827,39 @@ class Game {
         this.networking.loadLevel(levelName);
     }
 
+    // SECURITY HARDENING (2026-02): In-game chat send path disabled.
+    // Kept commented for future re-enable after XSS-safe implementation.
+    /*
     sendChatMessage(message) {
         this.networking.sendChatMessage(message);
     }
+    */
 
+    // SECURITY HARDENING (2026-02): In-game chat renderer disabled.
+    // Historical implementation used innerHTML with untrusted content.
+    // Keep as comment for reference. If re-enabled, replace with textContent-based
+    // rendering and optional sanitization.
+    /*
     addChatMessage(data) {
         const chatMessages = document.getElementById('chatMessages');
         if (!chatMessages) return;
-        
+
         const messageElement = document.createElement('div');
         messageElement.className = 'chat-message';
         messageElement.innerHTML = `
             <span class="chat-username">${data.username}:</span>
             <span class="chat-text">${data.message}</span>
         `;
-        
+
         chatMessages.appendChild(messageElement);
         chatMessages.scrollTop = chatMessages.scrollHeight;
-        
+
         // Remove old messages to prevent memory issues
         while (chatMessages.children.length > 50) {
             chatMessages.removeChild(chatMessages.firstChild);
         }
     }
+    */
 
     handleTwitchChatMessage(data) {
         if (!data || !data.userId || !data.message) return;

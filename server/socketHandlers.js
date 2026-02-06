@@ -642,7 +642,14 @@ function setupSocketHandlers(io, gameLogic, validTokens, adminRealtime = {}) {
       emitAdminBootstrap();
     });
 
-    // Handle chat messages (optional feature)
+    // SECURITY HARDENING (2026-02): In-game chat socket handler disabled.
+    // Reason: client chat rendering used unsafe innerHTML and created XSS risk.
+    // Keep this block commented for future re-enable if needed.
+    // IMPORTANT before re-enabling:
+    // 1) validate `data` and `message` types/length server-side
+    // 2) escape/sanitize all untrusted content
+    // 3) render with textContent (never innerHTML) client-side
+    /*
     socket.on('chatMessage', (data) => {
       const { message } = data;
       const player = gameLogic.players.get(socket.id);
@@ -690,6 +697,7 @@ function setupSocketHandlers(io, gameLogic, validTokens, adminRealtime = {}) {
         });
       }
     });
+    */
 
     // Handle keepalive messages (for overlays and other passive clients)
     socket.on('keepalive', () => {
