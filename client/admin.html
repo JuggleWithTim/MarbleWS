@@ -254,7 +254,16 @@
 
                     <div class="card" style="margin-top: 12px;">
                         <div class="toolbar">
-                            <input id="testEmoteNameInput" placeholder="Emote name (optional)" maxlength="64">
+                            <select id="testEmoteSelect">
+                                <option value="kappa">Kappa</option>
+                                <option value="pogchamp">PogChamp</option>
+                                <option value="lul">LUL</option>
+                                <option value="monkas">MonkaS</option>
+                                <option value="omegalul">OMEGALUL</option>
+                                <option value="kekw">KEKW</option>
+                                <option value="biblethump">BibleThump</option>
+                                <option value="seemsgood">SeemsGood</option>
+                            </select>
                             <button id="testEmoteAdminBtn" class="btn-primary">Test Emote</button>
                         </div>
                         <div class="muted">Spawns a test emote event through the admin realtime socket.</div>
@@ -704,7 +713,7 @@
                 return showStatus('Realtime connection unavailable', false);
             }
 
-            const emoteName = (document.getElementById('testEmoteNameInput')?.value || '').trim();
+            const emoteName = (document.getElementById('testEmoteSelect')?.value || 'kappa').trim();
             adminSocket.emit('spawnTestEmote', { emoteName });
             showStatus(`Requested test emote spawn${emoteName ? `: ${emoteName}` : ''}`);
         }

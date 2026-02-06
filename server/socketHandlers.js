@@ -4,6 +4,17 @@ const MAX_CONNECTIONS_PER_IP = 10;
 const fs = require('fs');
 const path = require('path');
 
+const TEST_EMOTE_IDS = {
+  kappa: '25',
+  pogchamp: '88',
+  lul: '425618',
+  monkas: '30389961',
+  omegalul: '128054',
+  kekw: '834269',
+  biblethump: '86',
+  seemsgood: '64138'
+};
+
 function setupSocketHandlers(io, gameLogic, validTokens, adminRealtime = {}) {
   const {
     isValidAdminToken = () => false,
@@ -14,6 +25,28 @@ function setupSocketHandlers(io, gameLogic, validTokens, adminRealtime = {}) {
   } = adminRealtime;
 
   const levelsDir = path.resolve(__dirname, '../levels');
+
+  function resolveTestEmote(requestedName = '') {
+    const normalizedName = String(requestedName || '').trim();
+    const key = normalizedName.toLowerCase();
+
+    let emoteId = TEST_EMOTE_IDS[key] || null;
+
+    // Allow direct numeric Twitch emote IDs as input for flexibility
+    if (!emoteId && /^\d{1,12}$/.test(normalizedName)) {
+      emoteId = normalizedName;
+    }
+
+    // Fallback to Kappa if unknown
+    if (!emoteId) {
+      emoteId = TEST_EMOTE_IDS.kappa;
+    }
+
+    const emoteName = normalizedName || 'Kappa';
+    const emoteUrl = `https://static-cdn.jtvnw.net/emoticons/v2/${emoteId}/default/dark/3.0`;
+
+    return { emoteName, emoteId, emoteUrl };
+  }
 
   // Function to extract real IP from proxy headers
   function getClientIP(socket) {
@@ -473,16 +506,18 @@ function setupSocketHandlers(io, gameLogic, validTokens, adminRealtime = {}) {
         return;
       }
 
-      const emoteName = (data && typeof data.emoteName === 'string' ? data.emoteName : 'Kappa').trim().slice(0, 64);
+      const requestedName = (data && typeof data.emoteName === 'string' ? data.emoteName : '').trim().slice(0, 64);
+      const { emoteName, emoteId, emoteUrl } = resolveTestEmote(requestedName);
 
       gameLogic.spawnEmote(
-        'https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/1.0',
+        emoteUrl,
         emoteName || 'Kappa'
       );
 
       emitAdminActivity('emote', `Test emote spawned: ${emoteName || 'Kappa'}`, {
         socketId: socket.id,
-        emoteName: emoteName || 'Kappa'
+        emoteName: emoteName || 'Kappa',
+        emoteId
       });
     });
 
