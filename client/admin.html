@@ -251,6 +251,14 @@
                         <div class="card"><div id="kpiPlayers" class="kpi-value">0</div><div class="kpi-label">Total Players</div></div>
                         <div class="card"><div id="kpiTwitch" class="kpi-value">-</div><div class="kpi-label">Twitch Channel</div></div>
                     </div>
+
+                    <div class="card" style="margin-top: 12px;">
+                        <div class="toolbar">
+                            <input id="testEmoteNameInput" placeholder="Emote name (optional)" maxlength="64">
+                            <button id="testEmoteAdminBtn" class="btn-primary">Test Emote</button>
+                        </div>
+                        <div class="muted">Spawns a test emote event through the admin realtime socket.</div>
+                    </div>
                 </section>
 
                 <section id="levels" class="section">
@@ -691,6 +699,16 @@
             showStatus(`Despawned ${data.count || 0} players`);
         }
 
+        function triggerTestEmoteFromAdmin() {
+            if (!adminSocket || !adminSocket.connected) {
+                return showStatus('Realtime connection unavailable', false);
+            }
+
+            const emoteName = (document.getElementById('testEmoteNameInput')?.value || '').trim();
+            adminSocket.emit('spawnTestEmote', { emoteName });
+            showStatus(`Requested test emote spawn${emoteName ? `: ${emoteName}` : ''}`);
+        }
+
         async function saveTwitchChannel() {
             const channel = document.getElementById('twitchChannelInput').value.trim();
             if (!channel) return showStatus('Enter a channel name', false);
@@ -804,6 +822,7 @@
         function bindUI() {
             document.getElementById('levelFilter').addEventListener('input', renderLevels);
             document.getElementById('despawnAllBtn').addEventListener('click', despawnAllPlayers);
+            document.getElementById('testEmoteAdminBtn').addEventListener('click', triggerTestEmoteFromAdmin);
             document.getElementById('saveChannelBtn').addEventListener('click', saveTwitchChannel);
             document.getElementById('reloadGameConfigBtn').addEventListener('click', loadGameConfigRaw);
             document.getElementById('saveGameConfigBtn').addEventListener('click', saveGameConfigRaw);

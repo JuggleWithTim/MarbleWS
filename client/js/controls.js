@@ -146,14 +146,6 @@ class Controls {
             });
         }
 
-        // Level select button
-        const levelSelectBtn = document.getElementById('levelSelectBtn');
-        if (levelSelectBtn) {
-            levelSelectBtn.addEventListener('click', () => {
-                game.showLevelSelect();
-            });
-        }
-
         // Editor button
         const editorBtn = document.getElementById('editorBtn');
         if (editorBtn) {
@@ -162,11 +154,11 @@ class Controls {
             });
         }
 
-        // Test emote button
-        const testEmoteBtn = document.getElementById('testEmoteBtn');
-        if (testEmoteBtn) {
-            testEmoteBtn.addEventListener('click', () => {
-                game.spawnTestEmote();
+        // Admin panel button
+        const adminBtn = document.getElementById('adminBtn');
+        if (adminBtn) {
+            adminBtn.addEventListener('click', () => {
+                window.open(`${basePath}/admin`, '_blank');
             });
         }
 

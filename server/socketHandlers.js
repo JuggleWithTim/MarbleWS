@@ -1,6 +1,8 @@
 // Socket connection tracking for limiting
 const connectedSockets = new Map(); // Track connections per IP
 const MAX_CONNECTIONS_PER_IP = 10;
+const fs = require('fs');
+const path = require('path');
 
 function setupSocketHandlers(io, gameLogic, validTokens, adminRealtime = {}) {
   const {
@@ -10,6 +12,8 @@ function setupSocketHandlers(io, gameLogic, validTokens, adminRealtime = {}) {
     emitAdminBootstrap = () => {},
     getOnlinePlayersForAdmin = () => []
   } = adminRealtime;
+
+  const levelsDir = path.resolve(__dirname, '../levels');
 
   // Function to extract real IP from proxy headers
   function getClientIP(socket) {
@@ -168,6 +172,41 @@ function setupSocketHandlers(io, gameLogic, validTokens, adminRealtime = {}) {
   });
 
   io.on('connection', (socket) => {
+    socket.data = socket.data || {};
+    socket.data.isAdmin = false;
+
+    function requireAdminSocket(eventName) {
+      if (socket.data.isAdmin === true) {
+        return true;
+      }
+
+      console.warn(`Unauthorized socket event attempt: ${eventName} from socket ${socket.id}`);
+      socket.emit('admin:auth:error', { message: `Admin authorization required for ${eventName}` });
+      return false;
+    }
+
+    function getSafeLevelPath(levelName) {
+      if (typeof levelName !== 'string') {
+        return null;
+      }
+
+      const trimmed = levelName.trim();
+      if (!trimmed || trimmed.length > 120) {
+        return null;
+      }
+
+      if (!/^[a-zA-Z0-9 _-]+$/.test(trimmed)) {
+        return null;
+      }
+
+      const resolvedPath = path.resolve(levelsDir, `${trimmed}.json`);
+      if (!resolvedPath.startsWith(levelsDir + path.sep)) {
+        return null;
+      }
+
+      return { levelPath: resolvedPath, levelName: trimmed };
+    }
+
     // Get real client IP address from proxy headers
     const clientIP = getClientIP(socket);
 
@@ -317,6 +356,7 @@ function setupSocketHandlers(io, gameLogic, validTokens, adminRealtime = {}) {
         return;
       }
 
+      socket.data.isAdmin = true;
       socket.join('admins');
       socket.emit('admin:auth:ok', { connectedAt: Date.now() });
 
@@ -391,9 +431,17 @@ function setupSocketHandlers(io, gameLogic, validTokens, adminRealtime = {}) {
 
     // Handle level loading
     socket.on('loadLevel', (levelName) => {
-      const fs = require('fs');
-      const path = require('path');
-      const levelPath = path.join(__dirname, '../levels', `${levelName}.json`);
+      if (!requireAdminSocket('loadLevel')) {
+        return;
+      }
+
+      const safeLevel = getSafeLevelPath(levelName);
+      if (!safeLevel) {
+        socket.emit('error', { message: 'Invalid level name' });
+        return;
+      }
+
+      const { levelPath, levelName: safeLevelName } = safeLevel;
 
       if (fs.existsSync(levelPath)) {
         const levelData = JSON.parse(fs.readFileSync(levelPath, 'utf8'));
@@ -401,17 +449,17 @@ function setupSocketHandlers(io, gameLogic, validTokens, adminRealtime = {}) {
 
         // Broadcast level change to all players
         io.emit('levelLoaded', {
-          levelName,
+          levelName: safeLevelName,
           levelData
         });
-        emitAdminActivity('level', `Level loaded: ${levelName}`, { levelName });
+        emitAdminActivity('level', `Level loaded: ${safeLevelName}`, { levelName: safeLevelName });
         emitAdminBootstrap();
 
         // Send level change announcement to Twitch chat
         gameLogic.eventEmitter.emit('sendAnnouncement', {
           type: 'levelChange',
           data: {
-            levelName
+            levelName: safeLevelName
           }
         });
       } else {
@@ -421,12 +469,21 @@ function setupSocketHandlers(io, gameLogic, validTokens, adminRealtime = {}) {
 
     // Handle manual emote spawn (for testing)
     socket.on('spawnTestEmote', (data) => {
-      const { emoteName } = data;
-      // This would typically be restricted to admins/streamers
+      if (!requireAdminSocket('spawnTestEmote')) {
+        return;
+      }
+
+      const emoteName = (data && typeof data.emoteName === 'string' ? data.emoteName : 'Kappa').trim().slice(0, 64);
+
       gameLogic.spawnEmote(
-        `https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/1.0`, 
+        'https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/1.0',
         emoteName || 'Kappa'
       );
+
+      emitAdminActivity('emote', `Test emote spawned: ${emoteName || 'Kappa'}`, {
+        socketId: socket.id,
+        emoteName: emoteName || 'Kappa'
+      });
     });
 
     // Handle disconnect
