@@ -1,11 +1,6 @@
 // Shared game configuration - single source of truth for all game items
 // Used by: game.js, overlay.js (client-side) and playerManager.js (server-side)
 
-const twitchSpeechBubbleEnabled =
-  (typeof process !== 'undefined' && process.env && typeof process.env.TWITCH_SPEECH_BUBBLES_ENABLED !== 'undefined')
-    ? process.env.TWITCH_SPEECH_BUBBLES_ENABLED === 'true'
-    : true;
-
 const gameConfig = {
   // UFO customization data
   ufoData: {
@@ -133,7 +128,7 @@ const gameConfig = {
 
   // Twitch chat speech bubbles
   twitchSpeechBubbles: {
-    enabled: twitchSpeechBubbleEnabled
+    enabled: true
   }
 };
 

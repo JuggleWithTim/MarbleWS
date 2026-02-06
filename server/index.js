@@ -4,6 +4,7 @@ const http = require('http');
 const socketIo = require('socket.io');
 const path = require('path');
 const cors = require('cors');
+const vm = require('vm');
 const axios = require('axios');
 const rateLimit = require('express-rate-limit');
 const { RateLimiterMemory } = require('rate-limiter-flexible');
@@ -196,12 +197,9 @@ async function getAdminSnapshot() {
   const players = await getPlayersForAdmin();
   const onlinePlayers = getOnlinePlayersForAdmin();
 
-  const gameConfig = require('../shared/gameConfig.js');
-
   return {
     currentLevel: gameLogic.currentLevel?.name || 'level1',
     twitchChannel: process.env.TWITCH_CHANNEL || '',
-    twitchSpeechBubblesEnabled: Boolean(gameConfig.twitchSpeechBubbles?.enabled),
     levels,
     players,
     onlinePlayers,
@@ -216,6 +214,17 @@ function emitAdminActivity(type, message, payload = {}) {
     payload,
     at: Date.now()
   });
+}
+
+function reloadGameConfigInPlace() {
+  const configPath = require.resolve('../shared/gameConfig.js');
+  const currentConfig = require('../shared/gameConfig.js');
+
+  delete require.cache[configPath];
+  const freshConfig = require('../shared/gameConfig.js');
+
+  Object.keys(currentConfig).forEach(key => delete currentConfig[key]);
+  Object.assign(currentConfig, freshConfig);
 }
 
 async function emitAdminBootstrap() {
@@ -723,10 +732,6 @@ app.get('/api/admin/config/twitch-channel', basicAuth, (req, res) => {
   res.json({ channel: process.env.TWITCH_CHANNEL || '' });
 });
 
-app.get('/api/admin/config/twitch-speech-bubbles', basicAuth, (req, res) => {
-  const gameConfig = require('../shared/gameConfig.js');
-  res.json({ enabled: Boolean(gameConfig.twitchSpeechBubbles?.enabled) });
-});
 
 app.put('/api/admin/config/twitch-channel', basicAuth, (req, res) => {
   const fs = require('fs');
@@ -771,39 +776,45 @@ app.put('/api/admin/config/twitch-channel', basicAuth, (req, res) => {
   }
 });
 
-app.put('/api/admin/config/twitch-speech-bubbles', basicAuth, (req, res) => {
-  const fs = require('fs');
-  const { enabled } = req.body;
 
-  if (typeof enabled !== 'boolean') {
-    return res.status(400).json({ error: 'Enabled flag must be boolean' });
-  }
-
+// Admin gameConfig raw editor endpoints
+app.get('/api/admin/config/game-config/raw', basicAuth, (req, res) => {
   try {
-    const envPath = path.join(__dirname, '../.env');
-    let envContent = fs.readFileSync(envPath, 'utf8');
+    const filePath = path.join(__dirname, '../shared/gameConfig.js');
+    const content = fs.readFileSync(filePath, 'utf8');
+    res.json({ content });
+  } catch (error) {
+    console.error('Failed to read gameConfig.js:', error);
+    res.status(500).json({ error: 'Failed to read gameConfig.js' });
+  }
+});
 
-    const settingRegex = /^TWITCH_SPEECH_BUBBLES_ENABLED=.*/m;
-    const newSettingLine = `TWITCH_SPEECH_BUBBLES_ENABLED=${enabled ? 'true' : 'false'}`;
+app.put('/api/admin/config/game-config/raw', basicAuth, (req, res) => {
+  try {
+    const { content } = req.body || {};
 
-    if (settingRegex.test(envContent)) {
-      envContent = envContent.replace(settingRegex, newSettingLine);
-    } else {
-      envContent += `\n${newSettingLine}`;
+    if (typeof content !== 'string' || !content.trim()) {
+      return res.status(400).json({ error: 'Content must be a non-empty string.' });
     }
 
-    fs.writeFileSync(envPath, envContent);
+    try {
+      new vm.Script(content, { filename: 'gameConfig.js' });
+    } catch (syntaxError) {
+      return res.status(400).json({ error: `Syntax error: ${syntaxError.message}` });
+    }
 
-    const gameConfig = require('../shared/gameConfig.js');
-    gameConfig.twitchSpeechBubbles.enabled = enabled;
+    const filePath = path.join(__dirname, '../shared/gameConfig.js');
+    fs.writeFileSync(filePath, content);
 
-    emitAdminActivity('config', `Twitch speech bubbles ${enabled ? 'enabled' : 'disabled'}`, { enabled });
+    reloadGameConfigInPlace();
+
+    emitAdminActivity('config', 'gameConfig.js updated', {});
     emitAdminBootstrap();
 
-    res.json({ success: true, enabled });
+    res.json({ success: true });
   } catch (error) {
-    console.error('Failed to update Twitch speech bubble config:', error);
-    res.status(500).json({ error: 'Failed to update speech bubble configuration' });
+    console.error('Failed to update gameConfig.js:', error);
+    res.status(500).json({ error: 'Failed to update gameConfig.js' });
   }
 });
 

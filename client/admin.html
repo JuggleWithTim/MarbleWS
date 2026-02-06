@@ -155,6 +155,16 @@
             font-size: 0.9rem;
         }
 
+        .config-editor {
+            width: 100%;
+            min-height: 360px;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            padding: 10px;
+            resize: vertical;
+        }
+
         .modal {
             display: none;
             position: fixed;
@@ -287,10 +297,18 @@
                             <input id="twitchChannelInput" placeholder="New Twitch channel">
                             <button id="saveChannelBtn" class="btn-primary">Save & Reconnect</button>
                         </div>
-                        <div class="toolbar">
-                            <label><input type="checkbox" id="speechToggle"> Enable Twitch speech bubbles</label>
-                        </div>
                         <div class="muted">Current Channel: <span id="currentTwitchChannel">-</span></div>
+                    </div>
+                    <div class="card" style="margin-top: 12px;">
+                        <div class="toolbar" style="justify-content: space-between;">
+                            <strong>Game Config</strong>
+                            <div class="toolbar" style="margin: 0;">
+                                <button id="reloadGameConfigBtn">Reload</button>
+                                <button id="saveGameConfigBtn" class="btn-primary">Save</button>
+                            </div>
+                        </div>
+                        <textarea id="gameConfigEditor" class="config-editor" spellcheck="false" placeholder="Loading shared/gameConfig.js..."></textarea>
+                        <div class="muted">Edits are saved to <code>shared/gameConfig.js</code>. Invalid JS will be rejected.</div>
                     </div>
                 </section>
 
@@ -328,7 +346,7 @@
     <script>
         let basePath = '__BASE_PATH__';
         let adminSocket = null;
-        let state = { levels: [], players: [], onlinePlayers: [], currentLevel: 'level1', twitchChannel: '', twitchSpeechBubblesEnabled: false, activities: [] };
+        let state = { levels: [], players: [], onlinePlayers: [], currentLevel: 'level1', twitchChannel: '', activities: [] };
         let modalPlayer = null;
         const previewImageCache = new Map();
 
@@ -474,7 +492,6 @@
             document.getElementById('kpiPlayers').textContent = String(state.players.length || 0);
             document.getElementById('kpiTwitch').textContent = state.twitchChannel || '-';
             document.getElementById('currentTwitchChannel').textContent = state.twitchChannel || 'Not set';
-            document.getElementById('speechToggle').checked = Boolean(state.twitchSpeechBubblesEnabled);
         }
 
         function renderLevels() {
@@ -661,12 +678,35 @@
             showStatus('Twitch channel updated');
         }
 
-        async function updateSpeechBubble(enabled) {
-            const res = await fetch(`${basePath}/api/admin/config/twitch-speech-bubbles`, {
-                method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ enabled })
+        async function loadGameConfigRaw() {
+            const editor = document.getElementById('gameConfigEditor');
+            if (!editor) return;
+            editor.placeholder = 'Loading shared/gameConfig.js...';
+            const res = await fetch(`${basePath}/api/admin/config/game-config/raw`);
+            if (!res.ok) return showStatus('Failed to load gameConfig.js', false);
+            const data = await res.json();
+            editor.value = data.content || '';
+        }
+
+        async function saveGameConfigRaw() {
+            const editor = document.getElementById('gameConfigEditor');
+            if (!editor) return;
+            const content = editor.value || '';
+            if (!content.trim()) return showStatus('gameConfig.js cannot be empty', false);
+            if (!confirm('Save changes to shared/gameConfig.js?')) return;
+
+            const res = await fetch(`${basePath}/api/admin/config/game-config/raw`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content })
             });
-            if (!res.ok) return showStatus('Failed to update speech bubble setting', false);
-            showStatus(`Speech bubbles ${enabled ? 'enabled' : 'disabled'}`);
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                return showStatus(err.error || 'Failed to save gameConfig.js', false);
+            }
+
+            showStatus('gameConfig.js updated');
         }
 
         async function openPlayerModal(userId) {
@@ -723,7 +763,8 @@
             document.getElementById('levelFilter').addEventListener('input', renderLevels);
             document.getElementById('despawnAllBtn').addEventListener('click', despawnAllPlayers);
             document.getElementById('saveChannelBtn').addEventListener('click', saveTwitchChannel);
-            document.getElementById('speechToggle').addEventListener('change', (e) => updateSpeechBubble(e.target.checked));
+            document.getElementById('reloadGameConfigBtn').addEventListener('click', loadGameConfigRaw);
+            document.getElementById('saveGameConfigBtn').addEventListener('click', saveGameConfigRaw);
             document.getElementById('mCancelBtn').addEventListener('click', closePlayerModal);
             document.getElementById('mSaveBtn').addEventListener('click', savePlayerModal);
             document.getElementById('mBanBtn').addEventListener('click', toggleModalBan);
@@ -740,6 +781,11 @@
                 await loadInitialSnapshot();
             } catch (error) {
                 showStatus('Failed to load admin snapshot', false);
+            }
+            try {
+                await loadGameConfigRaw();
+            } catch (error) {
+                showStatus('Failed to load gameConfig.js', false);
             }
             await loadSocketScript();
             try {
