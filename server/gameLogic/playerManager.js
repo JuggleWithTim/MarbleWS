@@ -490,14 +490,29 @@ class PlayerManager {
 
   savePlayerData(userId, appearance, level = 1, xp = 0, coins = 100, unlockedUFOs = [], unlockedPassengers = [], unlockedHats = [], username = null, banned = false) {
     return new Promise((resolve, reject) => {
+      const normalizedUsername = (typeof username === 'string' && username.trim().length > 0)
+        ? username.trim()
+        : null;
+
       const sql = `
-        INSERT OR REPLACE INTO players (userId, username, ufoAppearance, level, xp, coins, banned, unlockedUFOs, unlockedPassengers, unlockedHats, lastUpdated)
+        INSERT INTO players (userId, username, ufoAppearance, level, xp, coins, banned, unlockedUFOs, unlockedPassengers, unlockedHats, lastUpdated)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(userId) DO UPDATE SET
+          username = COALESCE(excluded.username, players.username),
+          ufoAppearance = excluded.ufoAppearance,
+          level = excluded.level,
+          xp = excluded.xp,
+          coins = excluded.coins,
+          banned = excluded.banned,
+          unlockedUFOs = excluded.unlockedUFOs,
+          unlockedPassengers = excluded.unlockedPassengers,
+          unlockedHats = excluded.unlockedHats,
+          lastUpdated = excluded.lastUpdated
       `;
 
       const params = [
         userId,
-        username,
+        normalizedUsername,
         JSON.stringify(appearance),
         level,
         xp,
@@ -521,10 +536,38 @@ class PlayerManager {
     });
   }
 
+  getStoredUsername(userId) {
+    return new Promise((resolve) => {
+      const sql = 'SELECT username FROM players WHERE userId = ?';
+      this.db.get(sql, [userId], (err, row) => {
+        if (err) {
+          console.error('Failed to load stored username:', err.message);
+          resolve(null);
+          return;
+        }
+
+        if (row && typeof row.username === 'string' && row.username.trim().length > 0) {
+          resolve(row.username.trim());
+          return;
+        }
+
+        resolve(null);
+      });
+    });
+  }
+
   async addCoinsToPlayer(userId, amount, reason = 'unknown') {
     try {
       // Load player data
       const playerData = await this.loadPlayerData(userId);
+
+      // Resolve best available username to prevent accidental null persistence
+      const onlinePlayer = Array.from(this.players.values())
+        .find(p => p.userId === userId);
+      const usernameToPersist =
+        (onlinePlayer && typeof onlinePlayer.username === 'string' && onlinePlayer.username.trim().length > 0)
+          ? onlinePlayer.username.trim()
+          : await this.getStoredUsername(userId);
 
       // Check if player exists (if all fields are default, assume doesn't exist)
       if (playerData.level === 1 && playerData.xp === 0 && playerData.coins === 100 &&
@@ -546,13 +589,9 @@ class PlayerManager {
         playerData.unlockedUFOs,
         playerData.unlockedPassengers,
         playerData.unlockedHats,
-        null,
+        usernameToPersist,
         playerData.banned
       );
-
-      // If player is online, update their in-memory state
-      const onlinePlayer = Array.from(this.players.values())
-        .find(p => p.userId === userId);
 
       if (onlinePlayer) {
         onlinePlayer.coins = playerData.coins;

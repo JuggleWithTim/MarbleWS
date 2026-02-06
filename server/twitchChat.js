@@ -218,7 +218,7 @@ class TwitchChat {
     console.log(`${username} (${userId}) cheered ${bits} bits!`);
 
     // Add coins to player (1:1 ratio)
-    const result = this.gameLogic.addCoinsToPlayer(userId, bits, 'cheer');
+    const result = await this.gameLogic.addCoinsToPlayer(userId, bits, 'cheer');
 
     if (result.success) {
       console.log(`Successfully added ${bits} coins to ${username}. New balance: ${result.newBalance}`);
