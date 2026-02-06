@@ -2,7 +2,7 @@ const Matter = require('matter-js');
 const sqlite3 = require('sqlite3').verbose();
 const fs = require('fs');
 const path = require('path');
-const { generateColorFromSeed } = require('./utils');
+const { generateColorFromSeed, normalizeColor } = require('./utils');
 const gameConfig = require('../../shared/gameConfig.js');
 
 class PlayerManager {
@@ -154,7 +154,7 @@ class PlayerManager {
 
     // Load saved appearance and progress data
     const savedData = await this.loadPlayerData(userId);
-    const color = savedData.ufoAppearance.type === 'default' ? savedData.ufoAppearance.color : generateColorFromSeed(userId);
+    const color = normalizeColor(savedData.ufoAppearance.color, generateColorFromSeed(userId));
 
     const player = {
       id: socketId,
@@ -355,16 +355,22 @@ class PlayerManager {
         return; // Reject the appearance change
       }
 
+      const fallbackColor = normalizeColor(player.color, generateColorFromSeed(player.userId));
+      const normalizedAppearance = {
+        ...appearance,
+        color: normalizeColor(appearance.color, fallbackColor)
+      };
+
       // Update the player's appearance
-      player.ufoAppearance = { ...appearance };
+      player.ufoAppearance = normalizedAppearance;
 
       // Always update the color field for username display, regardless of UFO type
-      player.color = appearance.color;
+      player.color = normalizedAppearance.color;
 
       // Save appearance and progress to persistent storage
-      this.savePlayerData(player.userId, appearance, player.level, player.xp, player.coins, player.unlockedUFOs, player.unlockedPassengers, player.unlockedHats, player.username, player.banned);
+      this.savePlayerData(player.userId, normalizedAppearance, player.level, player.xp, player.coins, player.unlockedUFOs, player.unlockedPassengers, player.unlockedHats, player.username, player.banned);
 
-      console.log(`Player ${player.username} updated appearance:`, appearance);
+      console.log(`Player ${player.username} updated appearance:`, normalizedAppearance);
     }
   }
 
@@ -630,8 +636,14 @@ class PlayerManager {
 
         if (row) {
           try {
+            const parsedAppearance = JSON.parse(row.ufoAppearance);
+            const normalizedAppearance = {
+              ...parsedAppearance,
+              color: normalizeColor(parsedAppearance?.color, generateColorFromSeed(userId))
+            };
+
             resolve({
-              ufoAppearance: JSON.parse(row.ufoAppearance),
+              ufoAppearance: normalizedAppearance,
               level: row.level || 1,
               xp: row.xp || 0,
               coins: row.coins || 100,
