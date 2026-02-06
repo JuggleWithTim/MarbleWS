@@ -72,6 +72,9 @@ const gameConfig = {
       slow: {
         speedMultiplier: 0.6,
         durationMs: 1500
+      },
+      confusion: {
+        durationMs: 2000
       }
     }
   },

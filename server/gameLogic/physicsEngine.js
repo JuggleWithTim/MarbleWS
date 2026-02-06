@@ -32,8 +32,8 @@ class PhysicsEngine {
       player.y = player.body.position.y;
     });
 
-    // Update speed boost expiry timers
-    this.playerManager.updateSpeedBoosts();
+    // Update player status effect expiry timers
+    this.playerManager.updateStatusEffects();
 
     // Handle player effects (available in all modes)
     this.handlePlayerEffects();
@@ -598,7 +598,7 @@ class PhysicsEngine {
           continue;
         }
 
-        const effect = this.pickItemForSpawn(spawn, config.items || { turbo: {}, slow: {} });
+        const effect = this.pickItemForSpawn(spawn, config.items || { turbo: {}, slow: {}, confusion: {} });
         this.playerEffectCooldowns.set(cooldownKey, now);
         this.applyItemEffect(playerId, effect, config.items || {});
 
@@ -624,6 +624,11 @@ class PhysicsEngine {
     const itemConfig = itemsConfig[item] || {};
     const multiplier = itemConfig.speedMultiplier || 1;
     const durationMs = itemConfig.durationMs || 1000;
+
+    if (item === 'confusion') {
+      this.playerManager.applyConfusion(playerId, durationMs);
+      return;
+    }
 
     if (multiplier !== 1) {
       this.playerManager.applySpeedBoost(playerId, multiplier, durationMs);
