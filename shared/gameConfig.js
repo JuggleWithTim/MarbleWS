@@ -112,6 +112,37 @@ const gameConfig = {
         maxPlayers: 3
       },
 
+      // Race mode lifecycle announcements
+      raceCountdown: {
+        enabled: false,
+        message: "Race starts in {remaining}..."
+      },
+      raceStart: {
+        enabled: true,
+        message: "Race started! {playerCount} racers, {laps} laps"
+      },
+      raceCheckpoint: {
+        enabled: false,
+        message: "{username} reached checkpoint {checkpoint}/{checkpointCount} on lap {lap}"
+      },
+      raceLap: {
+        enabled: false,
+        message: "{username} started lap {lap}/{totalLaps}"
+      },
+      racePlayerFinish: {
+        enabled: true,
+        message: "{username} finished in position {position} with time {finishTime}"
+      },
+      raceTimeout: {
+        enabled: true,
+        message: "Race timed out! Top {count}: {players}",
+        maxPlayers: 3
+      },
+      raceNextRound: {
+        enabled: false,
+        message: "Next race starts in {countdownSeconds} seconds"
+      },
+
       // Level change announcements
       levelChange: {
         enabled: true,

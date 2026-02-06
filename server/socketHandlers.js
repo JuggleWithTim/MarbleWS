@@ -163,6 +163,14 @@ function setupSocketHandlers(io, gameLogic, validTokens, adminRealtime = {}) {
   // Listen for Race mode events
   gameLogic.on('raceCountdown', (data) => {
     io.emit('raceCountdown', data);
+
+    // Send race countdown announcement to Twitch chat
+    if (typeof data?.remaining === 'number' && data.remaining > 0) {
+      gameLogic.eventEmitter.emit('sendAnnouncement', {
+        type: 'raceCountdown',
+        data
+      });
+    }
   });
 
   // Listen for Twitch chat messages to broadcast to clients
@@ -172,14 +180,57 @@ function setupSocketHandlers(io, gameLogic, validTokens, adminRealtime = {}) {
 
   gameLogic.on('raceStart', (data) => {
     io.emit('raceStart', data);
+
+    const currentMode = gameLogic.levelManager?.gameModeManager?.getCurrentMode?.();
+    const raceData = {
+      ...data,
+      playerCount: gameLogic.players.size,
+      laps: currentMode?.laps,
+      checkpointCount: currentMode?.checkpoints?.length || 0
+    };
+
+    // Send race start announcement to Twitch chat
+    gameLogic.eventEmitter.emit('sendAnnouncement', {
+      type: 'raceStart',
+      data: raceData
+    });
   });
 
   gameLogic.on('raceCheckpoint', (data) => {
     io.to(data.playerId).emit('raceCheckpoint', data);
+
+    const player = gameLogic.players.get(data.playerId);
+    const currentMode = gameLogic.levelManager?.gameModeManager?.getCurrentMode?.();
+    const checkpointCount = currentMode?.checkpoints?.length || 0;
+    const reachedCheckpoint = checkpointCount > 0
+      ? (data.checkpointIndex === 0 ? checkpointCount : data.checkpointIndex)
+      : data.checkpointIndex;
+
+    // Send race checkpoint announcement to Twitch chat
+    gameLogic.eventEmitter.emit('sendAnnouncement', {
+      type: 'raceCheckpoint',
+      data: {
+        ...data,
+        username: player?.username,
+        checkpoint: reachedCheckpoint,
+        checkpointCount
+      }
+    });
   });
 
   gameLogic.on('raceLap', (data) => {
     io.to(data.playerId).emit('raceLap', data);
+
+    const player = gameLogic.players.get(data.playerId);
+
+    // Send race lap announcement to Twitch chat
+    gameLogic.eventEmitter.emit('sendAnnouncement', {
+      type: 'raceLap',
+      data: {
+        ...data,
+        username: player?.username
+      }
+    });
   });
 
   gameLogic.on('racePlayerEffect', (data) => {
@@ -188,20 +239,42 @@ function setupSocketHandlers(io, gameLogic, validTokens, adminRealtime = {}) {
 
   gameLogic.on('raceFinished', (data) => {
     io.to(data.playerId).emit('raceFinished', data);
+
+    // Send race player finish announcement to Twitch chat
+    gameLogic.eventEmitter.emit('sendAnnouncement', {
+      type: 'racePlayerFinish',
+      data
+    });
   });
 
   gameLogic.on('raceEnd', (data) => {
     io.emit('raceEnd', data);
 
-    // Send race finish announcement to Twitch chat
+    const didTimeout = Array.isArray(data?.results)
+      && data.results.some(result => result.finishTime === null || result.finishTime === undefined);
+
+    // Send race finish/timeout announcement to Twitch chat
     gameLogic.eventEmitter.emit('sendAnnouncement', {
-      type: 'raceFinish',
-      data: data
+      type: didTimeout ? 'raceTimeout' : 'raceFinish',
+      data
     });
   });
 
   gameLogic.on('raceNextRound', (data) => {
     io.emit('raceNextRound', data);
+
+    const countdownSeconds = Math.max(0, Math.round((gameLogic.levelManager?.gameModeManager?.getCurrentMode?.()?.countdownStartTime
+      ? (gameLogic.levelManager.gameModeManager.getCurrentMode().countdownStartTime + 3000 - Date.now())
+      : 0) / 1000));
+
+    // Send next-round announcement to Twitch chat
+    gameLogic.eventEmitter.emit('sendAnnouncement', {
+      type: 'raceNextRound',
+      data: {
+        ...data,
+        countdownSeconds: countdownSeconds || 3
+      }
+    });
   });
 
   io.on('connection', (socket) => {

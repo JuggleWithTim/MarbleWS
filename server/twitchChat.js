@@ -343,38 +343,86 @@ class TwitchChat {
     }
 
     let message = config.message;
+    const safeData = data || {};
+    const formatRaceTime = (ms) => {
+      if (ms === null || ms === undefined || Number.isNaN(Number(ms))) return 'DNF';
+      const totalMs = Math.max(0, Number(ms));
+      const minutes = Math.floor(totalMs / 60000);
+      const seconds = Math.floor((totalMs % 60000) / 1000);
+      const millis = Math.floor(totalMs % 1000);
+      return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(millis).padStart(3, '0')}`;
+    };
 
     // Replace placeholders based on announcement type
     switch (type) {
       case 'levelUp':
-        message = message.replace('{username}', data.username).replace('{newLevel}', data.newLevel);
+        message = message.replace('{username}', safeData.username || 'Unknown').replace('{newLevel}', safeData.newLevel ?? '?');
         break;
       case 'colorRushEnd':
         const maxPlayers = config.maxPlayers || 3;
-        const topPlayers = data.results.slice(0, maxPlayers).map(r => r.username);
+        const topPlayers = (safeData.results || []).slice(0, maxPlayers).map(r => r.username);
         const playerList = topPlayers.join(', ');
         message = message.replace('{count}', topPlayers.length).replace('{players}', playerList);
         break;
       case 'raceFinish':
         const raceMaxPlayers = config.maxPlayers || 3;
-        const raceTopPlayers = (data.results || []).slice(0, raceMaxPlayers).map(result => {
+        const raceTopPlayers = (safeData.results || []).slice(0, raceMaxPlayers).map(result => {
           const player = Array.from(this.gameLogic.players.values()).find(p => p.id === result.playerId);
           return player ? player.username : result.playerId;
         });
         message = message.replace('{count}', raceTopPlayers.length).replace('{players}', raceTopPlayers.join(', '));
         break;
+      case 'raceCountdown':
+        message = message.replace('{remaining}', safeData.remaining ?? '?');
+        break;
+      case 'raceStart':
+        message = message
+          .replace('{playerCount}', safeData.playerCount ?? this.gameLogic.players.size)
+          .replace('{laps}', safeData.laps ?? '?')
+          .replace('{checkpointCount}', safeData.checkpointCount ?? 0);
+        break;
+      case 'raceCheckpoint':
+        message = message
+          .replace('{username}', safeData.username || safeData.playerName || safeData.playerId || 'Unknown')
+          .replace('{checkpoint}', safeData.checkpoint ?? '?')
+          .replace('{checkpointCount}', safeData.checkpointCount ?? '?')
+          .replace('{lap}', safeData.lap ?? '?');
+        break;
+      case 'raceLap':
+        message = message
+          .replace('{username}', safeData.username || safeData.playerName || safeData.playerId || 'Unknown')
+          .replace('{lap}', safeData.lap ?? '?')
+          .replace('{totalLaps}', safeData.totalLaps ?? '?');
+        break;
+      case 'racePlayerFinish':
+        message = message
+          .replace('{username}', safeData.playerName || safeData.username || safeData.playerId || 'Unknown')
+          .replace('{position}', safeData.position ?? '?')
+          .replace('{finishTime}', formatRaceTime(safeData.finishTime));
+        break;
+      case 'raceTimeout':
+        const timeoutMaxPlayers = config.maxPlayers || 3;
+        const timeoutTopPlayers = (safeData.results || []).slice(0, timeoutMaxPlayers).map(result => {
+          const player = Array.from(this.gameLogic.players.values()).find(p => p.id === result.playerId);
+          return player ? player.username : result.playerId;
+        });
+        message = message.replace('{count}', timeoutTopPlayers.length).replace('{players}', timeoutTopPlayers.join(', '));
+        break;
+      case 'raceNextRound':
+        message = message.replace('{countdownSeconds}', safeData.countdownSeconds ?? '?');
+        break;
       case 'levelChange':
-        message = message.replace('{levelName}', data.levelName);
+        message = message.replace('{levelName}', safeData.levelName || 'Unknown level');
         break;
       case 'modeChange':
-        message = message.replace('{modeName}', data.modeName);
+        message = message.replace('{modeName}', safeData.modeName || 'Unknown mode');
         break;
       case 'joinLeave':
         // Use specific join/leave messages
-        if (data.action === 'join' && config.joinMessage) {
-          message = config.joinMessage.replace('{username}', data.username);
-        } else if (data.action === 'leave' && config.leaveMessage) {
-          message = config.leaveMessage.replace('{username}', data.username);
+        if (safeData.action === 'join' && config.joinMessage) {
+          message = config.joinMessage.replace('{username}', safeData.username || 'Unknown');
+        } else if (safeData.action === 'leave' && config.leaveMessage) {
+          message = config.leaveMessage.replace('{username}', safeData.username || 'Unknown');
         }
         break;
     }
