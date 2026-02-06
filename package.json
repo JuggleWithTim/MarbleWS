@@ -3,8 +3,10 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "node server/index.js",
-    "dev": "nodemon server/index.js",
+    "copy-codemirror": "node scripts/copy-codemirror.js",
+    "postinstall": "npm run copy-codemirror",
+    "start": "npm run copy-codemirror && node server/index.js",
+    "dev": "npm run copy-codemirror && nodemon server/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -13,6 +15,7 @@
   "description": "",
   "dependencies": {
     "axios": "^1.11.0",
+    "codemirror": "^5.65.16",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",

@@ -1,11 +1,6 @@
 // Shared game configuration - single source of truth for all game items
 // Used by: game.js, overlay.js (client-side) and playerManager.js (server-side)
 
-const twitchSpeechBubbleEnabled =
-  (typeof process !== 'undefined' && process.env && typeof process.env.TWITCH_SPEECH_BUBBLES_ENABLED !== 'undefined')
-    ? process.env.TWITCH_SPEECH_BUBBLES_ENABLED === 'true'
-    : true;
-
 const gameConfig = {
   // UFO customization data
   ufoData: {
@@ -72,6 +67,9 @@ const gameConfig = {
       slow: {
         speedMultiplier: 0.6,
         durationMs: 1500
+      },
+      confusion: {
+        durationMs: 2000
       }
     }
   },
@@ -114,6 +112,37 @@ const gameConfig = {
         maxPlayers: 3
       },
 
+      // Race mode lifecycle announcements
+      raceCountdown: {
+        enabled: false,
+        message: "Race starts in {remaining}..."
+      },
+      raceStart: {
+        enabled: true,
+        message: "Race started! {playerCount} racers, {laps} laps"
+      },
+      raceCheckpoint: {
+        enabled: false,
+        message: "{username} reached checkpoint {checkpoint}/{checkpointCount} on lap {lap}"
+      },
+      raceLap: {
+        enabled: false,
+        message: "{username} started lap {lap}/{totalLaps}"
+      },
+      racePlayerFinish: {
+        enabled: true,
+        message: "{username} finished in position {position} with time {finishTime}"
+      },
+      raceTimeout: {
+        enabled: true,
+        message: "Race timed out! Top {count}: {players}",
+        maxPlayers: 3
+      },
+      raceNextRound: {
+        enabled: false,
+        message: "Next race starts in {countdownSeconds} seconds"
+      },
+
       // Level change announcements
       levelChange: {
         enabled: true,
@@ -130,7 +159,7 @@ const gameConfig = {
 
   // Twitch chat speech bubbles
   twitchSpeechBubbles: {
-    enabled: twitchSpeechBubbleEnabled
+    enabled: true
   }
 };
 

@@ -54,9 +54,13 @@ class Controls {
             case 'Space':
                 this.emit('beamActivate');
                 break;
+            // SECURITY HARDENING (2026-02): In-game chat is disabled.
+            // Keep Enter->chatFocus behavior commented for future re-enable.
+            /*
             case 'Enter':
                 this.emit('chatFocus');
                 break;
+            */
             case 'Escape':
                 this.emit('escape');
                 break;
@@ -146,14 +150,6 @@ class Controls {
             });
         }
 
-        // Level select button
-        const levelSelectBtn = document.getElementById('levelSelectBtn');
-        if (levelSelectBtn) {
-            levelSelectBtn.addEventListener('click', () => {
-                game.showLevelSelect();
-            });
-        }
-
         // Editor button
         const editorBtn = document.getElementById('editorBtn');
         if (editorBtn) {
@@ -162,18 +158,23 @@ class Controls {
             });
         }
 
-        // Test emote button
-        const testEmoteBtn = document.getElementById('testEmoteBtn');
-        if (testEmoteBtn) {
-            testEmoteBtn.addEventListener('click', () => {
-                game.spawnTestEmote();
+        // Admin panel button
+        const adminBtn = document.getElementById('adminBtn');
+        if (adminBtn) {
+            adminBtn.addEventListener('click', () => {
+                window.open(`${basePath}/admin`, '_blank');
             });
         }
 
-        // Chat input
+        // SECURITY HARDENING (2026-02): In-game chat UI handlers disabled.
+        // Reason: historic chat rendering path used unsafe innerHTML (XSS risk).
+        // Keep this block commented for future use. Re-enable only after:
+        // 1) server-side validation/sanitization
+        // 2) client-side safe rendering with textContent (never innerHTML)
+        /*
         const messageInput = document.getElementById('messageInput');
         const sendBtn = document.getElementById('sendBtn');
-        
+
         if (messageInput && sendBtn) {
             const sendMessage = () => {
                 const message = messageInput.value.trim();
@@ -195,6 +196,7 @@ class Controls {
                 messageInput.focus();
             });
         }
+        */
 
         // Level select modal
         const levelSelectModal = document.getElementById('levelSelectModal');

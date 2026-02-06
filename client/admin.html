@@ -4,1475 +4,865 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Panel - MarbleWS</title>
-    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="__BASE_PATH__/vendor/codemirror/codemirror.css">
+    <link rel="stylesheet" href="__BASE_PATH__/vendor/codemirror/material-darker.css">
     <style>
+        :root {
+            --bg: #0f172a;
+            --bg-soft: #1e293b;
+            --panel: #111827;
+            --panel-2: #0b1220;
+            --text: #e5e7eb;
+            --muted: #9ca3af;
+            --accent: #22d3ee;
+            --accent-2: #06b6d4;
+            --success: #34d399;
+            --danger: #f87171;
+            --warning: #f59e0b;
+            --border: rgba(148, 163, 184, 0.25);
+        }
+
+        * { box-sizing: border-box; }
         body {
-            background: #1a1a2e;
             margin: 0;
-            padding: 0;
-            font-family: 'Arial', sans-serif;
-            color: white;
+            font-family: Inter, Arial, sans-serif;
+            background: linear-gradient(135deg, #0b1220 0%, #111827 40%, #0f172a 100%);
+            color: var(--text);
         }
 
-        .admin-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
-            min-height: 100vh;
-        }
-
-        .admin-header {
-            text-align: center;
-            margin-bottom: 30px;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 20px;
-            border-radius: 8px;
-            border: 2px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .admin-header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            color: #4ecdc4;
-        }
-
-        .admin-header p {
-            color: #ffffff;
-            opacity: 0.8;
-        }
-
-        .top-section {
-            display: flex;
-            gap: 30px;
-            margin-bottom: 30px;
-        }
-
-        .current-level {
-            flex: 1;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 20px;
-            border-radius: 8px;
-            text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .current-level h2 {
-            color: #4ecdc4;
-            margin-bottom: 10px;
-            font-size: 1.2em;
-        }
-
-        .current-level p {
-            font-size: 1.1em;
-            color: #ffffff;
-        }
-
-        .twitch-config {
-            flex: 1;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 20px;
-            border-radius: 8px;
-            text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .twitch-config h2 {
-            color: #4ecdc4;
-            margin-bottom: 15px;
-            font-size: 1.2em;
-        }
-
-        .twitch-config .current-channel {
-            margin-bottom: 15px;
-            font-size: 0.9em;
-            opacity: 0.8;
-        }
-
-        .twitch-config .channel-input {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .twitch-config input[type="text"] {
-            padding: 8px 12px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 5px;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            font-size: 0.9em;
-            min-width: 200px;
-        }
-
-        .twitch-config input[type="text"]::placeholder {
-            color: rgba(255, 255, 255, 0.5);
-        }
-
-        .twitch-config input[type="text"]:focus {
-            outline: none;
-            border-color: #4ecdc4;
-            box-shadow: 0 0 5px rgba(78, 205, 196, 0.3);
-        }
-
-        .levels-container {
-            max-height: 65vh;
-            overflow-y: auto;
-            padding: 10px 0;
-            margin-bottom: 50px;
-        }
-
-        .levels-section {
-            margin-bottom: 40px;
-        }
-
-        .levels-section h3 {
-            color: #4ecdc4;
-            font-size: 1.4em;
-            margin-bottom: 15px;
-            padding-bottom: 5px;
-            border-bottom: 2px solid rgba(78, 205, 196, 0.3);
-        }
-
-        .levels-grid {
+        .layout {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 20px;
-            margin-bottom: 20px;
+            grid-template-columns: 260px 1fr 320px;
+            min-height: 100vh;
+            gap: 0;
         }
 
-        .level-card {
-            background: rgba(0, 0, 0, 0.8);
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .level-card:hover {
-            border-color: #4ecdc4;
-            box-shadow: 0 0 10px rgba(78, 205, 196, 0.2);
-        }
-
-        .level-preview {
-            position: absolute;
+        .sidebar {
+            border-right: 1px solid var(--border);
+            background: rgba(2, 6, 23, 0.75);
+            backdrop-filter: blur(4px);
+            padding: 20px 14px;
+            position: sticky;
             top: 0;
-            left: 0;
+            height: 100vh;
+        }
+
+        .brand { font-size: 1.2rem; font-weight: 700; color: var(--accent); margin-bottom: 16px; }
+        .subbrand { color: var(--muted); font-size: 0.85rem; margin-bottom: 20px; }
+
+        .nav-btn {
             width: 100%;
-            height: 100%;
-            z-index: 0;
-            opacity: 0.3;
-        }
-
-        .preview-canvas {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .level-content {
-            position: relative;
-            z-index: 1;
-        }
-
-        .level-name {
-            font-size: 1.2em;
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #4ecdc4;
-        }
-
-        .level-name .current-indicator {
-            color: #ff6b6b;
-            font-size: 0.8em;
-            font-weight: normal;
-        }
-
-        .level-info {
-            font-size: 0.9em;
-            opacity: 0.7;
-            margin-bottom: 15px;
-            color: #ffffff;
-        }
-
-        .level-actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .btn {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 5px;
+            text-align: left;
+            padding: 10px 12px;
+            border: 1px solid transparent;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            color: var(--text);
+            background: transparent;
             cursor: pointer;
-            font-size: 0.9em;
-            transition: all 0.3s ease;
-            font-weight: bold;
+        }
+        .nav-btn:hover, .nav-btn.active { border-color: var(--accent); background: rgba(34, 211, 238, 0.08); }
+
+        .main {
+            padding: 18px;
         }
 
-        .btn-primary {
-            background: #4ecdc4;
-            color: white;
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            gap: 12px;
         }
 
-        .btn-primary:hover {
-            background: #44a08d;
-            transform: translateY(-1px);
+        .title { font-size: 1.5rem; font-weight: 700; }
+        .muted { color: var(--muted); }
+        .badge {
+            display: inline-flex;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            padding: 4px 10px;
+            font-size: 0.8rem;
+            align-items: center;
+            gap: 6px;
+        }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--danger); }
+        .online .dot { background: var(--success); }
+
+        .content-grid {
+            display: grid;
+            gap: 14px;
         }
 
-        .btn-danger {
-            background: #ff6b6b;
-            color: white;
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(140px, 1fr));
+            gap: 12px;
         }
 
-        .btn-danger:hover {
-            background: #e55a5a;
-            transform: translateY(-1px);
+        .card {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px;
+        }
+
+        .kpi-value { font-size: 1.35rem; font-weight: 700; color: var(--accent); }
+        .kpi-label { font-size: 0.85rem; color: var(--muted); }
+
+        .section { display: none; }
+        .section.active { display: block; }
+
+        .toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+
+        input, button, select {
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: #0b1220;
+            color: var(--text);
+            padding: 8px 10px;
+        }
+        button { cursor: pointer; }
+        .btn-primary { background: #0e7490; border-color: #0891b2; }
+        .btn-danger { background: #7f1d1d; border-color: #dc2626; }
+        .btn-warning { background: #78350f; border-color: #f59e0b; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        th, td { border-bottom: 1px solid var(--border); padding: 8px; text-align: left; }
+        th { color: var(--muted); font-weight: 600; }
+
+        .rightbar {
+            border-left: 1px solid var(--border);
+            background: rgba(2, 6, 23, 0.75);
+            padding: 16px;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            overflow-y: auto;
+        }
+
+        .activity-item {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 8px;
+            background: rgba(15, 23, 42, 0.8);
         }
 
         .status-message {
-            margin-top: 20px;
-            padding: 15px;
-            border-radius: 5px;
-            text-align: center;
-            font-weight: bold;
-            border: 1px solid;
+            margin-top: 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px;
+            font-size: 0.9rem;
         }
 
-        .status-success {
-            background: rgba(78, 205, 196, 0.1);
-            color: #4ecdc4;
-            border-color: #4ecdc4;
+        .config-editor {
+            width: 100%;
+            min-height: 420px;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            padding: 10px;
+            resize: vertical;
         }
 
-        .status-error {
-            background: rgba(255, 107, 107, 0.1);
-            color: #ff6b6b;
-            border-color: #ff6b6b;
+        .CodeMirror {
+            height: 420px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 0.85rem;
+            background: #0b1220;
+        }
+
+        .CodeMirror-scroll {
+            min-height: 420px;
+        }
+
+        .CodeMirror-gutters {
+            background: #0b1220;
+            border-right: 1px solid rgba(148, 163, 184, 0.2);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+        }
+        .modal.open { display: flex; }
+        .modal-content {
+            width: 480px;
+            max-width: 92vw;
+            background: #0b1220;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px;
         }
 
         .back-link {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 10px 20px;
-            border-radius: 5px;
+            display: inline-block;
+            color: var(--muted);
+            margin-top: 10px;
             text-decoration: none;
-            color: white;
-            transition: all 0.3s ease;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            font-weight: bold;
         }
 
-        .back-link:hover {
-            background: rgba(0, 0, 0, 0.9);
-            border-color: #4ecdc4;
-            transform: translateY(-1px);
+        @media (max-width: 1200px) {
+            .layout { grid-template-columns: 220px 1fr; }
+            .rightbar { display: none; }
         }
 
-        .empty-state {
-            text-align: center;
-            padding: 40px;
-            background: rgba(0, 0, 0, 0.8);
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #ffffff;
-            opacity: 0.7;
-        }
-
-        .players-section {
-            margin-bottom: 70px;
-        }
-
-        .players-actions {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .players-actions p {
-            margin: 0;
-            opacity: 0.8;
-            font-size: 0.9em;
-        }
-
-        .online-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .online-card {
-            background: rgba(0, 0, 0, 0.8);
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s ease;
-        }
-
-        .online-card:hover {
-            border-color: #4ecdc4;
-            box-shadow: 0 0 10px rgba(78, 205, 196, 0.2);
-        }
-
-        .online-meta {
-            font-size: 0.85em;
-            opacity: 0.7;
-            margin-bottom: 12px;
-        }
-
-        .online-actions {
-            display: flex;
-            justify-content: flex-end;
-        }
-
-        .players-section h3 {
-            color: #4ecdc4;
-            font-size: 1.4em;
-            margin-bottom: 15px;
-            padding-bottom: 5px;
-            border-bottom: 2px solid rgba(78, 205, 196, 0.3);
-        }
-
-        .players-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 15px;
-        }
-
-        .player-card {
-            background: rgba(0, 0, 0, 0.8);
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-
-        .player-card.banned {
-            border-color: rgba(255, 107, 107, 0.8);
-        }
-
-        .player-card:hover {
-            border-color: #4ecdc4;
-            box-shadow: 0 0 10px rgba(78, 205, 196, 0.2);
-        }
-
-        .player-name {
-            font-size: 1.1em;
-            font-weight: bold;
-            color: #4ecdc4;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .player-badge {
-            font-size: 0.75em;
-            padding: 2px 8px;
-            border-radius: 999px;
-            font-weight: bold;
-        }
-
-        .player-badge-banned {
-            background: rgba(255, 107, 107, 0.2);
-            color: #ff6b6b;
-            border: 1px solid rgba(255, 107, 107, 0.6);
-        }
-
-        .btn-warning {
-            background: #ff9f43;
-            color: white;
-        }
-
-        .btn-warning:hover {
-            background: #f08c28;
-            transform: translateY(-1px);
-        }
-
-        .player-info {
-            font-size: 0.9em;
-            opacity: 0.8;
-            margin-bottom: 10px;
-        }
-
-        .player-stats {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.85em;
-            opacity: 0.7;
-        }
-
-        /* Player Edit Modal */
-        .player-modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .player-modal-content {
-            background: rgba(26, 26, 46, 0.95);
-            margin: 5% auto;
-            padding: 30px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 8px;
-            width: 90%;
-            max-width: 500px;
-            position: relative;
-            animation: slideIn 0.3s ease;
-        }
-
-        @keyframes slideIn {
-            from { transform: translateY(-50px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        .player-modal .close {
-            position: absolute;
-            top: 15px;
-            right: 20px;
-            color: #aaa;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: color 0.3s ease;
-        }
-
-        .player-modal .close:hover {
-            color: #4ecdc4;
-        }
-
-        .player-modal h2 {
-            color: #4ecdc4;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid rgba(78, 205, 196, 0.3);
-        }
-
-        .player-details {
-            margin-bottom: 20px;
-        }
-
-        .player-detail-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-            padding: 5px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .player-detail-label {
-            font-weight: bold;
-            color: #ffffff;
-            opacity: 0.8;
-        }
-
-        .player-detail-value {
-            color: #4ecdc4;
-        }
-
-        .edit-form {
-            margin-top: 20px;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            color: #ffffff;
-            font-weight: bold;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 5px;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            font-size: 0.9em;
-        }
-
-        .form-group input:focus {
-            outline: none;
-            border-color: #4ecdc4;
-            box-shadow: 0 0 5px rgba(78, 205, 196, 0.3);
-        }
-
-        .form-group input:invalid {
-            border-color: #ff6b6b;
-        }
-
-        .modal-actions {
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-            margin-top: 25px;
-        }
-
-        .modal-actions .btn {
-            min-width: 80px;
+        @media (max-width: 900px) {
+            .layout { grid-template-columns: 1fr; }
+            .sidebar { position: static; height: auto; }
+            .kpi-grid { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
         }
     </style>
 </head>
 <body>
-    <a href="/" class="back-link">← Back to Game</a>
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="brand">MarbleWS Admin</div>
+            <button class="nav-btn active" data-section="overview">Overview</button>
+            <button class="nav-btn" data-section="levels">Levels</button>
+            <button class="nav-btn" data-section="players">Players</button>
+            <button class="nav-btn" data-section="twitch">Twitch & Config</button>
+            <button class="nav-btn" data-section="activity">Activity</button>
+            <a class="back-link" href="/">← Back to game</a>
+        </aside>
 
-    <div class="admin-container">
-        <div class="admin-header">
-            <h1>Admin Panel</h1>
-            <p>Manage game levels and server settings</p>
-        </div>
-
-        <div class="top-section">
-            <div id="currentLevel" class="current-level">
-                <h2>Current Level</h2>
-                <p id="currentLevelName">Loading...</p>
-            </div>
-
-            <div class="twitch-config">
-                <h2>Twitch Configuration</h2>
-                <div class="current-channel">Current Channel: <span id="currentTwitchChannel">Loading...</span></div>
-                <div class="channel-input">
-                    <input type="text" id="twitchChannelInput" placeholder="Enter new channel name" />
-                    <button class="btn btn-primary" onclick="updateTwitchChannel()">Save & Reconnect</button>
+        <main class="main">
+            <div class="topbar">
+                <div>
+                    <div class="title">Admin Panel</div>
                 </div>
-                <div class="channel-input" style="margin-top: 12px;">
-                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                        <input type="checkbox" id="twitchSpeechBubblesToggle" />
-                        <span>Enable Twitch chat speech bubbles</span>
-                    </label>
-                </div>
-            </div>
-        </div>
-
-        <div class="levels-container">
-            <div class="levels-section">
-                <h3>Production Levels</h3>
-                <div class="levels-grid" id="prodLevelsGrid"></div>
-            </div>
-            <div class="levels-section">
-                <h3>Development Levels</h3>
-                <div class="levels-grid" id="devLevelsGrid"></div>
-            </div>
-            <div class="levels-section">
-                <h3>Other Levels</h3>
-                <div class="levels-grid" id="otherLevelsGrid"></div>
-            </div>
-            <div class="levels-section">
-                <h3>Dungeons</h3>
-                <div class="levels-grid" id="dungeonsGrid"></div>
+                <div id="connectionBadge" class="badge"><span class="dot"></span><span>Offline</span></div>
             </div>
 
-            <div class="players-section">
-                <h3>Player Management</h3>
-                <div class="players-actions">
-                    <p>Currently online players are listed below.</p>
-                    <button class="btn btn-danger" onclick="despawnAllPlayers()">Despawn All</button>
-                </div>
-                <div class="online-grid" id="onlinePlayersGrid"></div>
-                <div class="players-grid" id="playersGrid"></div>
-            </div>
-        </div>
+            <div class="content-grid">
+                <section id="overview" class="section active">
+                    <div class="kpi-grid">
+                        <div class="card"><div id="kpiLevel" class="kpi-value">-</div><div class="kpi-label">Current Level</div></div>
+                        <div class="card"><div id="kpiOnline" class="kpi-value">0</div><div class="kpi-label">Online Players</div></div>
+                        <div class="card"><div id="kpiPlayers" class="kpi-value">0</div><div class="kpi-label">Total Players</div></div>
+                        <div class="card"><div id="kpiTwitch" class="kpi-value">-</div><div class="kpi-label">Twitch Channel</div></div>
+                    </div>
 
-        <div id="statusMessage"></div>
+                    <div class="card" style="margin-top: 12px;">
+                        <div class="toolbar">
+                            <select id="testEmoteSelect">
+                                <option value="kappa">Kappa</option>
+                                <option value="pogchamp">PogChamp</option>
+                                <option value="lul">LUL</option>
+                                <option value="monkas">MonkaS</option>
+                                <option value="omegalul">OMEGALUL</option>
+                                <option value="kekw">KEKW</option>
+                                <option value="biblethump">BibleThump</option>
+                                <option value="seemsgood">SeemsGood</option>
+                            </select>
+                            <button id="testEmoteAdminBtn" class="btn-primary">Test Emote</button>
+                        </div>
+                        <div class="muted">Spawns a test emote event through the admin realtime socket.</div>
+                    </div>
+                </section>
+
+                <section id="levels" class="section">
+                    <div class="card" style="margin-bottom: 12px;">
+                        <div class="toolbar">
+                            <input id="levelFilter" placeholder="Filter levels by name/description">
+                        </div>
+                    </div>
+
+                    <div class="card" style="margin-bottom: 12px;">
+                        <h3 style="margin-top: 0;">Production Levels</h3>
+                        <table>
+                            <thead><tr><th>Preview</th><th>Name</th><th>Description</th><th>Modified</th><th>Actions</th></tr></thead>
+                            <tbody id="levelsBodyProd"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="card" style="margin-bottom: 12px;">
+                        <h3 style="margin-top: 0;">Development Levels</h3>
+                        <table>
+                            <thead><tr><th>Preview</th><th>Name</th><th>Description</th><th>Modified</th><th>Actions</th></tr></thead>
+                            <tbody id="levelsBodyDev"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="card" style="margin-bottom: 12px;">
+                        <h3 style="margin-top: 0;">Racing Levels</h3>
+                        <table>
+                            <thead><tr><th>Preview</th><th>Name</th><th>Description</th><th>Modified</th><th>Actions</th></tr></thead>
+                            <tbody id="levelsBodyRace"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="card">
+                        <h3 style="margin-top: 0;">Other Levels</h3>
+                        <table>
+                            <thead><tr><th>Preview</th><th>Name</th><th>Description</th><th>Modified</th><th>Actions</th></tr></thead>
+                            <tbody id="levelsBodyOther"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section id="players" class="section">
+                    <div class="card" style="margin-bottom: 12px;">
+                        <div class="toolbar">
+                            <button class="btn-danger" id="despawnAllBtn">Despawn All Online</button>
+                        </div>
+                        <table>
+                            <thead><tr><th>Online</th><th>User ID</th><th>Position</th><th>Action</th></tr></thead>
+                            <tbody id="onlinePlayersBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="card">
+                        <table>
+                            <thead><tr><th>Username</th><th>User ID</th><th>Level</th><th>XP</th><th>Coins</th><th>Status</th><th>Action</th></tr></thead>
+                            <tbody id="playersBody"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section id="twitch" class="section">
+                    <div class="card">
+                        <div class="toolbar">
+                            <input id="twitchChannelInput" placeholder="New Twitch channel">
+                            <button id="saveChannelBtn" class="btn-primary">Save & Reconnect</button>
+                        </div>
+                        <div class="muted">Current Channel: <span id="currentTwitchChannel">-</span></div>
+                    </div>
+                    <div class="card" style="margin-top: 12px;">
+                        <div class="toolbar" style="justify-content: space-between;">
+                            <strong>Game Config</strong>
+                            <div class="toolbar" style="margin: 0;">
+                                <button id="reloadGameConfigBtn">Reload</button>
+                                <button id="saveGameConfigBtn" class="btn-primary">Save</button>
+                            </div>
+                        </div>
+                        <textarea id="gameConfigEditor" class="config-editor" spellcheck="false" placeholder="Loading shared/gameConfig.js..."></textarea>
+                        <div class="muted">Edits are saved to <code>shared/gameConfig.js</code>. Invalid JS will be rejected.</div>
+                    </div>
+                </section>
+
+                <section id="activity" class="section">
+                    <div class="card">
+                        <div id="activityList"></div>
+                    </div>
+                </section>
+            </div>
+
+            <div id="status"></div>
+        </main>
+
+        <aside class="rightbar">
+            <h3 style="margin-top: 0; color: var(--accent);">Live Activity</h3>
+            <div id="activityRail"></div>
+        </aside>
     </div>
 
-    <!-- Player Edit Modal -->
-    <div id="playerModal" class="player-modal">
-        <div class="player-modal-content">
-            <span class="close" onclick="closePlayerModal()">&times;</span>
-            <h2>Edit Player</h2>
-
-            <div id="playerDetails" class="player-details">
-                <!-- Player details will be populated here -->
+    <div id="playerModal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-top: 0;">Edit Player</h3>
+            <div id="modalMeta" class="muted" style="margin-bottom: 10px;"></div>
+            <div class="toolbar"><label style="min-width: 80px;">Level</label><input type="number" id="mLevel" min="1" max="1000"></div>
+            <div class="toolbar"><label style="min-width: 80px;">XP</label><input type="number" id="mXP" min="0" max="10000000"></div>
+            <div class="toolbar"><label style="min-width: 80px;">Coins</label><input type="number" id="mCoins" min="0" max="1000000"></div>
+            <div class="toolbar">
+                <button id="mBanBtn" class="btn-warning">Toggle Ban</button>
+                <button id="mSaveBtn" class="btn-primary">Save</button>
+                <button id="mCancelBtn">Cancel</button>
             </div>
-
-            <form id="playerEditForm" class="edit-form">
-                <div class="form-group">
-                    <label for="editLevel">Level:</label>
-                    <input type="number" id="editLevel" min="1" max="1000" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="editXP">XP:</label>
-                    <input type="number" id="editXP" min="0" max="10000000" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="editCoins">Coins:</label>
-                    <input type="number" id="editCoins" min="0" max="1000000" required>
-                </div>
-
-                <div class="modal-actions">
-                    <button type="button" id="banToggleBtn" class="btn btn-warning" onclick="toggleBanStatus()">Ban Player</button>
-                    <button type="button" class="btn btn-danger" onclick="closePlayerModal()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Changes</button>
-                </div>
-            </form>
         </div>
     </div>
+
+    <script src="__BASE_PATH__/vendor/codemirror/codemirror.js"></script>
+    <script src="__BASE_PATH__/vendor/codemirror/javascript.js"></script>
 
     <script>
-        let currentLevelName = 'level1'; // Default
-        let basePath = "__BASE_PATH__";
-        let currentModalPlayer = null;
+        let basePath = '__BASE_PATH__';
+        let adminSocket = null;
+        let state = { levels: [], players: [], onlinePlayers: [], currentLevel: 'level1', twitchChannel: '', activities: [] };
+        let modalPlayer = null;
+        let gameConfigEditor = null;
+        const previewImageCache = new Map();
 
-        // Load client configuration
+        function renderLevelPreview(canvas, objects, backgroundImage) {
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width;
+            const h = canvas.height;
+            ctx.clearRect(0, 0, w, h);
+
+            const drawObjects = () => {
+                if (!objects || objects.length === 0) {
+                    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+                    ctx.font = '12px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Empty', w / 2, h / 2);
+                    return;
+                }
+
+                let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                objects.forEach(obj => {
+                    if (obj.shape === 'circle') {
+                        minX = Math.min(minX, obj.x - obj.radius);
+                        minY = Math.min(minY, obj.y - obj.radius);
+                        maxX = Math.max(maxX, obj.x + obj.radius);
+                        maxY = Math.max(maxY, obj.y + obj.radius);
+                    } else {
+                        minX = Math.min(minX, obj.x - (obj.width || 0) / 2);
+                        minY = Math.min(minY, obj.y - (obj.height || 0) / 2);
+                        maxX = Math.max(maxX, obj.x + (obj.width || 0) / 2);
+                        maxY = Math.max(maxY, obj.y + (obj.height || 0) / 2);
+                    }
+                });
+
+                const pad = 40;
+                minX -= pad; minY -= pad; maxX += pad; maxY += pad;
+                const levelW = Math.max(1, maxX - minX);
+                const levelH = Math.max(1, maxY - minY);
+                const scale = Math.min(w / levelW, h / levelH);
+                const offX = (w - levelW * scale) / 2;
+                const offY = (h - levelH * scale) / 2;
+
+                objects.forEach(obj => {
+                    ctx.save();
+
+                    if (obj.rotation) {
+                        const cx = (obj.x - minX) * scale + offX;
+                        const cy = (obj.y - minY) * scale + offY;
+                        ctx.translate(cx, cy);
+                        ctx.rotate(obj.rotation);
+                        ctx.translate(-cx, -cy);
+                    }
+
+                    ctx.fillStyle = obj.color || '#8b9cb3';
+                    if (obj.shape === 'circle') {
+                        const x = (obj.x - minX) * scale + offX;
+                        const y = (obj.y - minY) * scale + offY;
+                        const r = (obj.radius || 10) * scale;
+                        ctx.beginPath();
+                        ctx.arc(x, y, r, 0, Math.PI * 2);
+                        ctx.fill();
+                    } else {
+                        const objW = (obj.width || 20) * scale;
+                        const objH = (obj.height || 20) * scale;
+                        const x = (obj.x - (obj.width || 20) / 2 - minX) * scale + offX;
+                        const y = (obj.y - (obj.height || 20) / 2 - minY) * scale + offY;
+                        ctx.fillRect(x, y, objW, objH);
+                    }
+
+                    ctx.restore();
+                });
+            };
+
+            const drawFallbackBackground = () => {
+                ctx.fillStyle = '#0a1325';
+                ctx.fillRect(0, 0, w, h);
+            };
+
+            if (!backgroundImage || !backgroundImage.trim()) {
+                drawFallbackBackground();
+                drawObjects();
+                return;
+            }
+
+            const cached = previewImageCache.get(backgroundImage);
+            if (cached instanceof HTMLImageElement) {
+                ctx.drawImage(cached, 0, 0, w, h);
+                drawObjects();
+                return;
+            }
+
+            if (!cached) {
+                previewImageCache.set(backgroundImage, 'loading');
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = () => {
+                    previewImageCache.set(backgroundImage, img);
+                    renderLevelPreview(canvas, objects, backgroundImage);
+                };
+                img.onerror = () => {
+                    previewImageCache.set(backgroundImage, null);
+                    renderLevelPreview(canvas, objects, backgroundImage);
+                };
+                img.src = backgroundImage;
+            }
+
+            drawFallbackBackground();
+            drawObjects();
+        }
+
+        function setConnectionStatus(online) {
+            const badge = document.getElementById('connectionBadge');
+            badge.classList.toggle('online', online);
+            badge.querySelector('span:last-child').textContent = online ? 'Connected' : 'Offline';
+        }
+
+        function showStatus(msg, ok = true) {
+            document.getElementById('status').innerHTML = `<div class="status-message" style="border-color:${ok ? 'var(--success)' : 'var(--danger)'}">${msg}</div>`;
+            setTimeout(() => (document.getElementById('status').innerHTML = ''), 4000);
+        }
+
+        function addActivity(item) {
+            state.activities.unshift(item);
+            state.activities = state.activities.slice(0, 120);
+            renderActivity();
+        }
+
+        function renderActivity() {
+            const html = state.activities.slice(0, 40).map(a => `
+                <div class="activity-item">
+                    <div><strong>${a.type || 'event'}</strong></div>
+                    <div>${a.message || JSON.stringify(a.payload || {})}</div>
+                    <div class="muted">${new Date(a.at || Date.now()).toLocaleString()}</div>
+                </div>
+            `).join('');
+            document.getElementById('activityList').innerHTML = html || '<div class="muted">No activity yet.</div>';
+            document.getElementById('activityRail').innerHTML = html || '<div class="muted">No activity yet.</div>';
+        }
+
+        function renderKPIs() {
+            document.getElementById('kpiLevel').textContent = state.currentLevel || '-';
+            document.getElementById('kpiOnline').textContent = String(state.onlinePlayers.length || 0);
+            document.getElementById('kpiPlayers').textContent = String(state.players.length || 0);
+            document.getElementById('kpiTwitch').textContent = state.twitchChannel || '-';
+            document.getElementById('currentTwitchChannel').textContent = state.twitchChannel || 'Not set';
+        }
+
+        function renderLevels() {
+            const filter = document.getElementById('levelFilter').value.trim().toLowerCase();
+            const filteredLevels = state.levels
+                .filter(l => !filter || l.name.toLowerCase().includes(filter) || (l.description || '').toLowerCase().includes(filter));
+
+            const categories = {
+                prod: [],
+                dev: [],
+                race: [],
+                other: []
+            };
+
+            filteredLevels.forEach(level => {
+                const desc = String(level.description || '').trim().toLowerCase();
+                if (desc === 'prod') {
+                    categories.prod.push(level);
+                } else if (desc === 'dev') {
+                    categories.dev.push(level);
+                } else if (desc === 'race') {
+                    categories.race.push(level);
+                } else {
+                    categories.other.push(level);
+                }
+            });
+
+            const renderRows = (levels, tbodyId, prefix) => {
+                const rows = levels.map((l, idx) => `
+                    <tr>
+                        <td><canvas id="${prefix}_lvlPreview_${idx}" width="120" height="72" style="border:1px solid var(--border); border-radius:6px;"></canvas></td>
+                        <td>${l.name} ${l.name === state.currentLevel ? '<span class="muted">(current)</span>' : ''}</td>
+                        <td>${l.description || '-'}</td>
+                        <td>${new Date(l.modified).toLocaleString()}</td>
+                        <td>
+                            <button onclick="loadLevel('${l.name.replace(/'/g, "\\'")}')" class="btn-primary">Load</button>
+                            <button onclick="deleteLevel('${l.name.replace(/'/g, "\\'")}')" class="btn-danger">Delete</button>
+                        </td>
+                    </tr>
+                `).join('');
+                document.getElementById(tbodyId).innerHTML = rows || '<tr><td colspan="5" class="muted">No levels.</td></tr>';
+
+                levels.forEach((level, idx) => {
+                    const canvas = document.getElementById(`${prefix}_lvlPreview_${idx}`);
+                    renderLevelPreview(canvas, level.objects || [], level.backgroundImage || '');
+                });
+            };
+
+            renderRows(categories.prod, 'levelsBodyProd', 'prod');
+            renderRows(categories.dev, 'levelsBodyDev', 'dev');
+            renderRows(categories.race, 'levelsBodyRace', 'race');
+            renderRows(categories.other, 'levelsBodyOther', 'other');
+        }
+
+        function renderOnlinePlayers() {
+            const rows = state.onlinePlayers.map(p => `
+                <tr>
+                    <td>${p.username}</td>
+                    <td>${p.userId}</td>
+                    <td>${Math.round(p.x)} / ${Math.round(p.y)}</td>
+                    <td><button class="btn-danger" onclick="despawnPlayer('${p.socketId}')">Despawn</button></td>
+                </tr>
+            `).join('');
+            document.getElementById('onlinePlayersBody').innerHTML = rows || '<tr><td colspan="4" class="muted">No players online.</td></tr>';
+        }
+
+        function renderPlayers() {
+            const rows = state.players.map(p => `
+                <tr>
+                    <td>${p.username}</td>
+                    <td>${p.userId}</td>
+                    <td>${p.level}</td>
+                    <td>${p.xp}</td>
+                    <td>${p.coins}</td>
+                    <td>${p.banned ? 'BANNED' : 'Active'}</td>
+                    <td><button onclick="openPlayerModal('${p.userId.replace(/'/g, "\\'")}')">Edit</button></td>
+                </tr>
+            `).join('');
+            document.getElementById('playersBody').innerHTML = rows || '<tr><td colspan="7" class="muted">No players.</td></tr>';
+        }
+
+        function renderAll() {
+            renderKPIs();
+            renderLevels();
+            renderOnlinePlayers();
+            renderPlayers();
+        }
+
+        async function loadInitialSnapshot() {
+            const res = await fetch(`${basePath}/api/admin/snapshot`);
+            if (!res.ok) throw new Error('Failed to load admin snapshot');
+            const snapshot = await res.json();
+            state = { ...state, ...snapshot };
+            renderAll();
+        }
+
         async function loadConfig() {
-            // Fetch from absolute path - works from any route
             try {
                 const response = await fetch(`${basePath}/api/client-config`);
                 if (response.ok) {
                     const config = await response.json();
                     basePath = config.basePath || '';
-                    console.log('Admin config loaded:', config);
-                    return;
                 }
-            } catch (error) {
-                console.error('Failed to load admin config:', error);
-            }
-
-            // If config fetch fails, use empty base path as fallback
-            basePath = '';
-            console.log('Using default admin config (empty base path)');
+            } catch (_) {}
         }
 
-        // Fetch current level from server
-        async function fetchCurrentLevel() {
-            try {
-                const response = await fetch(`${basePath}/api/current-level`);
-                if (response.ok) {
-                    const data = await response.json();
-                    currentLevelName = data.levelName;
-                    document.getElementById('currentLevelName').textContent = data.levelName;
-                } else {
-                    // Fallback to level1 if no current level is set
-                    currentLevelName = 'level1';
-                    document.getElementById('currentLevelName').textContent = 'level1';
-                }
-            } catch (error) {
-                console.log('Could not fetch current level:', error);
-                // Fallback to level1 on error
-                currentLevelName = 'level1';
-                document.getElementById('currentLevelName').textContent = 'level1';
-            }
-        }
-
-        // Fetch current Twitch channel
-        async function fetchTwitchChannel() {
-            try {
-                const response = await fetch(`${basePath}/api/admin/config/twitch-channel`);
-                if (response.ok) {
-                    const data = await response.json();
-                    document.getElementById('currentTwitchChannel').textContent = data.channel || 'Not set';
-                } else {
-                    document.getElementById('currentTwitchChannel').textContent = 'Error loading';
-                }
-            } catch (error) {
-                console.log('Could not fetch Twitch channel:', error);
-                document.getElementById('currentTwitchChannel').textContent = 'Error loading';
-            }
-        }
-
-        // Update Twitch channel
-        async function updateTwitchChannel() {
-            const input = document.getElementById('twitchChannelInput');
-            const newChannel = input.value.trim();
-
-            if (!newChannel) {
-                showStatus('Please enter a channel name', 'error');
-                return;
-            }
-
-            if (!confirm(`Are you sure you want to change the Twitch channel to "${newChannel.toLowerCase()}"? The bot will disconnect and reconnect.`)) {
-                return;
-            }
-
-            try {
-                const response = await fetch(`${basePath}/api/admin/config/twitch-channel`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ channel: newChannel })
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    document.getElementById('currentTwitchChannel').textContent = data.channel;
-                    input.value = '';
-                    showStatus(`Twitch channel updated to "${data.channel}" and bot reconnected`, 'success');
-                } else {
-                    const error = await response.json();
-                    showStatus(error.error || 'Failed to update channel', 'error');
-                }
-            } catch (error) {
-                console.error('Failed to update Twitch channel:', error);
-                showStatus('Failed to update channel', 'error');
-            }
-        }
-
-        // Fetch current Twitch speech bubble setting
-        async function fetchTwitchSpeechBubbles() {
-            try {
-                const response = await fetch(`${basePath}/api/admin/config/twitch-speech-bubbles`);
-                if (response.ok) {
-                    const data = await response.json();
-                    const toggle = document.getElementById('twitchSpeechBubblesToggle');
-                    if (toggle) {
-                        toggle.checked = Boolean(data.enabled);
-                    }
-                }
-            } catch (error) {
-                console.log('Could not fetch Twitch speech bubble setting:', error);
-            }
-        }
-
-        // Update Twitch speech bubble setting
-        async function updateTwitchSpeechBubbles(enabled) {
-            try {
-                const response = await fetch(`${basePath}/api/admin/config/twitch-speech-bubbles`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ enabled })
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    showStatus(`Twitch speech bubbles ${data.enabled ? 'enabled' : 'disabled'}`, 'success');
-                } else {
-                    const error = await response.json();
-                    showStatus(error.error || 'Failed to update speech bubble setting', 'error');
-                }
-            } catch (error) {
-                console.error('Failed to update Twitch speech bubble setting:', error);
-                showStatus('Failed to update speech bubble setting', 'error');
-            }
-        }
-
-        // Image cache for level previews
-        const previewImageCache = new Map();
-
-        // Render a level preview on a canvas
-        function renderLevelPreview(canvas, objects, backgroundImage) {
-            const ctx = canvas.getContext('2d');
-            const canvasWidth = canvas.width;
-            const canvasHeight = canvas.height;
-
-            // Clear canvas
-            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-
-            // Draw background image if available
-            if (backgroundImage && backgroundImage.trim()) {
-                // Try to get the image from cache or load it
-                if (!previewImageCache.has(backgroundImage)) {
-                    // Create and cache the image
-                    const img = new Image();
-                    img.crossOrigin = 'anonymous'; // Enable CORS for external images
-                    img.onload = () => {
-                        previewImageCache.set(backgroundImage, img);
-                        // Re-render the preview when image loads
-                        renderLevelPreview(canvas, objects, backgroundImage);
-                    };
-                    img.onerror = (error) => {
-                        console.warn('Failed to load level background image:', backgroundImage, error);
-                        previewImageCache.set(backgroundImage, null);
-                        // Re-render with fallback
-                        renderLevelPreview(canvas, objects, backgroundImage);
-                    };
-                    img.src = backgroundImage;
-                    previewImageCache.set(backgroundImage, 'loading');
-
-                    // Set a timeout to prevent hanging on slow loads
-                    setTimeout(() => {
-                        if (previewImageCache.get(backgroundImage) === 'loading') {
-                            console.warn('Timeout loading level background image:', backgroundImage);
-                            img.src = ''; // Cancel the load
-                            previewImageCache.set(backgroundImage, null);
-                            renderLevelPreview(canvas, objects, backgroundImage);
-                        }
-                    }, 5000); // 5 second timeout
-                }
-
-                const cachedImage = previewImageCache.get(backgroundImage);
-                if (cachedImage instanceof HTMLImageElement) {
-                    // Draw the background image stretched to fill canvas
-                    ctx.drawImage(cachedImage, 0, 0, canvasWidth, canvasHeight);
-                }
-            }
-
-            // If no background image, draw default background
-            if (!backgroundImage || !backgroundImage.trim() || !(previewImageCache.get(backgroundImage) instanceof HTMLImageElement)) {
-                // Draw background
-                ctx.fillStyle = 'rgba(26, 26, 46, 0.8)'; // Dark background like the game
-                ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-            }
-
-            if (!objects || objects.length === 0) {
-                // Draw empty level indicator
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-                ctx.font = '12px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('Empty Level', canvasWidth / 2, canvasHeight / 2);
-                return;
-            }
-
-            // Calculate level bounds
-            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-
-            objects.forEach(obj => {
-                if (obj.shape === 'rectangle') {
-                    minX = Math.min(minX, obj.x - obj.width/2);
-                    minY = Math.min(minY, obj.y - obj.height/2);
-                    maxX = Math.max(maxX, obj.x + obj.width/2);
-                    maxY = Math.max(maxY, obj.y + obj.height/2);
-                } else if (obj.shape === 'circle') {
-                    minX = Math.min(minX, obj.x - obj.radius);
-                    minY = Math.min(minY, obj.y - obj.radius);
-                    maxX = Math.max(maxX, obj.x + obj.radius);
-                    maxY = Math.max(maxY, obj.y + obj.radius);
-                }
-            });
-
-            // Add some padding
-            const padding = 50;
-            minX -= padding;
-            minY -= padding;
-            maxX += padding;
-            maxY += padding;
-
-            const levelWidth = maxX - minX;
-            const levelHeight = maxY - minY;
-
-            // Calculate scale to fit in canvas while maintaining aspect ratio
-            const scaleX = canvasWidth / levelWidth;
-            const scaleY = canvasHeight / levelHeight;
-            const scale = Math.min(scaleX, scaleY);
-
-            // Center the level in the canvas
-            const offsetX = (canvasWidth - levelWidth * scale) / 2;
-            const offsetY = (canvasHeight - levelHeight * scale) / 2;
-
-            // Draw objects
-            objects.forEach(obj => {
-                ctx.save();
-
-                // Apply rotation if present
-                if (obj.rotation && obj.rotation !== 0) {
-                    const centerX = (obj.x - minX) * scale + offsetX;
-                    const centerY = (obj.y - minY) * scale + offsetY;
-                    ctx.translate(centerX, centerY);
-                    ctx.rotate(obj.rotation);
-                    ctx.translate(-centerX, -centerY);
-                }
-
-                // Check if object has a background image
-                if (obj.backgroundImage && obj.backgroundImage.trim()) {
-                    // Try to get the image from cache or load it
-                    if (!previewImageCache.has(obj.backgroundImage)) {
-                        // Create and cache the image
-                        const img = new Image();
-                        img.crossOrigin = 'anonymous'; // Enable CORS for external images
-                        img.onload = () => {
-                            previewImageCache.set(obj.backgroundImage, img);
-                            // Re-render the preview when image loads
-                            renderLevelPreview(canvas, objects, backgroundImage);
-                        };
-                        img.onerror = (error) => {
-                            console.warn('Failed to load object background image:', obj.backgroundImage, error);
-                            previewImageCache.set(obj.backgroundImage, null);
-                            // Re-render with fallback
-                            renderLevelPreview(canvas, objects, backgroundImage);
-                        };
-                        img.src = obj.backgroundImage;
-                        previewImageCache.set(obj.backgroundImage, 'loading');
-
-                        // Set a timeout to prevent hanging on slow loads
-                        setTimeout(() => {
-                            if (previewImageCache.get(obj.backgroundImage) === 'loading') {
-                                console.warn('Timeout loading object background image:', obj.backgroundImage);
-                                img.src = ''; // Cancel the load
-                                previewImageCache.set(obj.backgroundImage, null);
-                                renderLevelPreview(canvas, objects, backgroundImage);
-                            }
-                        }, 5000); // 5 second timeout
-                    }
-
-                    const cachedImage = previewImageCache.get(obj.backgroundImage);
-                    if (cachedImage instanceof HTMLImageElement) {
-                        // Draw the background image
-                        if (obj.shape === 'rectangle') {
-                            const x = (obj.x - obj.width/2 - minX) * scale + offsetX;
-                            const y = (obj.y - obj.height/2 - minY) * scale + offsetY;
-                            const width = obj.width * scale;
-                            const height = obj.height * scale;
-
-                            ctx.drawImage(cachedImage, x, y, width, height);
-                        } else if (obj.shape === 'circle') {
-                            // For circles, clip the image to a circle shape
-                            const x = (obj.x - minX) * scale + offsetX;
-                            const y = (obj.y - minY) * scale + offsetY;
-                            const radius = obj.radius * scale;
-
-                            ctx.save();
-                            ctx.beginPath();
-                            ctx.arc(x, y, radius, 0, Math.PI * 2);
-                            ctx.clip();
-                            ctx.drawImage(cachedImage, x - radius, y - radius, radius * 2, radius * 2);
-                            ctx.restore();
-                        }
-                    } else {
-                        // Image is still loading or failed to load, use color as fallback
-                        ctx.fillStyle = obj.color || '#888888';
-
-                        if (obj.shape === 'rectangle') {
-                            const x = (obj.x - obj.width/2 - minX) * scale + offsetX;
-                            const y = (obj.y - obj.height/2 - minY) * scale + offsetY;
-                            const width = obj.width * scale;
-                            const height = obj.height * scale;
-
-                            ctx.fillRect(x, y, width, height);
-                        } else if (obj.shape === 'circle') {
-                            const x = (obj.x - minX) * scale + offsetX;
-                            const y = (obj.y - minY) * scale + offsetY;
-                            const radius = obj.radius * scale;
-
-                            ctx.beginPath();
-                            ctx.arc(x, y, radius, 0, Math.PI * 2);
-                            ctx.fill();
-                        }
-                    }
-                } else {
-                    // No background image, just use color
-                    ctx.fillStyle = obj.color || '#888888';
-
-                    if (obj.shape === 'rectangle') {
-                        const x = (obj.x - obj.width/2 - minX) * scale + offsetX;
-                        const y = (obj.y - obj.height/2 - minY) * scale + offsetY;
-                        const width = obj.width * scale;
-                        const height = obj.height * scale;
-
-                        ctx.fillRect(x, y, width, height);
-                    } else if (obj.shape === 'circle') {
-                        const x = (obj.x - minX) * scale + offsetX;
-                        const y = (obj.y - minY) * scale + offsetY;
-                        const radius = obj.radius * scale;
-
-                        ctx.beginPath();
-                        ctx.arc(x, y, radius, 0, Math.PI * 2);
-                        ctx.fill();
-                    }
-                }
-
-                ctx.restore();
+        async function loadSocketScript() {
+            if (window.io) return;
+            await new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = `${basePath}/socket.io/socket.io.js`;
+                s.onload = resolve;
+                s.onerror = reject;
+                document.head.appendChild(s);
             });
         }
 
-        // Fetch and display levels
-        async function fetchLevels() {
-            try {
-                const response = await fetch(`${basePath}/api/admin/levels`);
-                const levels = await response.json();
+        async function connectRealtime() {
+            const tokenRes = await fetch(`${basePath}/api/admin/realtime-token`);
+            if (!tokenRes.ok) throw new Error('Failed to get realtime token');
+            const { token } = await tokenRes.json();
 
-                // Clear all grids
-                const prodGrid = document.getElementById('prodLevelsGrid');
-                const devGrid = document.getElementById('devLevelsGrid');
-                const otherGrid = document.getElementById('otherLevelsGrid');
-                const dungeonsGrid = document.getElementById('dungeonsGrid');
-                prodGrid.innerHTML = '';
-                devGrid.innerHTML = '';
-                otherGrid.innerHTML = '';
-                dungeonsGrid.innerHTML = '';
+            adminSocket = io({ path: `${basePath}/socket.io`, transports: ['websocket', 'polling'] });
 
-                if (levels.length === 0) {
-                    otherGrid.innerHTML = '<p>No levels found. Create some levels in the editor!</p>';
-                    return;
-                }
-
-                // Categorize levels
-                const categorizedLevels = {
-                    prod: [],
-                    dev: [],
-                    dungeons: [],
-                    other: []
-                };
-
-                levels.forEach(level => {
-                    const desc = (level.description || '').toLowerCase();
-                    if (desc.includes('prod')) {
-                        categorizedLevels.prod.push(level);
-                    } else if (desc.includes('dev')) {
-                        categorizedLevels.dev.push(level);
-                    } else if (desc.includes('dungeon')) {
-                        categorizedLevels.dungeons.push(level);
-                    } else {
-                        categorizedLevels.other.push(level);
-                    }
-                });
-
-                // Render levels in each category
-                Object.keys(categorizedLevels).forEach(category => {
-                    const grid = category === 'prod' ? prodGrid : category === 'dev' ? devGrid : category === 'dungeons' ? dungeonsGrid : otherGrid;
-                    const levelsInCategory = categorizedLevels[category];
-
-                    if (levelsInCategory.length === 0) {
-                        grid.innerHTML = '<p class="empty-state">No levels in this category</p>';
-                    } else {
-                        levelsInCategory.forEach(level => {
-                            const levelCard = document.createElement('div');
-                            levelCard.className = 'level-card';
-
-                            const isCurrent = level.name === currentLevelName;
-
-                            levelCard.innerHTML = `
-                                <div class="level-preview">
-                                    <canvas class="preview-canvas" width="200" height="150"></canvas>
-                                </div>
-                                <div class="level-content">
-                                    <div class="level-name">${level.name} ${isCurrent ? '(Current)' : ''}</div>
-                                    <div class="level-info">
-                                        Description: ${level.description || 'None'}<br>
-                                        Modified: ${new Date(level.modified).toLocaleString()}<br>
-                                        Size: ${Math.round(level.size / 1024)} KB
-                                    </div>
-                                    <div class="level-actions">
-                                        <button class="btn btn-primary" onclick="loadLevel('${level.name}')">
-                                            ${isCurrent ? 'Reload' : 'Load'}
-                                        </button>
-                                        <button class="btn btn-danger" onclick="deleteLevel('${level.name}')">
-                                            Delete
-                                        </button>
-                                    </div>
-                                </div>
-                            `;
-
-                            // Render level preview
-                            const canvas = levelCard.querySelector('.preview-canvas');
-                            renderLevelPreview(canvas, level.objects, level.backgroundImage);
-
-                            grid.appendChild(levelCard);
-                        });
-                    }
-                });
-            } catch (error) {
-                console.error('Failed to fetch levels:', error);
-                showStatus('Failed to load levels', 'error');
-            }
-        }
-
-        // Load Socket.IO script dynamically
-        async function loadSocketIOScript() {
-            return new Promise((resolve, reject) => {
-                if (window.io) {
-                    resolve();
-                    return;
-                }
-                const script = document.createElement('script');
-                script.src = `${basePath}/socket.io/socket.io.js`;
-                script.onload = resolve;
-                script.onerror = reject;
-                document.head.appendChild(script);
+            adminSocket.on('connect', () => {
+                setConnectionStatus(true);
+                adminSocket.emit('admin:authenticate', { token });
             });
+
+            adminSocket.on('disconnect', () => setConnectionStatus(false));
+            adminSocket.on('admin:auth:error', (e) => showStatus(e.message || 'Admin realtime auth failed', false));
+
+            adminSocket.on('admin:bootstrap', (snapshot) => {
+                state = { ...state, ...snapshot };
+                renderAll();
+            });
+
+            adminSocket.on('admin:onlinePlayers:update', (onlinePlayers) => {
+                state.onlinePlayers = onlinePlayers || [];
+                renderKPIs();
+                renderOnlinePlayers();
+            });
+
+            adminSocket.on('admin:activity:event', (evt) => addActivity(evt));
         }
 
-        // Load a level
         async function loadLevel(levelName) {
-            try {
-                // Ensure Socket.IO is loaded
-                await loadSocketIOScript();
-
-                // Create temporary socket connection for level loading
-                const socket = io({
-                    path: `${basePath}/socket.io`,
-                    timeout: 5000, // Fail after 5 seconds
-                    reconnection: false // Don't reconnect on disconnect
-                });
-
-                // Send level load command via WebSocket
-                socket.emit('loadLevel', levelName);
-
-                // Clean up immediately after loading
-                setTimeout(() => {
-                    socket.disconnect();
-                }, 100); // Wait 100ms for the emit to complete, then disconnect
-
-                currentLevelName = levelName;
-                document.getElementById('currentLevelName').textContent = levelName;
-                showStatus(`Level "${levelName}" loaded successfully`, 'success');
-                fetchLevels(); // Refresh the list
-            } catch (error) {
-                console.error('Failed to load level:', error);
-                showStatus('Failed to load level', 'error');
-            }
+            if (!adminSocket || !adminSocket.connected) return showStatus('Realtime connection unavailable', false);
+            adminSocket.emit('loadLevel', levelName);
+            showStatus(`Requested level load: ${levelName}`);
         }
 
-        // Delete a level
         async function deleteLevel(levelName) {
-            if (!confirm(`Are you sure you want to delete "${levelName}"?`)) {
-                return;
-            }
-
-            try {
-                const response = await fetch(`${basePath}/api/admin/levels/${levelName}`, {
-                    method: 'DELETE'
-                });
-
-                if (response.ok) {
-                    showStatus(`Level "${levelName}" deleted successfully`, 'success');
-                    fetchLevels(); // Refresh the list
-                } else {
-                    showStatus('Failed to delete level', 'error');
-                }
-            } catch (error) {
-                console.error('Failed to delete level:', error);
-                showStatus('Failed to delete level', 'error');
-            }
-        }
-
-        // Show status message
-        function showStatus(message, type) {
-            const statusDiv = document.getElementById('statusMessage');
-            statusDiv.innerHTML = `<div class="status-message status-${type}">${message}</div>`;
-
-            // Clear message after 5 seconds
-            setTimeout(() => {
-                statusDiv.innerHTML = '';
-            }, 5000);
-        }
-
-        // Fetch and display players
-        async function fetchPlayers() {
-            try {
-                const response = await fetch(`${basePath}/api/admin/players`);
-                if (!response.ok) {
-                    console.error('Failed to fetch players:', response.status, response.statusText);
-                    showStatus('Failed to load players', 'error');
-                    return;
-                }
-                const players = await response.json();
-
-                const playersGrid = document.getElementById('playersGrid');
-                playersGrid.innerHTML = '';
-
-                if (players.length === 0) {
-                    playersGrid.innerHTML = '<p class="empty-state">No players found.</p>';
-                    return;
-                }
-
-                players.forEach(player => {
-                    const playerCard = document.createElement('div');
-                    const isBanned = Boolean(player.banned);
-                    playerCard.className = `player-card ${isBanned ? 'banned' : ''}`;
-                    playerCard.onclick = () => openPlayerModal(player.userId);
-
-                    playerCard.innerHTML = `
-                        <div class="player-name">${player.username} ${isBanned ? '<span class="player-badge player-badge-banned">BANNED</span>' : ''}</div>
-                        <div class="player-info">User ID: ${player.userId}</div>
-                        <div class="player-stats">
-                            <span>Level ${player.level}</span>
-                            <span>${player.xp} XP</span>
-                            <span>${player.coins} coins</span>
-                        </div>
-                    `;
-
-                    playersGrid.appendChild(playerCard);
-                });
-            } catch (error) {
-                console.error('Failed to fetch players:', error);
-                showStatus('Failed to load players', 'error');
-            }
-        }
-
-        async function fetchOnlinePlayers() {
-            try {
-                const response = await fetch(`${basePath}/api/admin/online-players`);
-                if (!response.ok) {
-                    console.error('Failed to fetch online players:', response.status, response.statusText);
-                    showStatus('Failed to load online players', 'error');
-                    return;
-                }
-
-                const players = await response.json();
-                const onlineGrid = document.getElementById('onlinePlayersGrid');
-                onlineGrid.innerHTML = '';
-
-                if (players.length === 0) {
-                    onlineGrid.innerHTML = '<p class="empty-state">No players online.</p>';
-                    return;
-                }
-
-                players.forEach(player => {
-                    const card = document.createElement('div');
-                    card.className = 'online-card';
-                    card.innerHTML = `
-                        <div class="player-name">${player.username}</div>
-                        <div class="online-meta">User ID: ${player.userId}</div>
-                        <div class="online-meta">Position: ${Math.round(player.x)} / ${Math.round(player.y)}</div>
-                        <div class="online-actions">
-                            <button class="btn btn-danger" onclick="despawnPlayer('${player.socketId}')">Despawn</button>
-                        </div>
-                    `;
-                    onlineGrid.appendChild(card);
-                });
-            } catch (error) {
-                console.error('Failed to fetch online players:', error);
-                showStatus('Failed to load online players', 'error');
-            }
+            if (!confirm(`Delete level "${levelName}"?`)) return;
+            const res = await fetch(`${basePath}/api/admin/levels/${encodeURIComponent(levelName)}`, { method: 'DELETE' });
+            if (!res.ok) return showStatus('Failed to delete level', false);
+            showStatus(`Deleted level: ${levelName}`);
         }
 
         async function despawnPlayer(socketId) {
-            if (!confirm('Despawn this player?')) {
-                return;
-            }
-
-            try {
-                const response = await fetch(`${basePath}/api/admin/online-players/despawn`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ socketId })
-                });
-
-                if (response.ok) {
-                    const result = await response.json();
-                    showStatus(`Player "${result.username}" despawned`, 'success');
-                    fetchOnlinePlayers();
-                } else {
-                    const error = await response.json();
-                    showStatus(error.error || 'Failed to despawn player', 'error');
-                }
-            } catch (error) {
-                console.error('Failed to despawn player:', error);
-                showStatus('Failed to despawn player', 'error');
-            }
+            const res = await fetch(`${basePath}/api/admin/online-players/despawn`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ socketId })
+            });
+            if (!res.ok) return showStatus('Failed to despawn player', false);
+            showStatus('Player despawned');
         }
 
         async function despawnAllPlayers() {
-            if (!confirm('Despawn all online players?')) {
-                return;
+            if (!confirm('Despawn all online players?')) return;
+            const res = await fetch(`${basePath}/api/admin/online-players/despawn-all`, { method: 'POST' });
+            if (!res.ok) return showStatus('Failed to despawn all players', false);
+            const data = await res.json();
+            showStatus(`Despawned ${data.count || 0} players`);
+        }
+
+        function triggerTestEmoteFromAdmin() {
+            if (!adminSocket || !adminSocket.connected) {
+                return showStatus('Realtime connection unavailable', false);
             }
 
-            try {
-                const response = await fetch(`${basePath}/api/admin/online-players/despawn-all`, {
-                    method: 'POST'
-                });
+            const emoteName = (document.getElementById('testEmoteSelect')?.value || 'kappa').trim();
+            adminSocket.emit('spawnTestEmote', { emoteName });
+            showStatus(`Requested test emote spawn${emoteName ? `: ${emoteName}` : ''}`);
+        }
 
-                if (response.ok) {
-                    const result = await response.json();
-                    showStatus(`Despawned ${result.count} players`, 'success');
-                    fetchOnlinePlayers();
-                } else {
-                    const error = await response.json();
-                    showStatus(error.error || 'Failed to despawn players', 'error');
-                }
-            } catch (error) {
-                console.error('Failed to despawn all players:', error);
-                showStatus('Failed to despawn players', 'error');
+        async function saveTwitchChannel() {
+            const channel = document.getElementById('twitchChannelInput').value.trim();
+            if (!channel) return showStatus('Enter a channel name', false);
+            const res = await fetch(`${basePath}/api/admin/config/twitch-channel`, {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ channel })
+            });
+            if (!res.ok) return showStatus('Failed to update channel', false);
+            document.getElementById('twitchChannelInput').value = '';
+            showStatus('Twitch channel updated');
+        }
+
+        function initGameConfigEditor() {
+            const textarea = document.getElementById('gameConfigEditor');
+            if (!textarea || gameConfigEditor) return;
+            gameConfigEditor = CodeMirror.fromTextArea(textarea, {
+                mode: 'javascript',
+                theme: 'material-darker',
+                lineNumbers: true,
+                lineWrapping: true
+            });
+        }
+
+        async function loadGameConfigRaw() {
+            const editor = gameConfigEditor || document.getElementById('gameConfigEditor');
+            if (!editor) return;
+            const res = await fetch(`${basePath}/api/admin/config/game-config/raw`);
+            if (!res.ok) return showStatus('Failed to load gameConfig.js', false);
+            const data = await res.json();
+            const content = data.content || '';
+            if (gameConfigEditor) {
+                gameConfigEditor.setValue(content);
+            } else {
+                editor.value = content;
             }
         }
 
-        // Open player edit modal
+        async function saveGameConfigRaw() {
+            const editor = gameConfigEditor || document.getElementById('gameConfigEditor');
+            if (!editor) return;
+            const content = gameConfigEditor ? gameConfigEditor.getValue() : (editor.value || '');
+            if (!content.trim()) return showStatus('gameConfig.js cannot be empty', false);
+            if (!confirm('Save changes to shared/gameConfig.js?')) return;
+
+            const res = await fetch(`${basePath}/api/admin/config/game-config/raw`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content })
+            });
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                return showStatus(err.error || 'Failed to save gameConfig.js', false);
+            }
+
+            showStatus('gameConfig.js updated');
+        }
+
         async function openPlayerModal(userId) {
-            try {
-                const response = await fetch(`${basePath}/api/admin/players/${userId}`);
-                const player = await response.json();
-                currentModalPlayer = player;
-
-                // Populate player details
-                const detailsDiv = document.getElementById('playerDetails');
-                detailsDiv.innerHTML = `
-                    <div class="player-detail-row">
-                        <span class="player-detail-label">Username:</span>
-                        <span class="player-detail-value">${player.username}</span>
-                    </div>
-                    <div class="player-detail-row">
-                        <span class="player-detail-label">User ID:</span>
-                        <span class="player-detail-value">${player.userId}</span>
-                    </div>
-                    <div class="player-detail-row">
-                        <span class="player-detail-label">UFOs Unlocked:</span>
-                        <span class="player-detail-value">${player.unlockedUFOs.length}</span>
-                    </div>
-                    <div class="player-detail-row">
-                        <span class="player-detail-label">Passengers Unlocked:</span>
-                        <span class="player-detail-value">${player.unlockedPassengers.length}</span>
-                    </div>
-                    <div class="player-detail-row">
-                        <span class="player-detail-label">Last Updated:</span>
-                        <span class="player-detail-value">${new Date(player.lastUpdated).toLocaleString()}</span>
-                    </div>
-                    <div class="player-detail-row">
-                        <span class="player-detail-label">Status:</span>
-                        <span id="playerBannedStatus" class="player-detail-value">${player.banned ? 'Banned' : 'Active'}</span>
-                    </div>
-                `;
-
-                // Populate form fields
-                document.getElementById('editLevel').value = player.level;
-                document.getElementById('editXP').value = player.xp;
-                document.getElementById('editCoins').value = player.coins;
-                updateBanButton(player.banned);
-
-                // Store current player ID for form submission
-                document.getElementById('playerEditForm').dataset.userId = userId;
-
-                // Show modal
-                document.getElementById('playerModal').style.display = 'flex';
-            } catch (error) {
-                console.error('Failed to fetch player details:', error);
-                showStatus('Failed to load player details', 'error');
-            }
+            const res = await fetch(`${basePath}/api/admin/players/${encodeURIComponent(userId)}`);
+            if (!res.ok) return showStatus('Failed to load player details', false);
+            modalPlayer = await res.json();
+            document.getElementById('modalMeta').textContent = `${modalPlayer.username} (${modalPlayer.userId})`;
+            document.getElementById('mLevel').value = modalPlayer.level;
+            document.getElementById('mXP').value = modalPlayer.xp;
+            document.getElementById('mCoins').value = modalPlayer.coins;
+            document.getElementById('mBanBtn').textContent = modalPlayer.banned ? 'Unban Player' : 'Ban Player';
+            document.getElementById('playerModal').classList.add('open');
         }
 
-        // Close player edit modal
         function closePlayerModal() {
-            document.getElementById('playerModal').style.display = 'none';
-            document.getElementById('playerEditForm').reset();
-            currentModalPlayer = null;
+            modalPlayer = null;
+            document.getElementById('playerModal').classList.remove('open');
         }
 
-        function updateBanButton(isBanned) {
-            const banButton = document.getElementById('banToggleBtn');
-            const status = document.getElementById('playerBannedStatus');
-            if (!banButton) return;
+        async function savePlayerModal() {
+            if (!modalPlayer) return;
+            const level = parseInt(document.getElementById('mLevel').value, 10);
+            const xp = parseInt(document.getElementById('mXP').value, 10);
+            const coins = parseInt(document.getElementById('mCoins').value, 10);
+            const banned = Boolean(modalPlayer.banned);
 
-            banButton.textContent = isBanned ? 'Unban Player' : 'Ban Player';
-            banButton.classList.remove('btn-warning', 'btn-primary');
-            banButton.classList.add(isBanned ? 'btn-primary' : 'btn-warning');
-
-            if (status) {
-                status.textContent = isBanned ? 'Banned' : 'Active';
-            }
+            const res = await fetch(`${basePath}/api/admin/players/${encodeURIComponent(modalPlayer.userId)}`, {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ level, xp, coins, banned })
+            });
+            if (!res.ok) return showStatus('Failed to update player', false);
+            showStatus('Player updated');
+            closePlayerModal();
         }
 
-        async function toggleBanStatus() {
-            const form = document.getElementById('playerEditForm');
-            const userId = form.dataset.userId;
-            if (!userId || !currentModalPlayer) {
-                return;
-            }
+        function toggleModalBan() {
+            if (!modalPlayer) return;
+            modalPlayer.banned = !modalPlayer.banned;
+            document.getElementById('mBanBtn').textContent = modalPlayer.banned ? 'Unban Player' : 'Ban Player';
+        }
 
-            const nextBannedState = !Boolean(currentModalPlayer.banned);
-            const actionLabel = nextBannedState ? 'ban' : 'unban';
-
-            if (!confirm(`Are you sure you want to ${actionLabel} this player?`)) {
-                return;
-            }
-
-            const level = parseInt(document.getElementById('editLevel').value);
-            const xp = parseInt(document.getElementById('editXP').value);
-            const coins = parseInt(document.getElementById('editCoins').value);
-
-            try {
-                const response = await fetch(`${basePath}/api/admin/players/${userId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ level, xp, coins, banned: nextBannedState })
+        function setupNav() {
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    const target = btn.dataset.section;
+                    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+                    document.getElementById(target).classList.add('active');
+                    if (target === 'twitch') {
+                        loadGameConfigRaw();
+                    }
                 });
-
-                if (response.ok) {
-                    currentModalPlayer.banned = nextBannedState;
-                    updateBanButton(nextBannedState);
-                    showStatus(`Player has been ${nextBannedState ? 'banned' : 'unbanned'}`, 'success');
-                    fetchPlayers();
-                    fetchOnlinePlayers();
-                } else {
-                    const error = await response.json();
-                    showStatus(error.error || `Failed to ${actionLabel} player`, 'error');
-                }
-            } catch (error) {
-                console.error(`Failed to ${actionLabel} player:`, error);
-                showStatus(`Failed to ${actionLabel} player`, 'error');
-            }
+            });
         }
 
-        // Handle player edit form submission
-        document.getElementById('playerEditForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
+        function bindUI() {
+            document.getElementById('levelFilter').addEventListener('input', renderLevels);
+            document.getElementById('despawnAllBtn').addEventListener('click', despawnAllPlayers);
+            document.getElementById('testEmoteAdminBtn').addEventListener('click', triggerTestEmoteFromAdmin);
+            document.getElementById('saveChannelBtn').addEventListener('click', saveTwitchChannel);
+            document.getElementById('reloadGameConfigBtn').addEventListener('click', loadGameConfigRaw);
+            document.getElementById('saveGameConfigBtn').addEventListener('click', saveGameConfigRaw);
+            document.getElementById('mCancelBtn').addEventListener('click', closePlayerModal);
+            document.getElementById('mSaveBtn').addEventListener('click', savePlayerModal);
+            document.getElementById('mBanBtn').addEventListener('click', toggleModalBan);
+            document.getElementById('playerModal').addEventListener('click', (e) => {
+                if (e.target.id === 'playerModal') closePlayerModal();
+            });
+        }
 
-            const userId = e.target.dataset.userId;
-            const level = parseInt(document.getElementById('editLevel').value);
-            const xp = parseInt(document.getElementById('editXP').value);
-            const coins = parseInt(document.getElementById('editCoins').value);
-            const banned = Boolean(currentModalPlayer?.banned);
-
-            try {
-                const response = await fetch(`${basePath}/api/admin/players/${userId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ level, xp, coins, banned })
-                });
-
-                if (response.ok) {
-                    const result = await response.json();
-                    showStatus(`Player "${result.userId}" updated successfully`, 'success');
-                    closePlayerModal();
-                    fetchPlayers(); // Refresh the player list
-                } else {
-                    const error = await response.json();
-                    showStatus(error.error || 'Failed to update player', 'error');
-                }
-            } catch (error) {
-                console.error('Failed to update player:', error);
-                showStatus('Failed to update player', 'error');
-            }
-        });
-
-        // Close modal when clicking outside
-        window.addEventListener('click', (event) => {
-            const modal = document.getElementById('playerModal');
-            if (event.target === modal) {
-                closePlayerModal();
-            }
-        });
-
-        // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
+            setupNav();
+            bindUI();
+            initGameConfigEditor();
             await loadConfig();
-            fetchCurrentLevel();
-            fetchTwitchChannel();
-            fetchTwitchSpeechBubbles();
-            fetchLevels();
-            fetchPlayers();
-            fetchOnlinePlayers();
-
-            const toggle = document.getElementById('twitchSpeechBubblesToggle');
-            if (toggle) {
-                toggle.addEventListener('change', (event) => {
-                    updateTwitchSpeechBubbles(event.target.checked);
-                });
+            try {
+                await loadInitialSnapshot();
+            } catch (error) {
+                showStatus('Failed to load admin snapshot', false);
+            }
+            try {
+                await loadGameConfigRaw();
+            } catch (error) {
+                showStatus('Failed to load gameConfig.js', false);
+            }
+            await loadSocketScript();
+            try {
+                await connectRealtime();
+            } catch (error) {
+                showStatus('Failed to connect admin realtime stream', false);
             }
         });
     </script>

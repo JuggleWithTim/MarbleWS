@@ -1,8 +1,53 @@
 // Socket connection tracking for limiting
 const connectedSockets = new Map(); // Track connections per IP
 const MAX_CONNECTIONS_PER_IP = 10;
+const fs = require('fs');
+const path = require('path');
 
-function setupSocketHandlers(io, gameLogic, validTokens) {
+const TEST_EMOTE_IDS = {
+  kappa: '25',
+  pogchamp: '88',
+  lul: '425618',
+  monkas: '30389961',
+  omegalul: '128054',
+  kekw: '834269',
+  biblethump: '86',
+  seemsgood: '64138'
+};
+
+function setupSocketHandlers(io, gameLogic, validTokens, adminRealtime = {}) {
+  const {
+    isValidAdminToken = () => false,
+    getAdminSnapshot = async () => ({}),
+    emitAdminActivity = () => {},
+    emitAdminBootstrap = () => {},
+    getOnlinePlayersForAdmin = () => []
+  } = adminRealtime;
+
+  const levelsDir = path.resolve(__dirname, '../levels');
+
+  function resolveTestEmote(requestedName = '') {
+    const normalizedName = String(requestedName || '').trim();
+    const key = normalizedName.toLowerCase();
+
+    let emoteId = TEST_EMOTE_IDS[key] || null;
+
+    // Allow direct numeric Twitch emote IDs as input for flexibility
+    if (!emoteId && /^\d{1,12}$/.test(normalizedName)) {
+      emoteId = normalizedName;
+    }
+
+    // Fallback to Kappa if unknown
+    if (!emoteId) {
+      emoteId = TEST_EMOTE_IDS.kappa;
+    }
+
+    const emoteName = normalizedName || 'Kappa';
+    const emoteUrl = `https://static-cdn.jtvnw.net/emoticons/v2/${emoteId}/default/dark/3.0`;
+
+    return { emoteName, emoteId, emoteUrl };
+  }
+
   // Function to extract real IP from proxy headers
   function getClientIP(socket) {
     // First try Socket.IO's built-in proxy detection
@@ -42,6 +87,8 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
         levelName: nextLevelName,
         levelData
       });
+      emitAdminActivity('level', `Auto-loaded next level: ${nextLevelName}`, { levelName: nextLevelName });
+      emitAdminBootstrap();
     } else {
       console.error(`Next level not found: ${nextLevelName}`);
     }
@@ -116,6 +163,14 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
   // Listen for Race mode events
   gameLogic.on('raceCountdown', (data) => {
     io.emit('raceCountdown', data);
+
+    // Send race countdown announcement to Twitch chat
+    if (typeof data?.remaining === 'number' && data.remaining > 0) {
+      gameLogic.eventEmitter.emit('sendAnnouncement', {
+        type: 'raceCountdown',
+        data
+      });
+    }
   });
 
   // Listen for Twitch chat messages to broadcast to clients
@@ -125,14 +180,57 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
 
   gameLogic.on('raceStart', (data) => {
     io.emit('raceStart', data);
+
+    const currentMode = gameLogic.levelManager?.gameModeManager?.getCurrentMode?.();
+    const raceData = {
+      ...data,
+      playerCount: gameLogic.players.size,
+      laps: currentMode?.laps,
+      checkpointCount: currentMode?.checkpoints?.length || 0
+    };
+
+    // Send race start announcement to Twitch chat
+    gameLogic.eventEmitter.emit('sendAnnouncement', {
+      type: 'raceStart',
+      data: raceData
+    });
   });
 
   gameLogic.on('raceCheckpoint', (data) => {
     io.to(data.playerId).emit('raceCheckpoint', data);
+
+    const player = gameLogic.players.get(data.playerId);
+    const currentMode = gameLogic.levelManager?.gameModeManager?.getCurrentMode?.();
+    const checkpointCount = currentMode?.checkpoints?.length || 0;
+    const reachedCheckpoint = checkpointCount > 0
+      ? (data.checkpointIndex === 0 ? checkpointCount : data.checkpointIndex)
+      : data.checkpointIndex;
+
+    // Send race checkpoint announcement to Twitch chat
+    gameLogic.eventEmitter.emit('sendAnnouncement', {
+      type: 'raceCheckpoint',
+      data: {
+        ...data,
+        username: player?.username,
+        checkpoint: reachedCheckpoint,
+        checkpointCount
+      }
+    });
   });
 
   gameLogic.on('raceLap', (data) => {
     io.to(data.playerId).emit('raceLap', data);
+
+    const player = gameLogic.players.get(data.playerId);
+
+    // Send race lap announcement to Twitch chat
+    gameLogic.eventEmitter.emit('sendAnnouncement', {
+      type: 'raceLap',
+      data: {
+        ...data,
+        username: player?.username
+      }
+    });
   });
 
   gameLogic.on('racePlayerEffect', (data) => {
@@ -141,23 +239,80 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
 
   gameLogic.on('raceFinished', (data) => {
     io.to(data.playerId).emit('raceFinished', data);
+
+    // Send race player finish announcement to Twitch chat
+    gameLogic.eventEmitter.emit('sendAnnouncement', {
+      type: 'racePlayerFinish',
+      data
+    });
   });
 
   gameLogic.on('raceEnd', (data) => {
     io.emit('raceEnd', data);
 
-    // Send race finish announcement to Twitch chat
+    const didTimeout = Array.isArray(data?.results)
+      && data.results.some(result => result.finishTime === null || result.finishTime === undefined);
+
+    // Send race finish/timeout announcement to Twitch chat
     gameLogic.eventEmitter.emit('sendAnnouncement', {
-      type: 'raceFinish',
-      data: data
+      type: didTimeout ? 'raceTimeout' : 'raceFinish',
+      data
     });
   });
 
   gameLogic.on('raceNextRound', (data) => {
     io.emit('raceNextRound', data);
+
+    const countdownSeconds = Math.max(0, Math.round((gameLogic.levelManager?.gameModeManager?.getCurrentMode?.()?.countdownStartTime
+      ? (gameLogic.levelManager.gameModeManager.getCurrentMode().countdownStartTime + 3000 - Date.now())
+      : 0) / 1000));
+
+    // Send next-round announcement to Twitch chat
+    gameLogic.eventEmitter.emit('sendAnnouncement', {
+      type: 'raceNextRound',
+      data: {
+        ...data,
+        countdownSeconds: countdownSeconds || 3
+      }
+    });
   });
 
   io.on('connection', (socket) => {
+    socket.data = socket.data || {};
+    socket.data.isAdmin = false;
+
+    function requireAdminSocket(eventName) {
+      if (socket.data.isAdmin === true) {
+        return true;
+      }
+
+      console.warn(`Unauthorized socket event attempt: ${eventName} from socket ${socket.id}`);
+      socket.emit('admin:auth:error', { message: `Admin authorization required for ${eventName}` });
+      return false;
+    }
+
+    function getSafeLevelPath(levelName) {
+      if (typeof levelName !== 'string') {
+        return null;
+      }
+
+      const trimmed = levelName.trim();
+      if (!trimmed || trimmed.length > 120) {
+        return null;
+      }
+
+      if (!/^[a-zA-Z0-9 _-]+$/.test(trimmed)) {
+        return null;
+      }
+
+      const resolvedPath = path.resolve(levelsDir, `${trimmed}.json`);
+      if (!resolvedPath.startsWith(levelsDir + path.sep)) {
+        return null;
+      }
+
+      return { levelPath: resolvedPath, levelName: trimmed };
+    }
+
     // Get real client IP address from proxy headers
     const clientIP = getClientIP(socket);
 
@@ -269,6 +424,18 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
       socket.emit('loginSuccess', player);
       socket.broadcast.emit('playerJoined', player);
 
+      try {
+        emitAdminActivity('player_join', `Player joined: ${player.username}`, {
+          userId: player.userId,
+          username: player.username,
+          socketId: player.id,
+          ip: clientIP,
+          onlineCount: getOnlinePlayersForAdmin().length
+        });
+      } catch (error) {
+        console.error('Failed to emit admin player_join activity:', error);
+      }
+
       // Send join announcement to Twitch chat
       gameLogic.eventEmitter.emit('sendAnnouncement', {
         type: 'joinLeave',
@@ -280,6 +447,32 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
 
       // Send current game state to new player
       socket.emit('gameState', gameLogic.getGameState());
+      emitAdminBootstrap();
+    });
+
+    // Handle admin realtime authentication
+    socket.on('admin:authenticate', async (data) => {
+      if (!data || typeof data.token !== 'string') {
+        socket.emit('admin:auth:error', { message: 'Missing realtime admin token' });
+        return;
+      }
+
+      if (!isValidAdminToken(data.token)) {
+        socket.emit('admin:auth:error', { message: 'Invalid or expired realtime admin token' });
+        return;
+      }
+
+      socket.data.isAdmin = true;
+      socket.join('admins');
+      socket.emit('admin:auth:ok', { connectedAt: Date.now() });
+
+      try {
+        const snapshot = await getAdminSnapshot();
+        socket.emit('admin:bootstrap', snapshot);
+        socket.emit('admin:onlinePlayers:update', getOnlinePlayersForAdmin());
+      } catch (error) {
+        socket.emit('admin:auth:error', { message: 'Failed to initialize admin stream' });
+      }
     });
 
     // Handle player input (WASD keys)
@@ -344,9 +537,17 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
 
     // Handle level loading
     socket.on('loadLevel', (levelName) => {
-      const fs = require('fs');
-      const path = require('path');
-      const levelPath = path.join(__dirname, '../levels', `${levelName}.json`);
+      if (!requireAdminSocket('loadLevel')) {
+        return;
+      }
+
+      const safeLevel = getSafeLevelPath(levelName);
+      if (!safeLevel) {
+        socket.emit('error', { message: 'Invalid level name' });
+        return;
+      }
+
+      const { levelPath, levelName: safeLevelName } = safeLevel;
 
       if (fs.existsSync(levelPath)) {
         const levelData = JSON.parse(fs.readFileSync(levelPath, 'utf8'));
@@ -354,15 +555,17 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
 
         // Broadcast level change to all players
         io.emit('levelLoaded', {
-          levelName,
+          levelName: safeLevelName,
           levelData
         });
+        emitAdminActivity('level', `Level loaded: ${safeLevelName}`, { levelName: safeLevelName });
+        emitAdminBootstrap();
 
         // Send level change announcement to Twitch chat
         gameLogic.eventEmitter.emit('sendAnnouncement', {
           type: 'levelChange',
           data: {
-            levelName
+            levelName: safeLevelName
           }
         });
       } else {
@@ -372,12 +575,23 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
 
     // Handle manual emote spawn (for testing)
     socket.on('spawnTestEmote', (data) => {
-      const { emoteName } = data;
-      // This would typically be restricted to admins/streamers
+      if (!requireAdminSocket('spawnTestEmote')) {
+        return;
+      }
+
+      const requestedName = (data && typeof data.emoteName === 'string' ? data.emoteName : '').trim().slice(0, 64);
+      const { emoteName, emoteId, emoteUrl } = resolveTestEmote(requestedName);
+
       gameLogic.spawnEmote(
-        `https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/1.0`, 
+        emoteUrl,
         emoteName || 'Kappa'
       );
+
+      emitAdminActivity('emote', `Test emote spawned: ${emoteName || 'Kappa'}`, {
+        socketId: socket.id,
+        emoteName: emoteName || 'Kappa',
+        emoteId
+      });
     });
 
     // Handle disconnect
@@ -403,6 +617,18 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
 
       // Send leave announcement to Twitch chat
       if (player) {
+        try {
+          emitAdminActivity('player_leave', `Player left: ${player.username}`, {
+            userId: player.userId,
+            username: player.username,
+            socketId: socket.id,
+            ip: clientIP,
+            onlineCount: getOnlinePlayersForAdmin().length
+          });
+        } catch (error) {
+          console.error('Failed to emit admin player_leave activity:', error);
+        }
+
         gameLogic.eventEmitter.emit('sendAnnouncement', {
           type: 'joinLeave',
           data: {
@@ -411,9 +637,19 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
           }
         });
       }
+
+      io.to('admins').emit('admin:onlinePlayers:update', getOnlinePlayersForAdmin());
+      emitAdminBootstrap();
     });
 
-    // Handle chat messages (optional feature)
+    // SECURITY HARDENING (2026-02): In-game chat socket handler disabled.
+    // Reason: client chat rendering used unsafe innerHTML and created XSS risk.
+    // Keep this block commented for future re-enable if needed.
+    // IMPORTANT before re-enabling:
+    // 1) validate `data` and `message` types/length server-side
+    // 2) escape/sanitize all untrusted content
+    // 3) render with textContent (never innerHTML) client-side
+    /*
     socket.on('chatMessage', (data) => {
       const { message } = data;
       const player = gameLogic.players.get(socket.id);
@@ -461,6 +697,7 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
         });
       }
     });
+    */
 
     // Handle keepalive messages (for overlays and other passive clients)
     socket.on('keepalive', () => {
@@ -552,6 +789,11 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
       // Send result back to client
       socket.emit('unlockResult', result);
     });
+
+    // Keepalive for admin realtime dashboards
+    socket.on('admin:ping', () => {
+      socket.emit('admin:pong', { at: Date.now() });
+    });
   });
 
   // Broadcast game state updates periodically
@@ -559,6 +801,11 @@ function setupSocketHandlers(io, gameLogic, validTokens) {
     const gameState = gameLogic.getGameState();
     io.emit('gameStateUpdate', gameState);
   }, 100); // 10 FPS for game state updates
+
+  // Broadcast lightweight admin online-player snapshots for live dashboards
+  setInterval(() => {
+    io.to('admins').emit('admin:onlinePlayers:update', getOnlinePlayersForAdmin());
+  }, 1000);
 }
 
 module.exports = { setupSocketHandlers };

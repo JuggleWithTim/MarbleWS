@@ -177,6 +177,8 @@ class PlayerManager {
       targetY: spawnY,
       speedMultiplier: 1,
       speedBoostExpiresAt: 0,
+      controlsInverted: false,
+      controlsInvertedExpiresAt: 0,
       banned: savedData.banned
     };
 
@@ -272,6 +274,8 @@ class PlayerManager {
         player.beamTarget = null;
         player.speedMultiplier = 1;
         player.speedBoostExpiresAt = 0;
+        player.controlsInverted = false;
+        player.controlsInvertedExpiresAt = 0;
       }
     });
   }
@@ -291,10 +295,19 @@ class PlayerManager {
         const forceAmount = 0.003 * speedMultiplier; // Similar to reference game's 0.0035
         let fx = 0, fy = 0;
 
-        if (player.input.up) fy -= forceAmount;
-        if (player.input.down) fy += forceAmount;
-        if (player.input.left) fx -= forceAmount;
-        if (player.input.right) fx += forceAmount;
+        const input = player.controlsInverted
+          ? {
+              up: player.input.down,
+              down: player.input.up,
+              left: player.input.right,
+              right: player.input.left
+            }
+          : player.input;
+
+        if (input.up) fy -= forceAmount;
+        if (input.down) fy += forceAmount;
+        if (input.left) fx -= forceAmount;
+        if (input.right) fx += forceAmount;
 
         if (fx !== 0 || fy !== 0) {
           Matter.Body.applyForce(
@@ -325,11 +338,30 @@ class PlayerManager {
     player.speedBoostExpiresAt = Date.now() + durationMs;
   }
 
+  applyConfusion(playerId, durationMs) {
+    const player = this.players.get(playerId);
+    if (!player) return;
+
+    player.controlsInverted = true;
+    player.controlsInvertedExpiresAt = Date.now() + durationMs;
+  }
+
   updateSpeedBoosts(now = Date.now()) {
     this.players.forEach(player => {
       if (player.speedBoostExpiresAt && player.speedBoostExpiresAt <= now) {
         player.speedMultiplier = 1;
         player.speedBoostExpiresAt = 0;
+      }
+    });
+  }
+
+  updateStatusEffects(now = Date.now()) {
+    this.updateSpeedBoosts(now);
+
+    this.players.forEach(player => {
+      if (player.controlsInvertedExpiresAt && player.controlsInvertedExpiresAt <= now) {
+        player.controlsInverted = false;
+        player.controlsInvertedExpiresAt = 0;
       }
     });
   }

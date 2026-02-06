@@ -9,6 +9,12 @@ class Renderer {
         };
         this.images = new Map();
         this.loadedImages = new Set();
+        this.scaledBackgrounds = new Map(); // url|canvasSize -> pre-scaled bitmap/canvas
+        this.scaledObjectImages = new Map(); // url|shape|objectSize -> pre-scaled bitmap/canvas
+        this.backgroundCacheCanvasSize = {
+            width: canvas.width,
+            height: canvas.height
+        };
         this.goalParticles = []; // Active goal celebration particles
     }clear() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -25,10 +31,19 @@ class Renderer {
         // Clear the canvas
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
+        this.invalidateBackgroundCacheIfCanvasChanged();
+
         if (imageUrl) {
             const cached = this.images.get(imageUrl);
-            if (cached) {
-                // Stretch background to full canvas
+            if (cached instanceof HTMLImageElement && cached.complete) {
+                const scaledBackground = this.getOrCreateScaledBackground(imageUrl, cached);
+                if (scaledBackground) {
+                    // Draw pre-scaled background to avoid re-scaling giant sources every frame
+                    this.ctx.drawImage(scaledBackground, 0, 0, this.canvas.width, this.canvas.height);
+                    return;
+                }
+
+                // Fallback if pre-scaling fails for any reason
                 this.ctx.drawImage(cached, 0, 0, this.canvas.width, this.canvas.height);
                 return;
             }
@@ -62,7 +77,74 @@ class Renderer {
             x: (screenX - this.canvas.width / 2) / this.camera.zoom + this.camera.x,
             y: (screenY - this.canvas.height / 2) / this.camera.zoom + this.camera.y
         };
-    }async loadImage(url) {
+    }
+
+    invalidateBackgroundCacheIfCanvasChanged() {
+        if (
+            this.backgroundCacheCanvasSize.width !== this.canvas.width ||
+            this.backgroundCacheCanvasSize.height !== this.canvas.height
+        ) {
+            this.backgroundCacheCanvasSize.width = this.canvas.width;
+            this.backgroundCacheCanvasSize.height = this.canvas.height;
+            this.scaledBackgrounds.clear();
+        }
+    }
+
+    createScaledBitmap(source, targetWidth, targetHeight) {
+        const width = Math.max(1, Math.round(targetWidth));
+        const height = Math.max(1, Math.round(targetHeight));
+
+        if (!Number.isFinite(width) || !Number.isFinite(height)) {
+            return null;
+        }
+
+        let buffer;
+        if (typeof OffscreenCanvas !== 'undefined') {
+            buffer = new OffscreenCanvas(width, height);
+        } else {
+            buffer = document.createElement('canvas');
+            buffer.width = width;
+            buffer.height = height;
+        }
+
+        const bufferCtx = buffer.getContext('2d');
+        if (!bufferCtx) return null;
+
+        bufferCtx.imageSmoothingEnabled = true;
+        bufferCtx.drawImage(source, 0, 0, width, height);
+        return buffer;
+    }
+
+    getOrCreateScaledBackground(imageUrl, sourceImage) {
+        const key = `${imageUrl}|${this.canvas.width}x${this.canvas.height}`;
+        if (this.scaledBackgrounds.has(key)) {
+            return this.scaledBackgrounds.get(key);
+        }
+
+        const scaled = this.createScaledBitmap(sourceImage, this.canvas.width, this.canvas.height);
+        if (scaled) {
+            this.scaledBackgrounds.set(key, scaled);
+        }
+        return scaled;
+    }
+
+    getOrCreateScaledObjectImage(imageUrl, sourceImage, shape, width, height) {
+        const normalizedWidth = Math.max(1, Math.round(width));
+        const normalizedHeight = Math.max(1, Math.round(height));
+        const key = `${imageUrl}|${shape}|${normalizedWidth}x${normalizedHeight}`;
+
+        if (this.scaledObjectImages.has(key)) {
+            return this.scaledObjectImages.get(key);
+        }
+
+        const scaled = this.createScaledBitmap(sourceImage, normalizedWidth, normalizedHeight);
+        if (scaled) {
+            this.scaledObjectImages.set(key, scaled);
+        }
+        return scaled;
+    }
+
+    async loadImage(url) {
         if (this.images.has(url)) {
             const cached = this.images.get(url);
             return Promise.resolve(cached);
@@ -377,16 +459,31 @@ class Renderer {
             if (cachedImage instanceof HTMLImageElement && cachedImage.complete) {
                 // Image is loaded, draw it synchronously
                 if (obj.shape === 'rectangle') {
+                    const scaledImage = this.getOrCreateScaledObjectImage(
+                        obj.backgroundImage,
+                        cachedImage,
+                        'rectangle',
+                        obj.width,
+                        obj.height
+                    ) || cachedImage;
                     const screenPos = this.worldToScreen(obj.x, obj.y);
 
                     this.ctx.save();
                     this.ctx.translate(screenPos.x, screenPos.y);
                     this.ctx.rotate(obj.angle || 0);
-                    this.ctx.drawImage(cachedImage,
+                    this.ctx.drawImage(scaledImage,
                         -obj.width/2 * this.camera.zoom, -obj.height/2 * this.camera.zoom,
                         obj.width * this.camera.zoom, obj.height * this.camera.zoom);
                     this.ctx.restore();
                 } else if (obj.shape === 'circle') {
+                    const diameter = obj.radius * 2;
+                    const scaledImage = this.getOrCreateScaledObjectImage(
+                        obj.backgroundImage,
+                        cachedImage,
+                        'circle',
+                        diameter,
+                        diameter
+                    ) || cachedImage;
                     // Create a circular clipping path
                     const screenPos = this.worldToScreen(obj.x, obj.y);
 
@@ -400,7 +497,7 @@ class Renderer {
                     this.ctx.clip();
 
                     // Draw the image
-                    this.ctx.drawImage(cachedImage,
+                    this.ctx.drawImage(scaledImage,
                         -obj.radius * this.camera.zoom, -obj.radius * this.camera.zoom,
                         obj.radius * 2 * this.camera.zoom, obj.radius * 2 * this.camera.zoom);
 
@@ -421,12 +518,28 @@ class Renderer {
 
                         const xs = vertices.map(vertex => vertex.x);
                         const ys = vertices.map(vertex => vertex.y);
-                        const minX = Math.min(...xs) * this.camera.zoom;
-                        const maxX = Math.max(...xs) * this.camera.zoom;
-                        const minY = Math.min(...ys) * this.camera.zoom;
-                        const maxY = Math.max(...ys) * this.camera.zoom;
+                        const minX = Math.min(...xs);
+                        const maxX = Math.max(...xs);
+                        const minY = Math.min(...ys);
+                        const maxY = Math.max(...ys);
+                        const boundsWidth = maxX - minX;
+                        const boundsHeight = maxY - minY;
 
-                        this.ctx.drawImage(cachedImage, minX, minY, maxX - minX, maxY - minY);
+                        const scaledImage = this.getOrCreateScaledObjectImage(
+                            obj.backgroundImage,
+                            cachedImage,
+                            'triangle',
+                            boundsWidth,
+                            boundsHeight
+                        ) || cachedImage;
+
+                        this.ctx.drawImage(
+                            scaledImage,
+                            minX * this.camera.zoom,
+                            minY * this.camera.zoom,
+                            boundsWidth * this.camera.zoom,
+                            boundsHeight * this.camera.zoom
+                        );
                         this.ctx.restore();
                     }
                 }
