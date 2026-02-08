@@ -965,6 +965,74 @@ class PlayerManager {
     });
   }
 
+  awardXPAndCoinsForBeamDrain(results) {
+    if (!results || results.length === 0) return;
+
+    const playerCount = results.length;
+    const rewardConfig = gameConfig.beamDrainReward || gameConfig.colorRushReward;
+    const baseXP = rewardConfig.xp;
+    const baseCoins = rewardConfig.coins;
+
+    const totalXP = playerCount * baseXP;
+    const totalCoins = playerCount * baseCoins;
+
+    console.log(`Beam Drain ended with ${playerCount} players. Reward pot: ${totalXP} XP, ${totalCoins} coins`);
+
+    const weights = [];
+    let totalWeight = 0;
+    for (let i = 0; i < playerCount; i++) {
+      const weight = Math.pow(0.7, i);
+      weights.push(weight);
+      totalWeight += weight;
+    }
+
+    results.forEach((result, index) => {
+      const placement = index + 1;
+      const player = Array.from(this.players.values()).find(p => p.id === result.playerId);
+      if (!player) return;
+
+      const normalizedWeight = weights[index] / totalWeight;
+      const xpReward = Math.max(1, Math.round(totalXP * normalizedWeight));
+      const coinReward = Math.max(1, Math.round(totalCoins * normalizedWeight));
+
+      const oldLevel = player.level;
+      player.xp += xpReward;
+      player.coins += coinReward;
+
+      result.xpReward = xpReward;
+      result.coinReward = coinReward;
+
+      const newLevel = this.calculateLevelFromXP(player.xp);
+      if (newLevel > oldLevel) {
+        player.level = newLevel;
+        const levelUpCoins = oldLevel * 100;
+        player.coins += levelUpCoins;
+
+        this.eventEmitter.emit('playerLeveledUp', {
+          playerId: player.id,
+          username: player.username,
+          newLevel: player.level,
+          coinReward: levelUpCoins
+        });
+      }
+
+      this.savePlayerData(
+        player.userId,
+        player.ufoAppearance,
+        player.level,
+        player.xp,
+        player.coins,
+        player.unlockedUFOs,
+        player.unlockedPassengers,
+        player.unlockedHats,
+        player.username,
+        player.banned
+      );
+
+      console.log(`Player ${player.username} (#${placement}) gained ${xpReward} XP and ${coinReward} coins from Beam Drain!`);
+    });
+  }
+
   // Set references to external dependencies
   setWorld(world) {
     this.world = world;

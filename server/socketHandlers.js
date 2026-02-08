@@ -277,6 +277,28 @@ function setupSocketHandlers(io, gameLogic, validTokens, adminRealtime = {}) {
     });
   });
 
+  // Listen for Beam Drain mode events
+  gameLogic.on('beamDrainRoundStart', (data) => {
+    io.emit('beamDrainRoundStart', data);
+  });
+
+  gameLogic.on('beamDrainRoundEnd', (data) => {
+    io.emit('beamDrainRoundEnd', data);
+
+    gameLogic.eventEmitter.emit('sendAnnouncement', {
+      type: 'beamDrainEnd',
+      data
+    });
+  });
+
+  gameLogic.on('beamDrainNextRound', (data) => {
+    io.emit('beamDrainNextRound', data);
+  });
+
+  gameLogic.on('beamDrainPlayerEliminated', (data) => {
+    io.emit('beamDrainPlayerEliminated', data);
+  });
+
   io.on('connection', (socket) => {
     socket.data = socket.data || {};
     socket.data.isAdmin = false;

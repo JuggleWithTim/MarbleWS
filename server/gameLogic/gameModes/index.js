@@ -3,6 +3,7 @@ const MarbleMode = require('./marbleMode');
 const ColorRushMode = require('./colorRushMode');
 const DungeonMode = require('./dungeonMode');
 const RaceMode = require('./raceMode');
+const BeamDrainMode = require('./beamDrainMode');
 
 class GameModeManager {
   constructor(eventEmitter, playerManager, levelManager) {
@@ -14,7 +15,8 @@ class GameModeManager {
       'Marble': MarbleMode,
       'Color Rush': ColorRushMode,
       'Dungeon': DungeonMode,
-      'Race': RaceMode
+      'Race': RaceMode,
+      'Beam Drain': BeamDrainMode
     };
   }
 
