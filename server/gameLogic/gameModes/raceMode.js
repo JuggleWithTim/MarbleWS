@@ -323,6 +323,9 @@ class RaceMode extends BaseGameMode {
       player.input = null;
       player.speedMultiplier = 1;
       player.speedBoostExpiresAt = 0;
+      player.controlsInverted = false;
+      player.controlsInvertedExpiresAt = 0;
+      this.playerManager.clearGhost(playerId);
       player.beamActive = false;
       player.beamTarget = null;
       const Matter = require('matter-js');

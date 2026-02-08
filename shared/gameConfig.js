@@ -70,6 +70,9 @@ const gameConfig = {
       },
       confusion: {
         durationMs: 2000
+      },
+      ghost: {
+        durationMs: 2000
       }
     }
   },

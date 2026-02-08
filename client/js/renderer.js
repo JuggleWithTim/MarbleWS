@@ -224,12 +224,16 @@ class Renderer {
         this.ctx.restore();
     }
 
-    drawUFO(x, y, color = '#4ecdc4', beamActive = false, appearance = null, game = null, scale = 1) {
+    drawUFO(x, y, color = '#4ecdc4', beamActive = false, appearance = null, game = null, scale = 1, isGhost = false) {
         const screenPos = this.worldToScreen(x, y);
         const size = 30 * this.camera.zoom * scale;
 
         this.ctx.save();
         this.ctx.translate(screenPos.x, screenPos.y);
+
+        if (isGhost) {
+            this.ctx.globalAlpha = 0.45;
+        }
 
         // Check if player has custom appearance
         if (appearance && appearance.type === 'custom' && appearance.image) {

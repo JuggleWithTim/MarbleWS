@@ -355,7 +355,9 @@ class TransparentRenderer extends Renderer {
                         color,
                         renderable.data.beamActive,
                         renderable.data.ufoAppearance,
-                        gameData
+                        gameData,
+                        1,
+                        !!renderable.data.isGhost
                     );
                     break;
             }

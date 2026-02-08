@@ -598,7 +598,7 @@ class PhysicsEngine {
           continue;
         }
 
-        const effect = this.pickItemForSpawn(spawn, config.items || { turbo: {}, slow: {}, confusion: {} });
+        const effect = this.pickItemForSpawn(spawn, config.items || { turbo: {}, slow: {}, confusion: {}, ghost: {} });
         this.playerEffectCooldowns.set(cooldownKey, now);
         this.applyItemEffect(playerId, effect, config.items || {});
 
@@ -624,6 +624,11 @@ class PhysicsEngine {
     const itemConfig = itemsConfig[item] || {};
     const multiplier = itemConfig.speedMultiplier || 1;
     const durationMs = itemConfig.durationMs || 1000;
+
+    if (item === 'ghost') {
+      this.playerManager.applyGhost(playerId, durationMs);
+      return;
+    }
 
     if (item === 'confusion') {
       this.playerManager.applyConfusion(playerId, durationMs);

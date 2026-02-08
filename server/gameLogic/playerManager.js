@@ -179,6 +179,8 @@ class PlayerManager {
       speedBoostExpiresAt: 0,
       controlsInverted: false,
       controlsInvertedExpiresAt: 0,
+      isGhost: false,
+      ghostExpiresAt: 0,
       banned: savedData.banned
     };
 
@@ -201,6 +203,7 @@ class PlayerManager {
       xp: savedData.xp,
       level: savedData.level,
       coins: savedData.coins,
+      isGhost: false,
       banned: savedData.banned
     };
   }
@@ -276,6 +279,9 @@ class PlayerManager {
         player.speedBoostExpiresAt = 0;
         player.controlsInverted = false;
         player.controlsInvertedExpiresAt = 0;
+        player.isGhost = false;
+        player.ghostExpiresAt = 0;
+        this.setPlayerCollisionEnabled(player, true);
       }
     });
   }
@@ -346,6 +352,34 @@ class PlayerManager {
     player.controlsInvertedExpiresAt = Date.now() + durationMs;
   }
 
+  setPlayerCollisionEnabled(player, enabled) {
+    if (!player || !player.body) return;
+
+    const currentFilter = player.body.collisionFilter || {};
+    Matter.Body.set(player.body, 'collisionFilter', {
+      ...currentFilter,
+      mask: enabled ? 0xFFFFFFFF : 0x0000
+    });
+  }
+
+  applyGhost(playerId, durationMs) {
+    const player = this.players.get(playerId);
+    if (!player) return;
+
+    player.isGhost = true;
+    player.ghostExpiresAt = Date.now() + durationMs;
+    this.setPlayerCollisionEnabled(player, false);
+  }
+
+  clearGhost(playerId) {
+    const player = this.players.get(playerId);
+    if (!player) return;
+
+    player.isGhost = false;
+    player.ghostExpiresAt = 0;
+    this.setPlayerCollisionEnabled(player, true);
+  }
+
   updateSpeedBoosts(now = Date.now()) {
     this.players.forEach(player => {
       if (player.speedBoostExpiresAt && player.speedBoostExpiresAt <= now) {
@@ -362,6 +396,10 @@ class PlayerManager {
       if (player.controlsInvertedExpiresAt && player.controlsInvertedExpiresAt <= now) {
         player.controlsInverted = false;
         player.controlsInvertedExpiresAt = 0;
+      }
+
+      if (player.ghostExpiresAt && player.ghostExpiresAt <= now) {
+        this.clearGhost(player.id);
       }
     });
   }

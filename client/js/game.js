@@ -735,7 +735,8 @@ class Game {
                         renderable.data.beamActive,
                         renderable.data.ufoAppearance,
                         this,
-                        playerScale
+                        playerScale,
+                        !!renderable.data.isGhost
                     );
                     break;
             }
