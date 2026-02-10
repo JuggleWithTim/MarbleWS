@@ -87,6 +87,12 @@ class ColorRushMode extends BaseGameMode {
     this.deadPlayers.delete(playerId);
     this.waitingPlayers.delete(playerId);
     this.playerSections.delete(playerId);
+
+    const player = this.playerManager.players.get(playerId);
+    if (player) {
+      player.isGhost = false;
+      player.ghostExpiresAt = 0;
+    }
   }
 
   handlePlayerInput(playerId, input) {
@@ -169,6 +175,15 @@ class ColorRushMode extends BaseGameMode {
 
     // Reset dead players for new round
     this.deadPlayers.clear();
+
+    // Clear eliminated visual ghost state for all active players at round start
+    for (const playerId of this.alivePlayers) {
+      const player = this.playerManager.players.get(playerId);
+      if (player) {
+        player.isGhost = false;
+        player.ghostExpiresAt = 0;
+      }
+    }
 
     console.log(`Round ${this.currentRound} started with ${this.alivePlayers.size} players. Initial safe section: ${this.getSectionName(this.safeSectionId)}, grace period: ${this.currentGracePeriod}ms`);
 
@@ -300,7 +315,13 @@ class ColorRushMode extends BaseGameMode {
     this.deadPlayers.set(playerId, deathTime);
 
     // Clear any active input to prevent stuck movement
-    this.playerManager.players.get(playerId).input = null;
+    const eliminatedPlayer = this.playerManager.players.get(playerId);
+    if (eliminatedPlayer) {
+      eliminatedPlayer.input = null;
+      // Visual ghost effect only (do not disable collisions)
+      eliminatedPlayer.isGhost = true;
+      eliminatedPlayer.ghostExpiresAt = 0;
+    }
 
     // Emit player death event
     this.eventEmitter.emit('colorRushPlayerDeath', {

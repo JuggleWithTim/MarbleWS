@@ -79,6 +79,12 @@ class BeamDrainMode extends BaseGameMode {
     this.eliminatedBy.delete(playerId);
     this.drainedByPlayer.delete(playerId);
 
+    const player = this.playerManager.players.get(playerId);
+    if (player) {
+      player.isGhost = false;
+      player.ghostExpiresAt = 0;
+    }
+
     if (this.roundState === 'active' && this.alivePlayers.size <= 1) {
       this.endRound();
     }
@@ -151,6 +157,13 @@ class BeamDrainMode extends BaseGameMode {
       this.alivePlayers.add(playerId);
       this.energyByPlayer.set(playerId, this.startEnergy);
       this.drainedByPlayer.set(playerId, 0);
+
+      const player = this.playerManager.players.get(playerId);
+      if (player) {
+        // Clear elimination visual state when a new round starts
+        player.isGhost = false;
+        player.ghostExpiresAt = 0;
+      }
     }
 
     this.respawnPlayers();
@@ -324,6 +337,9 @@ class BeamDrainMode extends BaseGameMode {
       player.input = null;
       player.beamActive = false;
       player.beamTarget = null;
+      // Visual ghost effect only (do not disable collisions)
+      player.isGhost = true;
+      player.ghostExpiresAt = 0;
     }
 
     this.eventEmitter.emit('beamDrainPlayerEliminated', {
