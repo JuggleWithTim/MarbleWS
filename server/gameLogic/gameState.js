@@ -63,7 +63,8 @@ class GameState {
         nextLevel: obj.nextLevel,
         properties: obj.properties,
         checkpointOrder: obj.checkpointOrder,
-        itemType: obj.itemType
+        itemType: obj.itemType,
+        axisLock: obj.axisLock
       })),
       connections: this.levelManager.constraints.map(constraint => ({
         id: constraint.id,

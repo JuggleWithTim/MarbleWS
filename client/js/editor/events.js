@@ -239,7 +239,7 @@ export const events = {
             'objectCheckpoint', 'objectCheckpointOrder', 'objectFinish', 'objectPlayerEffect',
             'objectEffectType',
             'objectTeleporter', 'objectTeleporterTarget', 'objectChair', 'objectChairNumber', 'objectSolid', 'objectZIndex',
-            'objectActive', 'objectPointAX', 'objectPointAY', 'objectPointBX', 'objectPointBY', 'objectTimeToA', 'objectTimeFromA', 'objectSpeedToB', 'objectSpeedFromB',
+            'objectActive', 'objectPointAX', 'objectPointAY', 'objectPointBX', 'objectPointBY', 'objectTimeToA', 'objectTimeFromA', 'objectSpeedToB', 'objectSpeedFromB', 'objectAxisLock',
             'objectRotationA', 'objectRotationB', 'objectRotationPointX', 'objectRotationPointY', 'objectAdvancedRotation', 'objectRotationSpeedToB', 'objectRotationSpeedFromB'
         ];
 
@@ -247,6 +247,7 @@ export const events = {
             const element = document.getElementById(id);
             if (element) {
                 element.addEventListener('input', () => this.updateSelectedObject());
+                element.addEventListener('change', () => this.updateSelectedObject());
             }
         });
 

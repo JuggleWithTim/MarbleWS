@@ -631,6 +631,19 @@
                         </span>
                     </label>
                 </div>
+                <div class="property-group">
+                    <label>Axis Lock:
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Locks movement for non-static objects to one axis. X = left/right only, Y = up/down only, None = normal movement on both axes.</span>
+                        </span>
+                    </label>
+                    <select id="objectAxisLock">
+                        <option value="none">None</option>
+                        <option value="x">X (left/right only)</option>
+                        <option value="y">Y (up/down only)</option>
+                    </select>
+                </div>
                 <div id="activeOptionsContainer" style="display: none; margin-left: 20px; border-left: 2px solid rgba(78, 205, 196, 0.3); padding-left: 10px;">
                     <div class="property-group">
                         <label>Point A:
