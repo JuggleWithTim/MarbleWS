@@ -55,6 +55,9 @@ class PhysicsEngine {
     // Update active object movements
     this.updateActiveObjects();
 
+    // Enforce axis locks for dynamic (non-static) objects
+    this.enforceAxisLocks();
+
     // Handle teleporter collisions
     this.handleTeleporters();
 
@@ -918,6 +921,17 @@ class PhysicsEngine {
         Matter.Body.setAngle(body, angle);
       };
 
+      // Helper to constrain active movement to a single axis when requested
+      const setPositionWithAxisLock = (targetPosition) => {
+        if (obj.axisLock === 'x') {
+          Matter.Body.setPosition(obj.body, { x: targetPosition.x, y: obj.body.position.y });
+        } else if (obj.axisLock === 'y') {
+          Matter.Body.setPosition(obj.body, { x: obj.body.position.x, y: targetPosition.y });
+        } else {
+          Matter.Body.setPosition(obj.body, targetPosition);
+        }
+      };
+
       switch (state.phase) {
         case 'toA':
           // Move from current position to point A
@@ -927,7 +941,7 @@ class PhysicsEngine {
             const newY = state.currentPos.y + (pointAWorld.y - state.currentPos.y) * progress;
             const newAngle = state.currentAngle + (rotationA - state.currentAngle) * progress;
 
-            Matter.Body.setPosition(obj.body, { x: newX, y: newY });
+            setPositionWithAxisLock({ x: newX, y: newY });
             if (obj.rotationPoint) {
               const pivotX = obj.body.position.x + obj.rotationPoint.x;
               const pivotY = obj.body.position.y + obj.rotationPoint.y;
@@ -943,7 +957,7 @@ class PhysicsEngine {
             }
           } else {
             // No time specified, move instantly
-            Matter.Body.setPosition(obj.body, pointAWorld);
+            setPositionWithAxisLock(pointAWorld);
             if (obj.rotationPoint) {
               const pivotX = obj.body.position.x + obj.rotationPoint.x;
               const pivotY = obj.body.position.y + obj.rotationPoint.y;
@@ -986,7 +1000,7 @@ class PhysicsEngine {
 
               if (moveDistance >= distance) {
                 // Reached point B
-                Matter.Body.setPosition(obj.body, pointBWorld);
+                setPositionWithAxisLock(pointBWorld);
                 state.phase = 'atB';
                 state.startTime = now;
               } else {
@@ -994,7 +1008,7 @@ class PhysicsEngine {
                 const ratio = moveDistance / distance;
                 const newX = obj.body.position.x + dx * ratio;
                 const newY = obj.body.position.y + dy * ratio;
-                Matter.Body.setPosition(obj.body, { x: newX, y: newY });
+                setPositionWithAxisLock({ x: newX, y: newY });
               }
             } else {
               state.phase = 'atB';
@@ -1002,7 +1016,7 @@ class PhysicsEngine {
             }
           } else {
             // No speed specified, move instantly
-            Matter.Body.setPosition(obj.body, pointBWorld);
+            setPositionWithAxisLock(pointBWorld);
             state.phase = 'atB';
             state.startTime = now;
           }
@@ -1087,7 +1101,7 @@ class PhysicsEngine {
 
               if (moveDistance >= distance) {
                 // Reached point A, restart cycle
-                Matter.Body.setPosition(obj.body, pointAWorld);
+                setPositionWithAxisLock(pointAWorld);
                 state.phase = 'toA';
                 state.startTime = now;
                 state.currentPos = { x: obj.body.position.x, y: obj.body.position.y };
@@ -1097,7 +1111,7 @@ class PhysicsEngine {
                 const ratio = moveDistance / distance;
                 const newX = obj.body.position.x + dx * ratio;
                 const newY = obj.body.position.y + dy * ratio;
-                Matter.Body.setPosition(obj.body, { x: newX, y: newY });
+                setPositionWithAxisLock({ x: newX, y: newY });
               }
             } else {
               // Restart cycle
@@ -1108,7 +1122,7 @@ class PhysicsEngine {
             }
           } else {
             // No speed specified, move instantly and restart
-            Matter.Body.setPosition(obj.body, pointAWorld);
+            setPositionWithAxisLock(pointAWorld);
             state.phase = 'toA';
             state.startTime = now;
             state.currentPos = { x: obj.body.position.x, y: obj.body.position.y };
@@ -1173,6 +1187,25 @@ class PhysicsEngine {
             }
           }
           break;
+      }
+    });
+  }
+
+  enforceAxisLocks() {
+    this.levelManager.levelObjects.forEach(obj => {
+      if (obj.isStatic || !obj.body) return;
+      if (obj.axisLock !== 'x' && obj.axisLock !== 'y') return;
+
+      if (obj.axisLock === 'x') {
+        // Keep object on its original horizontal line (constant Y)
+        const lockedY = (typeof obj.y === 'number') ? obj.y : obj.body.position.y;
+        Matter.Body.setPosition(obj.body, { x: obj.body.position.x, y: lockedY });
+        Matter.Body.setVelocity(obj.body, { x: obj.body.velocity.x, y: 0 });
+      } else {
+        // Keep object on its original vertical line (constant X)
+        const lockedX = (typeof obj.x === 'number') ? obj.x : obj.body.position.x;
+        Matter.Body.setPosition(obj.body, { x: lockedX, y: obj.body.position.y });
+        Matter.Body.setVelocity(obj.body, { x: 0, y: obj.body.velocity.y });
       }
     });
   }

@@ -2,6 +2,15 @@
 
 export const events = {
     setupEventListeners() {
+        const isTextEditingTarget = (element) => {
+            if (!element || !(element instanceof Element)) {
+                return false;
+            }
+
+            const editableContainer = element.closest('[contenteditable="true"], input, textarea, select');
+            return !!editableContainer;
+        };
+
         // Canvas events
         this.canvas.addEventListener('mousedown', (e) => this.onMouseDown(e));
         this.canvas.addEventListener('mousemove', (e) => this.onMouseMove(e));
@@ -239,7 +248,7 @@ export const events = {
             'objectCheckpoint', 'objectCheckpointOrder', 'objectFinish', 'objectPlayerEffect',
             'objectEffectType',
             'objectTeleporter', 'objectTeleporterTarget', 'objectChair', 'objectChairNumber', 'objectSolid', 'objectZIndex',
-            'objectActive', 'objectPointAX', 'objectPointAY', 'objectPointBX', 'objectPointBY', 'objectTimeToA', 'objectTimeFromA', 'objectSpeedToB', 'objectSpeedFromB',
+            'objectActive', 'objectPointAX', 'objectPointAY', 'objectPointBX', 'objectPointBY', 'objectTimeToA', 'objectTimeFromA', 'objectSpeedToB', 'objectSpeedFromB', 'objectAxisLock',
             'objectRotationA', 'objectRotationB', 'objectRotationPointX', 'objectRotationPointY', 'objectAdvancedRotation', 'objectRotationSpeedToB', 'objectRotationSpeedFromB'
         ];
 
@@ -247,6 +256,7 @@ export const events = {
             const element = document.getElementById(id);
             if (element) {
                 element.addEventListener('input', () => this.updateSelectedObject());
+                element.addEventListener('change', () => this.updateSelectedObject());
             }
         });
 
@@ -270,20 +280,29 @@ export const events = {
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
             this.shiftKey = e.shiftKey;
-            this.ctrlKey = e.ctrlKey;
+            this.ctrlKey = e.ctrlKey || e.metaKey;
+
+            const inTextEditor = isTextEditingTarget(e.target) || isTextEditingTarget(document.activeElement);
+            if (inTextEditor) {
+                return;
+            }
+
+            const isModifierPressed = e.ctrlKey || e.metaKey;
+            const key = e.key.toLowerCase();
+
             if (e.key === 'Delete' && this.selectedObjects.length > 0) {
                 // Delete all selected objects
                 this.selectedObjects.forEach(obj => this.deleteObject(obj));
-            } else if (e.ctrlKey && e.key === 'c' && this.selectedObjects.length > 0) {
+            } else if (isModifierPressed && key === 'c' && this.selectedObjects.length > 0) {
                 // Copy selected objects
                 this.copyObjects();
-            } else if (e.ctrlKey && e.key === 'v' && this.clipboard.length > 0) {
+            } else if (isModifierPressed && key === 'v' && this.clipboard.length > 0) {
                 // Paste objects from clipboard
                 this.pasteObjects();
-            } else if (e.ctrlKey && !e.shiftKey && e.key === 'z') {
+            } else if (isModifierPressed && !e.shiftKey && key === 'z') {
                 // Undo with Ctrl+Z
                 this.undo();
-            } else if (e.ctrlKey && e.shiftKey && e.key === 'Z') {
+            } else if (isModifierPressed && e.shiftKey && key === 'z') {
                 // Redo with Ctrl+Shift+Z
                 this.redo();
             }
@@ -291,7 +310,7 @@ export const events = {
 
         document.addEventListener('keyup', (e) => {
             this.shiftKey = e.shiftKey;
-            this.ctrlKey = e.ctrlKey;
+            this.ctrlKey = e.ctrlKey || e.metaKey;
         });
 
         // Point selection event listeners

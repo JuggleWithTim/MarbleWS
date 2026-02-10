@@ -43,6 +43,11 @@ export const objects = {
             properties: this.getSelectedProperties()
         };
 
+        const axisLock = this.getAxisLockSetting();
+        if (axisLock) {
+            obj.axisLock = axisLock;
+        }
+
         const nextLevel = this.getNextLevel();
         if (nextLevel) {
             obj.nextLevel = nextLevel;
@@ -107,6 +112,11 @@ export const objects = {
             density: parseFloat(document.getElementById('objectDensity').value),
             properties: this.getSelectedProperties()
         };
+
+        const axisLock = this.getAxisLockSetting();
+        if (axisLock) {
+            obj.axisLock = axisLock;
+        }
 
         // Add nextLevel property for goal objects
         const nextLevel = this.getNextLevel();
@@ -174,6 +184,11 @@ export const objects = {
             density: parseFloat(document.getElementById('objectDensity').value),
             properties: this.getSelectedProperties()
         };
+
+        const axisLock = this.getAxisLockSetting();
+        if (axisLock) {
+            obj.axisLock = axisLock;
+        }
 
         // Add nextLevel property for goal objects
         const nextLevel = this.getNextLevel();
@@ -247,6 +262,11 @@ export const objects = {
             return document.getElementById('objectTeleporterTarget').value.trim();
         }
         return '';
+    },
+
+    getAxisLockSetting() {
+        const axisLock = document.getElementById('objectAxisLock').value;
+        return (axisLock === 'x' || axisLock === 'y') ? axisLock : '';
     },
 
     getCheckpointOrder() {
@@ -460,6 +480,7 @@ export const objects = {
             // Set active properties
             document.getElementById('objectActive').checked = obj.active || false;
             document.getElementById('activeOptionsContainer').style.display = (obj.active) ? 'block' : 'none';
+            document.getElementById('objectAxisLock').value = obj.axisLock || 'none';
 
             if (obj.active) {
                 document.getElementById('objectPointAX').value = obj.pointA ? obj.pointA.x : 0;
@@ -729,6 +750,14 @@ export const objects = {
                 obj.chair = chairNumber;
             } else if (obj.chair !== undefined) {
                 delete obj.chair;
+            }
+
+            // Update axis lock (independent of active movement)
+            const axisLock = this.getAxisLockSetting();
+            if (axisLock) {
+                obj.axisLock = axisLock;
+            } else if (obj.axisLock !== undefined) {
+                delete obj.axisLock;
             }
 
             // Update active properties
