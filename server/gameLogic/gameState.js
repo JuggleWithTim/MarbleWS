@@ -21,6 +21,7 @@ class GameState {
         unlockedHats: player.unlockedHats,
         x: player.x,
         y: player.y,
+        isGhost: !!player.isGhost,
         beamActive: player.beamActive,
         beamTarget: player.beamTarget,
         xp: player.xp,

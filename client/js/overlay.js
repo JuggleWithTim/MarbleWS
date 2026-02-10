@@ -39,6 +39,7 @@ class TransparentRenderer extends Renderer {
     // Color Rush renderer
     const colorRushRenderer = new window.ColorRushRenderer(renderer, gameWrapper);
     const raceRenderer = new window.RaceRenderer(renderer, gameWrapper);
+    const beamDrainRenderer = new window.BeamDrainRenderer(renderer, gameWrapper);
 
     // Load shared game configuration via API
     let gameData;
@@ -349,13 +350,21 @@ class TransparentRenderer extends Renderer {
                     break;
                 case 'player':
                     const color = renderable.data.color || '#4ecdc4';
+                    const isBeamDrainWaitingPlayer = !!(
+                        gameState.gameMode
+                        && gameState.gameMode.mode === 'beamDrain'
+                        && Array.isArray(gameState.gameMode.waitingPlayers)
+                        && gameState.gameMode.waitingPlayers.includes(renderable.data.id)
+                    );
                     renderer.drawUFO(
                         renderable.data.x,
                         renderable.data.y,
                         color,
                         renderable.data.beamActive,
                         renderable.data.ufoAppearance,
-                        gameData
+                        gameData,
+                        1,
+                        !!renderable.data.isGhost || isBeamDrainWaitingPlayer
                     );
                     break;
             }
@@ -406,6 +415,10 @@ class TransparentRenderer extends Renderer {
 
         if (raceRenderer) {
             raceRenderer.render();
+        }
+
+        if (beamDrainRenderer) {
+            beamDrainRenderer.render();
         }
     }
 
@@ -513,6 +526,30 @@ class TransparentRenderer extends Renderer {
         networking.socket.on('raceNextRound', (data) => {
             if (raceRenderer) {
                 raceRenderer.handleNextRace(data);
+            }
+        });
+
+        networking.socket.on('beamDrainRoundStart', (data) => {
+            if (beamDrainRenderer) {
+                beamDrainRenderer.handleRoundStart(data);
+            }
+        });
+
+        networking.socket.on('beamDrainRoundEnd', (data) => {
+            if (beamDrainRenderer) {
+                beamDrainRenderer.handleRoundEnd(data);
+            }
+        });
+
+        networking.socket.on('beamDrainNextRound', () => {
+            if (beamDrainRenderer) {
+                beamDrainRenderer.handleNextRound();
+            }
+        });
+
+        networking.socket.on('beamDrainPlayerEliminated', (data) => {
+            if (beamDrainRenderer) {
+                beamDrainRenderer.handlePlayerEliminated(data);
             }
         });
 

@@ -179,6 +179,8 @@ class PlayerManager {
       speedBoostExpiresAt: 0,
       controlsInverted: false,
       controlsInvertedExpiresAt: 0,
+      isGhost: false,
+      ghostExpiresAt: 0,
       banned: savedData.banned
     };
 
@@ -201,6 +203,7 @@ class PlayerManager {
       xp: savedData.xp,
       level: savedData.level,
       coins: savedData.coins,
+      isGhost: false,
       banned: savedData.banned
     };
   }
@@ -276,6 +279,9 @@ class PlayerManager {
         player.speedBoostExpiresAt = 0;
         player.controlsInverted = false;
         player.controlsInvertedExpiresAt = 0;
+        player.isGhost = false;
+        player.ghostExpiresAt = 0;
+        this.setPlayerCollisionEnabled(player, true);
       }
     });
   }
@@ -346,6 +352,34 @@ class PlayerManager {
     player.controlsInvertedExpiresAt = Date.now() + durationMs;
   }
 
+  setPlayerCollisionEnabled(player, enabled) {
+    if (!player || !player.body) return;
+
+    const currentFilter = player.body.collisionFilter || {};
+    Matter.Body.set(player.body, 'collisionFilter', {
+      ...currentFilter,
+      mask: enabled ? 0xFFFFFFFF : 0x0000
+    });
+  }
+
+  applyGhost(playerId, durationMs) {
+    const player = this.players.get(playerId);
+    if (!player) return;
+
+    player.isGhost = true;
+    player.ghostExpiresAt = Date.now() + durationMs;
+    this.setPlayerCollisionEnabled(player, false);
+  }
+
+  clearGhost(playerId) {
+    const player = this.players.get(playerId);
+    if (!player) return;
+
+    player.isGhost = false;
+    player.ghostExpiresAt = 0;
+    this.setPlayerCollisionEnabled(player, true);
+  }
+
   updateSpeedBoosts(now = Date.now()) {
     this.players.forEach(player => {
       if (player.speedBoostExpiresAt && player.speedBoostExpiresAt <= now) {
@@ -362,6 +396,10 @@ class PlayerManager {
       if (player.controlsInvertedExpiresAt && player.controlsInvertedExpiresAt <= now) {
         player.controlsInverted = false;
         player.controlsInvertedExpiresAt = 0;
+      }
+
+      if (player.ghostExpiresAt && player.ghostExpiresAt <= now) {
+        this.clearGhost(player.id);
       }
     });
   }
@@ -924,6 +962,74 @@ class PlayerManager {
       this.savePlayerData(player.userId, player.ufoAppearance, player.level, player.xp, player.coins, player.unlockedUFOs, player.unlockedPassengers, player.unlockedHats, player.username, player.banned);
 
       console.log(`Player ${player.username} (#${placement}) gained ${xpReward} XP and ${coinReward} coins from Race!`);
+    });
+  }
+
+  awardXPAndCoinsForBeamDrain(results) {
+    if (!results || results.length === 0) return;
+
+    const playerCount = results.length;
+    const rewardConfig = gameConfig.beamDrainReward || gameConfig.colorRushReward;
+    const baseXP = rewardConfig.xp;
+    const baseCoins = rewardConfig.coins;
+
+    const totalXP = playerCount * baseXP;
+    const totalCoins = playerCount * baseCoins;
+
+    console.log(`Beam Drain ended with ${playerCount} players. Reward pot: ${totalXP} XP, ${totalCoins} coins`);
+
+    const weights = [];
+    let totalWeight = 0;
+    for (let i = 0; i < playerCount; i++) {
+      const weight = Math.pow(0.7, i);
+      weights.push(weight);
+      totalWeight += weight;
+    }
+
+    results.forEach((result, index) => {
+      const placement = index + 1;
+      const player = Array.from(this.players.values()).find(p => p.id === result.playerId);
+      if (!player) return;
+
+      const normalizedWeight = weights[index] / totalWeight;
+      const xpReward = Math.max(1, Math.round(totalXP * normalizedWeight));
+      const coinReward = Math.max(1, Math.round(totalCoins * normalizedWeight));
+
+      const oldLevel = player.level;
+      player.xp += xpReward;
+      player.coins += coinReward;
+
+      result.xpReward = xpReward;
+      result.coinReward = coinReward;
+
+      const newLevel = this.calculateLevelFromXP(player.xp);
+      if (newLevel > oldLevel) {
+        player.level = newLevel;
+        const levelUpCoins = oldLevel * 100;
+        player.coins += levelUpCoins;
+
+        this.eventEmitter.emit('playerLeveledUp', {
+          playerId: player.id,
+          username: player.username,
+          newLevel: player.level,
+          coinReward: levelUpCoins
+        });
+      }
+
+      this.savePlayerData(
+        player.userId,
+        player.ufoAppearance,
+        player.level,
+        player.xp,
+        player.coins,
+        player.unlockedUFOs,
+        player.unlockedPassengers,
+        player.unlockedHats,
+        player.username,
+        player.banned
+      );
+
+      console.log(`Player ${player.username} (#${placement}) gained ${xpReward} XP and ${coinReward} coins from Beam Drain!`);
     });
   }
 

@@ -408,6 +408,14 @@ class TwitchChat {
         });
         message = message.replace('{count}', timeoutTopPlayers.length).replace('{players}', timeoutTopPlayers.join(', '));
         break;
+      case 'beamDrainEnd':
+        const beamDrainMaxPlayers = config.maxPlayers || 3;
+        const beamDrainTopPlayers = (safeData.results || []).slice(0, beamDrainMaxPlayers).map(result => {
+          const player = Array.from(this.gameLogic.players.values()).find(p => p.id === result.playerId);
+          return player ? player.username : (result.username || result.playerId);
+        });
+        message = message.replace('{count}', beamDrainTopPlayers.length).replace('{players}', beamDrainTopPlayers.join(', '));
+        break;
       case 'raceNextRound':
         message = message.replace('{countdownSeconds}', safeData.countdownSeconds ?? '?');
         break;

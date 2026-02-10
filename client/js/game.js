@@ -42,6 +42,7 @@ class Game {
         this.colorRushRenderer = null;
         this.dungeonRenderer = null;
         this.raceRenderer = null;
+        this.beamDrainRenderer = null;
     }
 
     // Linear interpolation function
@@ -145,6 +146,7 @@ class Game {
             this.colorRushRenderer = new window.ColorRushRenderer(this.renderer, this);
             this.dungeonRenderer = new window.DungeonRenderer(this.renderer, this);
             this.raceRenderer = new window.RaceRenderer(this.renderer, this);
+            this.beamDrainRenderer = new window.BeamDrainRenderer(this.renderer, this);
             this.controls.setupCanvasControls(this.canvas, this);
         }
 
@@ -326,6 +328,30 @@ class Game {
         this.networking.socket.on('raceNextRound', (data) => {
             if (this.raceRenderer) {
                 this.raceRenderer.handleNextRace(data);
+            }
+        });
+
+        this.networking.socket.on('beamDrainRoundStart', (data) => {
+            if (this.beamDrainRenderer) {
+                this.beamDrainRenderer.handleRoundStart(data);
+            }
+        });
+
+        this.networking.socket.on('beamDrainRoundEnd', (data) => {
+            if (this.beamDrainRenderer) {
+                this.beamDrainRenderer.handleRoundEnd(data);
+            }
+        });
+
+        this.networking.socket.on('beamDrainNextRound', () => {
+            if (this.beamDrainRenderer) {
+                this.beamDrainRenderer.handleNextRound();
+            }
+        });
+
+        this.networking.socket.on('beamDrainPlayerEliminated', (data) => {
+            if (this.beamDrainRenderer) {
+                this.beamDrainRenderer.handlePlayerEliminated(data);
             }
         });
     }
@@ -728,6 +754,12 @@ class Game {
                     const color = renderable.data.color || '#4ecdc4';
                     const isDungeonView = this.gameState.gameMode && this.gameState.gameMode.dungeonViewEnabled;
                     const playerScale = isDungeonView ? (this.gameState.gameMode.playerScale || 1) : 1;
+                    const isBeamDrainWaitingPlayer = !!(
+                        this.gameState.gameMode
+                        && this.gameState.gameMode.mode === 'beamDrain'
+                        && Array.isArray(this.gameState.gameMode.waitingPlayers)
+                        && this.gameState.gameMode.waitingPlayers.includes(renderable.data.id)
+                    );
                     this.renderer.drawUFO(
                         renderable.data.x,
                         renderable.data.y,
@@ -735,7 +767,8 @@ class Game {
                         renderable.data.beamActive,
                         renderable.data.ufoAppearance,
                         this,
-                        playerScale
+                        playerScale,
+                        !!renderable.data.isGhost || isBeamDrainWaitingPlayer
                     );
                     break;
             }
@@ -786,6 +819,10 @@ class Game {
 
         if (this.raceRenderer) {
             this.raceRenderer.render();
+        }
+
+        if (this.beamDrainRenderer) {
+            this.beamDrainRenderer.render();
         }
 
         // Debug info (optional)

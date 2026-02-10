@@ -49,6 +49,9 @@ const gameConfig = {
   // Race reward data (per player contribution to reward pot)
   raceReward: { xp: 5, coins: 10 },
 
+  // Beam Drain reward data (per player contribution to reward pot)
+  beamDrainReward: { xp: 5, coins: 10 },
+
   // Race mode configuration
   raceMode: {
     laps: 3,
@@ -70,8 +73,23 @@ const gameConfig = {
       },
       confusion: {
         durationMs: 2000
+      },
+      ghost: {
+        durationMs: 2222
       }
     }
+  },
+
+  // Beam Drain mode configuration
+  beamDrainMode: {
+    minPlayersToStart: 2,
+    startEnergy: 50,
+    maxEnergy: 100,
+    drainPerSecond: 18,
+    pickupPerSecond: 14,
+    particleUnitValue: 5,
+    particleLifetimeMs: 12000,
+    resultsDurationMs: 15000
   },
 
   // Twitch chat announcements configuration
@@ -141,6 +159,13 @@ const gameConfig = {
       raceNextRound: {
         enabled: false,
         message: "Next race starts in {countdownSeconds} seconds"
+      },
+
+      // Beam Drain round end announcements
+      beamDrainEnd: {
+        enabled: true,
+        message: "Beam Drain over! Top {count}: {players}",
+        maxPlayers: 3
       },
 
       // Level change announcements

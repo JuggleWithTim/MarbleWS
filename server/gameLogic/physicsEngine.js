@@ -21,7 +21,7 @@ class PhysicsEngine {
     this.playerManager.applyPlayerInputs();
 
     // Update continuous beam effects
-    this.updateBeamEffects();
+    this.updateBeamEffects(1 / 60);
 
     // Check for player-emote collisions
     this.checkPlayerEmoteCollisions();
@@ -270,56 +270,93 @@ class PhysicsEngine {
   }
 
   // New method for continuous beam effects
-  updateBeamEffects() {
-    const MatterVertices = Matter.Vertices || require('matter-js').Vertices;
-    this.playerManager.players.forEach(player => {
-      if (player.beamActive) {
-        // Define beam polygon (trapezoid) under UFO
-        const beamRange = 120;
-        const beamWidth = 80;
-        const px = player.x;
-        const py = player.y;
-        const beamPolygon = [
-          { x: px - beamWidth * 0.5, y: py + 18 },
-          { x: px + beamWidth * 0.5, y: py + 18 },
-          { x: px + beamWidth * 1.5, y: py + beamRange },
-          { x: px - beamWidth * 1.5, y: py + beamRange }
-        ];
-        const beamVerts = beamPolygon.map(v => ({ x: v.x, y: v.y }));
+  updateBeamEffects(deltaTime = 1 / 60) {
+    const currentMode = this.levelManager?.gameModeManager?.getCurrentMode?.();
+    const isBeamDrainMode = currentMode && currentMode.getModeName && currentMode.getModeName() === 'Beam Drain';
+    const drainPerSecond = require('../../shared/gameConfig').beamDrainMode?.drainPerSecond || 18;
 
-        // Include other players in beam candidates
-        const otherPlayers = Array.from(this.playerManager.players.values()).filter(p => p.id !== player.id);
-        const candidates = [...this.levelManager.marbles, ...this.levelManager.emotes, ...this.levelManager.levelObjects.filter(obj => !obj.isStatic), ...otherPlayers];
-        candidates.forEach(obj => {
-          const objVerts = obj.body.vertices;
+    this.playerManager.players.forEach(player => {
+      if (!player.beamActive) return;
+
+      // Define beam polygon (trapezoid) under UFO
+      const beamRange = 120;
+      const beamWidth = 80;
+      const px = player.x;
+      const py = player.y;
+      const beamPolygon = [
+        { x: px - beamWidth * 0.5, y: py + 18 },
+        { x: px + beamWidth * 0.5, y: py + 18 },
+        { x: px + beamWidth * 1.5, y: py + beamRange },
+        { x: px - beamWidth * 1.5, y: py + beamRange }
+      ];
+      const beamVerts = beamPolygon.map(v => ({ x: v.x, y: v.y }));
+
+      const otherPlayers = Array.from(this.playerManager.players.values()).filter(p => p.id !== player.id);
+      const nonPlayerCandidates = [
+        ...this.levelManager.marbles,
+        ...this.levelManager.emotes,
+        ...this.levelManager.levelObjects.filter(obj => !obj.isStatic)
+      ];
+
+      if (isBeamDrainMode && currentMode && typeof currentMode.collectParticlesInBeam === 'function') {
+        currentMode.collectParticlesInBeam(player.id, beamVerts, Matter.Vertices, deltaTime);
+      }
+
+      if (isBeamDrainMode && currentMode && typeof currentMode.transferEnergy === 'function') {
+        otherPlayers.forEach(otherPlayer => {
+          if (typeof currentMode.isPlayerAlive === 'function' && !currentMode.isPlayerAlive(otherPlayer.id)) {
+            return;
+          }
+
+          const objVerts = otherPlayer.body.vertices;
           const overlap = objVerts.some(v => Matter.Vertices.contains(beamVerts, v));
           const beamOverlap = beamVerts.some(v => Matter.Vertices.contains(objVerts, v));
-          if (overlap || beamOverlap) {
-            const dx = obj.body.position.x - px;
-            const dy = obj.body.position.y - py;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            const forceMultiplier = Math.max(0.1, 1 - (distance / beamRange));
-            // Continuous upward force
-            const upwardForce = -0.02 * forceMultiplier;
-            // Attraction towards UFO center
-            const attractionForce = {
-              x: (px - obj.body.position.x) * 0.001 * forceMultiplier,
-              y: upwardForce
-            };
-            Matter.Body.applyForce(obj.body, obj.body.position, attractionForce);
-            // Visual effect for objects in beam
-            if (obj.body.render) {
-              obj.body.render.strokeStyle = '#4ecdc4';
-              obj.body.render.lineWidth = 2;
-            }
+          if (!overlap && !beamOverlap) return;
 
-            // Track emote interactions
-            if (obj.type === 'emote') {
-              obj.interactedPlayers.add(player.id);
-            }
-          }
+          currentMode.transferEnergy(
+            player.id,
+            otherPlayer.id,
+            drainPerSecond * deltaTime,
+            { x: otherPlayer.body.position.x, y: otherPlayer.body.position.y }
+          );
         });
       }
+
+      // Keep chaotic beam-force feeling in all modes (including Beam Drain)
+      const beamAffectedPlayers = (isBeamDrainMode && currentMode && typeof currentMode.isPlayerAlive === 'function')
+        ? otherPlayers.filter(p => currentMode.isPlayerAlive(p.id))
+        : otherPlayers;
+
+      const candidates = [...nonPlayerCandidates, ...beamAffectedPlayers];
+      candidates.forEach(obj => {
+        const objVerts = obj.body.vertices;
+        const overlap = objVerts.some(v => Matter.Vertices.contains(beamVerts, v));
+        const beamOverlap = beamVerts.some(v => Matter.Vertices.contains(objVerts, v));
+        if (overlap || beamOverlap) {
+          const dx = obj.body.position.x - px;
+          const dy = obj.body.position.y - py;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          const forceMultiplier = Math.max(0.1, 1 - (distance / beamRange));
+          // Continuous upward force
+          const upwardForce = -0.02 * forceMultiplier;
+          // Attraction towards UFO center
+          const attractionForce = {
+            x: (px - obj.body.position.x) * 0.001 * forceMultiplier,
+            y: upwardForce
+          };
+          Matter.Body.applyForce(obj.body, obj.body.position, attractionForce);
+          // Visual effect for objects in beam
+          if (obj.body.render) {
+            obj.body.render.strokeStyle = '#4ecdc4';
+            obj.body.render.lineWidth = 2;
+          }
+
+          // Track emote interactions
+          if (obj.type === 'emote') {
+            obj.interactedPlayers.add(player.id);
+          }
+        }
+      });
     });
   }
 
@@ -350,6 +387,11 @@ class PhysicsEngine {
   }
 
   checkWinCondition() {
+    const currentMode = this.levelManager?.gameModeManager?.getCurrentMode?.();
+    if (currentMode && currentMode.getModeName && currentMode.getModeName() === 'Beam Drain') {
+      return { win: false };
+    }
+
     const goals = this.levelManager.levelObjects.filter(obj =>
       obj.properties && obj.properties.includes('goal')
     );
@@ -598,7 +640,7 @@ class PhysicsEngine {
           continue;
         }
 
-        const effect = this.pickItemForSpawn(spawn, config.items || { turbo: {}, slow: {}, confusion: {} });
+        const effect = this.pickItemForSpawn(spawn, config.items || { turbo: {}, slow: {}, confusion: {}, ghost: {} });
         this.playerEffectCooldowns.set(cooldownKey, now);
         this.applyItemEffect(playerId, effect, config.items || {});
 
@@ -624,6 +666,11 @@ class PhysicsEngine {
     const itemConfig = itemsConfig[item] || {};
     const multiplier = itemConfig.speedMultiplier || 1;
     const durationMs = itemConfig.durationMs || 1000;
+
+    if (item === 'ghost') {
+      this.playerManager.applyGhost(playerId, durationMs);
+      return;
+    }
 
     if (item === 'confusion') {
       this.playerManager.applyConfusion(playerId, durationMs);
