@@ -60,9 +60,11 @@ class GameLogic {
   }
 
   removePlayer(socketId) {
-    // Let active game modes clean up round-specific state for this player first
-    this.levelManager.handlePlayerLeave(socketId);
     this.playerManager.removePlayer(socketId);
+
+    // Let active game modes clean up round-specific state after disconnect removal
+    // so round result snapshots only include still-connected players.
+    this.levelManager.handlePlayerLeave(socketId);
   }
 
   updatePlayerInput(socketId, input) {
