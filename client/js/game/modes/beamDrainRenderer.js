@@ -104,10 +104,12 @@ constructor(renderer, game) {
             const worldY = interpolated ? interpolated.y : player.y;
             const screen = this.renderer.worldToScreen(worldX, worldY);
 
-            const width = 56 * this.renderer.camera.zoom;
-            const height = 7 * this.renderer.camera.zoom;
+            const zoom = this.renderer.camera.zoom;
+            const visibilityBoost = zoom <= 1 ? 1.35 : 1;
+            const width = 68 * zoom * visibilityBoost;
+            const height = 9 * zoom * visibilityBoost;
             const x = screen.x - width / 2;
-            const y = screen.y - (46 * this.renderer.camera.zoom);
+            const y = screen.y - ((49 + (visibilityBoost - 1) * 8) * zoom);
             const ratio = Math.max(0, Math.min(1, energy / Math.max(1, this.maxEnergy)));
 
             this.ctx.fillStyle = 'rgba(0,0,0,0.55)';

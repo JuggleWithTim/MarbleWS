@@ -75,7 +75,7 @@ const gameConfig = {
         durationMs: 2000
       },
       ghost: {
-        durationMs: 2000
+        durationMs: 2222
       }
     }
   },
