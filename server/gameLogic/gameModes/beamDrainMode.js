@@ -102,6 +102,7 @@ class BeamDrainMode extends BaseGameMode {
     }
 
     if (this.roundState === 'active') {
+      this.syncAlivePlayersWithConnectedPlayers();
       this.cleanupExpiredParticles(now);
       if (this.alivePlayers.size <= 1) {
         this.endRound();
@@ -112,6 +113,17 @@ class BeamDrainMode extends BaseGameMode {
     if (this.roundState === 'results') {
       if (now - this.resultsStartTime >= this.resultsDuration) {
         this.startNextRound(now);
+      }
+    }
+  }
+
+  syncAlivePlayersWithConnectedPlayers() {
+    if (this.alivePlayers.size === 0) return;
+
+    const connectedPlayerIds = new Set(this.playerManager.players.keys());
+    for (const playerId of Array.from(this.alivePlayers)) {
+      if (!connectedPlayerIds.has(playerId)) {
+        this.handlePlayerLeave(playerId);
       }
     }
   }

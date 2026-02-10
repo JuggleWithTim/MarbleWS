@@ -60,6 +60,8 @@ class GameLogic {
   }
 
   removePlayer(socketId) {
+    // Let active game modes clean up round-specific state for this player first
+    this.levelManager.handlePlayerLeave(socketId);
     this.playerManager.removePlayer(socketId);
   }
 
