@@ -455,64 +455,71 @@ class Renderer {
     }
 
     drawLevelObject(obj) {
+        const resolvedVisual = this.resolveObjectVisualState(obj);
+        const renderObj = {
+            ...obj,
+            color: resolvedVisual.color,
+            backgroundImage: resolvedVisual.backgroundImage
+        };
+
         // Check if object has a background image
-        if (obj.backgroundImage) {
+        if (renderObj.backgroundImage) {
             // Check if image is already loaded in cache
-            const cachedImage = this.images.get(obj.backgroundImage);
+            const cachedImage = this.images.get(renderObj.backgroundImage);
 
             if (cachedImage instanceof HTMLImageElement && cachedImage.complete) {
                 // Image is loaded, draw it synchronously
                 if (obj.shape === 'rectangle') {
                     const scaledImage = this.getOrCreateScaledObjectImage(
-                        obj.backgroundImage,
+                        renderObj.backgroundImage,
                         cachedImage,
                         'rectangle',
-                        obj.width,
-                        obj.height
+                        renderObj.width,
+                        renderObj.height
                     ) || cachedImage;
-                    const screenPos = this.worldToScreen(obj.x, obj.y);
+                    const screenPos = this.worldToScreen(renderObj.x, renderObj.y);
 
                     this.ctx.save();
                     this.ctx.translate(screenPos.x, screenPos.y);
-                    this.ctx.rotate(obj.angle || 0);
+                    this.ctx.rotate(renderObj.angle || 0);
                     this.ctx.drawImage(scaledImage,
-                        -obj.width/2 * this.camera.zoom, -obj.height/2 * this.camera.zoom,
-                        obj.width * this.camera.zoom, obj.height * this.camera.zoom);
+                        -renderObj.width/2 * this.camera.zoom, -renderObj.height/2 * this.camera.zoom,
+                        renderObj.width * this.camera.zoom, renderObj.height * this.camera.zoom);
                     this.ctx.restore();
                 } else if (obj.shape === 'circle') {
-                    const diameter = obj.radius * 2;
+                    const diameter = renderObj.radius * 2;
                     const scaledImage = this.getOrCreateScaledObjectImage(
-                        obj.backgroundImage,
+                        renderObj.backgroundImage,
                         cachedImage,
                         'circle',
                         diameter,
                         diameter
                     ) || cachedImage;
                     // Create a circular clipping path
-                    const screenPos = this.worldToScreen(obj.x, obj.y);
+                    const screenPos = this.worldToScreen(renderObj.x, renderObj.y);
 
                     this.ctx.save();
                     this.ctx.translate(screenPos.x, screenPos.y);
-                    if (obj.angle) this.ctx.rotate(obj.angle);
+                    if (renderObj.angle) this.ctx.rotate(renderObj.angle);
 
                     // Create clipping circle
                     this.ctx.beginPath();
-                    this.ctx.arc(0, 0, obj.radius * this.camera.zoom, 0, Math.PI * 2);
+                    this.ctx.arc(0, 0, renderObj.radius * this.camera.zoom, 0, Math.PI * 2);
                     this.ctx.clip();
 
                     // Draw the image
                     this.ctx.drawImage(scaledImage,
-                        -obj.radius * this.camera.zoom, -obj.radius * this.camera.zoom,
-                        obj.radius * 2 * this.camera.zoom, obj.radius * 2 * this.camera.zoom);
+                        -renderObj.radius * this.camera.zoom, -renderObj.radius * this.camera.zoom,
+                        renderObj.radius * 2 * this.camera.zoom, renderObj.radius * 2 * this.camera.zoom);
 
                     this.ctx.restore();
                 } else if (obj.shape === 'triangle') {
-                    const screenPos = this.worldToScreen(obj.x, obj.y);
-                    const vertices = obj.vertices || [];
+                    const screenPos = this.worldToScreen(renderObj.x, renderObj.y);
+                    const vertices = renderObj.vertices || [];
                     if (vertices.length === 3) {
                         this.ctx.save();
                         this.ctx.translate(screenPos.x, screenPos.y);
-                        this.ctx.rotate(obj.angle || 0);
+                        this.ctx.rotate(renderObj.angle || 0);
                         this.ctx.beginPath();
                         this.ctx.moveTo(vertices[0].x * this.camera.zoom, vertices[0].y * this.camera.zoom);
                         this.ctx.lineTo(vertices[1].x * this.camera.zoom, vertices[1].y * this.camera.zoom);
@@ -530,7 +537,7 @@ class Renderer {
                         const boundsHeight = maxY - minY;
 
                         const scaledImage = this.getOrCreateScaledObjectImage(
-                            obj.backgroundImage,
+                            renderObj.backgroundImage,
                             cachedImage,
                             'triangle',
                             boundsWidth,
@@ -550,29 +557,29 @@ class Renderer {
             } else {
                 // Image not loaded yet or failed, draw color fallback and start loading
                 if (!cachedImage) {
-                    this.loadImage(obj.backgroundImage); // Start loading if not already started
+                    this.loadImage(renderObj.backgroundImage); // Start loading if not already started
                 }
 
                 // Draw fallback
                 if (obj.shape === 'rectangle') {
-                    this.drawRectangle(obj.x, obj.y, obj.width, obj.height, obj.color, obj.angle);
+                    this.drawRectangle(renderObj.x, renderObj.y, renderObj.width, renderObj.height, renderObj.color, renderObj.angle);
                 } else if (obj.shape === 'circle') {
-                    this.drawCircle(obj.x, obj.y, obj.radius, obj.color, obj.angle);
+                    this.drawCircle(renderObj.x, renderObj.y, renderObj.radius, renderObj.color, renderObj.angle);
                 } else if (obj.shape === 'triangle') {
-                    if (obj.vertices && obj.vertices.length === 3) {
-                        this.drawTriangle(obj.x, obj.y, obj.vertices, obj.color, obj.angle);
+                    if (renderObj.vertices && renderObj.vertices.length === 3) {
+                        this.drawTriangle(renderObj.x, renderObj.y, renderObj.vertices, renderObj.color, renderObj.angle);
                     }
                 }
             }
         } else {
             // No background image, use regular drawing
             if (obj.shape === 'rectangle') {
-                this.drawRectangle(obj.x, obj.y, obj.width, obj.height, obj.color, obj.angle);
+                this.drawRectangle(renderObj.x, renderObj.y, renderObj.width, renderObj.height, renderObj.color, renderObj.angle);
             } else if (obj.shape === 'circle') {
-                this.drawCircle(obj.x, obj.y, obj.radius, obj.color, obj.angle);
+                this.drawCircle(renderObj.x, renderObj.y, renderObj.radius, renderObj.color, renderObj.angle);
             } else if (obj.shape === 'triangle') {
-                if (obj.vertices && obj.vertices.length === 3) {
-                    this.drawTriangle(obj.x, obj.y, obj.vertices, obj.color, obj.angle);
+                if (renderObj.vertices && renderObj.vertices.length === 3) {
+                    this.drawTriangle(renderObj.x, renderObj.y, renderObj.vertices, renderObj.color, renderObj.angle);
                 }
             }
         }
@@ -594,6 +601,28 @@ class Renderer {
                 this.ctx.fillText('GOAL', screenPos.x, screenPos.y - 20);
             }
         }*/
+    }
+
+    resolveObjectVisualState(obj) {
+        const visual = {
+            color: obj.color,
+            backgroundImage: obj.backgroundImage
+        };
+
+        if (obj.properties?.includes('door')) {
+            const open = !!obj.doorOpen;
+            visual.color = open ? (obj.doorOpenColor || obj.color) : (obj.doorClosedColor || obj.color);
+            visual.backgroundImage = open ? (obj.doorOpenImage || obj.backgroundImage) : (obj.doorClosedImage || obj.backgroundImage);
+            return visual;
+        }
+
+        if (obj.properties?.includes('button')) {
+            const active = !!obj.buttonActive;
+            visual.color = active ? (obj.buttonActiveColor || obj.color) : (obj.buttonInactiveColor || obj.color);
+            visual.backgroundImage = active ? (obj.buttonActiveImage || obj.backgroundImage) : (obj.buttonInactiveImage || obj.backgroundImage);
+        }
+
+        return visual;
     }
 
     drawPlayerName(x, y, name, color = '#ffffff') {

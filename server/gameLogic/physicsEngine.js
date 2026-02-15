@@ -61,6 +61,9 @@ class PhysicsEngine {
     // Handle teleporter collisions
     this.handleTeleporters();
 
+    // Handle button/door interactions
+    this.handleButtonsAndDoors();
+
     // Update game mode logic
     this.levelManager.updateGameMode(1/60); // Pass delta time
 
@@ -654,6 +657,61 @@ class PhysicsEngine {
         });
       }
     });
+  }
+
+  handleButtonsAndDoors() {
+    const buttons = this.levelManager.levelObjects.filter(obj =>
+      obj.properties && obj.properties.includes('button') && typeof obj.buttonId === 'number'
+    );
+
+    if (buttons.length === 0) return;
+
+    const movableObjects = [
+      ...this.levelManager.marbles,
+      ...this.levelManager.emotes,
+      ...this.levelManager.levelObjects.filter(obj => !obj.isStatic && obj.body),
+      ...Array.from(this.playerManager.players.values())
+    ];
+
+    const buttonStates = new Map();
+    buttons.forEach(button => {
+      const pressed = movableObjects.some(obj => {
+        if (!obj.body || obj.id === button.id) return false;
+        return this.areBodiesOverlapping(obj.body, button.body);
+      });
+      button.buttonActive = pressed;
+      buttonStates.set(button.buttonId, (buttonStates.get(button.buttonId) || false) || pressed);
+    });
+
+    const doors = this.levelManager.levelObjects.filter(obj =>
+      obj.properties && obj.properties.includes('door') && typeof obj.doorId === 'number'
+    );
+
+    doors.forEach(door => {
+      door.doorOpen = !!buttonStates.get(door.doorId);
+
+      if (door.body) {
+        // Closed doors are solid (unless explicitly non-solid), open doors are pass-through.
+        if (door.doorOpen || door.isSolid === false) {
+          door.body.collisionFilter.mask = 0x0000;
+        } else {
+          door.body.collisionFilter.mask = 0xFFFFFFFF;
+        }
+      }
+    });
+  }
+
+  areBodiesOverlapping(bodyA, bodyB) {
+    if (!bodyA || !bodyB) return false;
+
+    const a = bodyA.bounds;
+    const b = bodyB.bounds;
+    return !(
+      a.max.x < b.min.x ||
+      a.min.x > b.max.x ||
+      a.max.y < b.min.y ||
+      a.min.y > b.max.y
+    );
   }
 
   pickItemForSpawn(spawn, itemsConfig) {

@@ -149,6 +149,21 @@ export const rendering = {
     },
 
     drawObject(obj) {
+        const resolvedVisual = {
+            color: obj.color,
+            backgroundImage: obj.backgroundImage
+        };
+
+        if (obj.properties.includes('door')) {
+            const open = !!obj.doorOpen;
+            resolvedVisual.color = open ? (obj.doorOpenColor || obj.color) : (obj.doorClosedColor || obj.color);
+            resolvedVisual.backgroundImage = open ? (obj.doorOpenImage || obj.backgroundImage) : (obj.doorClosedImage || obj.backgroundImage);
+        } else if (obj.properties.includes('button')) {
+            const active = !!obj.buttonActive;
+            resolvedVisual.color = active ? (obj.buttonActiveColor || obj.color) : (obj.buttonInactiveColor || obj.color);
+            resolvedVisual.backgroundImage = active ? (obj.buttonActiveImage || obj.backgroundImage) : (obj.buttonInactiveImage || obj.backgroundImage);
+        }
+
         this.ctx.save(); // Save current context state
 
         // Apply rotation if object has rotation
@@ -159,13 +174,13 @@ export const rendering = {
         }
 
         // Check if object has a background image
-        if (obj.backgroundImage) {
+        if (resolvedVisual.backgroundImage) {
             // Try to get the image from cache or load it
-            if (!this.objectImages.has(obj.backgroundImage)) {
-                this.loadObjectImage(obj.backgroundImage);
+            if (!this.objectImages.has(resolvedVisual.backgroundImage)) {
+                this.loadObjectImage(resolvedVisual.backgroundImage);
             }
 
-            const image = this.objectImages.get(obj.backgroundImage);
+            const image = this.objectImages.get(resolvedVisual.backgroundImage);
 
             if (image instanceof HTMLImageElement) {
                 // Draw the background image
@@ -214,7 +229,7 @@ export const rendering = {
                 }
             } else {
                 // Image is still loading or failed to load, use color as fallback
-                this.ctx.fillStyle = obj.color;
+                this.ctx.fillStyle = resolvedVisual.color;
 
                 if (obj.shape === 'rectangle') {
                     this.ctx.fillRect(
@@ -234,13 +249,13 @@ export const rendering = {
             }
         } else {
             // No background image, just use color
-            let fillColor = obj.color;
+            let fillColor = resolvedVisual.color;
 
             // If viewTransparent is enabled, override alpha for transparent objects
             if (this.viewTransparent) {
                 // Parse the color to check if it's transparent
-                if (typeof obj.color === 'string' && obj.color.startsWith('rgba(')) {
-                    const rgbaMatch = obj.color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+                if (typeof resolvedVisual.color === 'string' && resolvedVisual.color.startsWith('rgba(')) {
+                    const rgbaMatch = resolvedVisual.color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
                     if (rgbaMatch && rgbaMatch[4]) {
                         const alpha = parseFloat(rgbaMatch[4]);
                         if (alpha < 1.0) {
@@ -331,6 +346,20 @@ export const rendering = {
             this.ctx.font = '12px Arial';
             this.ctx.textAlign = 'center';
             this.ctx.fillText('TELEPORTER', obj.x, obj.y - 20);
+        }
+
+        if (obj.properties.includes('door')) {
+            this.ctx.fillStyle = '#ffd166';
+            this.ctx.font = '12px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText(`DOOR ${obj.doorId || '?'}`, obj.x, obj.y - 20);
+        }
+
+        if (obj.properties.includes('button')) {
+            this.ctx.fillStyle = '#ef476f';
+            this.ctx.font = '12px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText(`BUTTON ${obj.buttonId || '?'}`, obj.x, obj.y - 20);
         }
 
         if (obj.properties.includes('checkpoint')) {

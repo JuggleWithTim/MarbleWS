@@ -227,6 +227,20 @@ export const events = {
             }
         });
 
+        // Show/hide door controls
+        document.getElementById('objectDoor').addEventListener('change', (e) => {
+            document.getElementById('doorIdContainer').style.display = e.target.checked ? 'block' : 'none';
+            document.getElementById('doorVisualsContainer').style.display = e.target.checked ? 'block' : 'none';
+            this.updateSelectedObject();
+        });
+
+        // Show/hide button controls
+        document.getElementById('objectButton').addEventListener('change', (e) => {
+            document.getElementById('buttonIdContainer').style.display = e.target.checked ? 'block' : 'none';
+            document.getElementById('buttonVisualsContainer').style.display = e.target.checked ? 'block' : 'none';
+            this.updateSelectedObject();
+        });
+
         // Show/hide active options when active checkbox is toggled
         document.getElementById('objectActive').addEventListener('change', (e) => {
             document.getElementById('activeOptionsContainer').style.display =
@@ -248,6 +262,8 @@ export const events = {
             'objectCheckpoint', 'objectCheckpointOrder', 'objectFinish', 'objectPlayerEffect',
             'objectEffectType',
             'objectTeleporter', 'objectTeleporterTarget', 'objectChair', 'objectChairNumber', 'objectSolid', 'objectZIndex',
+            'objectDoor', 'objectDoorId', 'objectDoorClosedColor', 'objectDoorOpenColor', 'objectDoorClosedImage', 'objectDoorOpenImage',
+            'objectButton', 'objectButtonId', 'objectButtonInactiveColor', 'objectButtonActiveColor', 'objectButtonInactiveImage', 'objectButtonActiveImage',
             'objectActive', 'objectPointAX', 'objectPointAY', 'objectPointBX', 'objectPointBY', 'objectTimeToA', 'objectTimeFromA', 'objectSpeedToB', 'objectSpeedFromB', 'objectAxisLock',
             'objectRotationA', 'objectRotationB', 'objectRotationPointX', 'objectRotationPointY', 'objectAdvancedRotation', 'objectRotationSpeedToB', 'objectRotationSpeedFromB'
         ];

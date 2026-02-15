@@ -73,6 +73,26 @@ export const objects = {
             obj.itemType = itemType;
         }
 
+        const doorId = this.getDoorId();
+        if (doorId !== null) {
+            obj.doorId = doorId;
+            obj.doorOpen = false;
+            obj.doorClosedColor = document.getElementById('objectDoorClosedColor').value;
+            obj.doorOpenColor = document.getElementById('objectDoorOpenColor').value;
+            obj.doorClosedImage = document.getElementById('objectDoorClosedImage').value.trim();
+            obj.doorOpenImage = document.getElementById('objectDoorOpenImage').value.trim();
+        }
+
+        const buttonId = this.getButtonId();
+        if (buttonId !== null) {
+            obj.buttonId = buttonId;
+            obj.buttonActive = false;
+            obj.buttonInactiveColor = document.getElementById('objectButtonInactiveColor').value;
+            obj.buttonActiveColor = document.getElementById('objectButtonActiveColor').value;
+            obj.buttonInactiveImage = document.getElementById('objectButtonInactiveImage').value.trim();
+            obj.buttonActiveImage = document.getElementById('objectButtonActiveImage').value.trim();
+        }
+
         this.level.objects.push(obj);
         this.saveState();
         this.selectObject(obj);
@@ -146,6 +166,26 @@ export const objects = {
             obj.itemType = itemType;
         }
 
+        const doorId = this.getDoorId();
+        if (doorId !== null) {
+            obj.doorId = doorId;
+            obj.doorOpen = false;
+            obj.doorClosedColor = document.getElementById('objectDoorClosedColor').value;
+            obj.doorOpenColor = document.getElementById('objectDoorOpenColor').value;
+            obj.doorClosedImage = document.getElementById('objectDoorClosedImage').value.trim();
+            obj.doorOpenImage = document.getElementById('objectDoorOpenImage').value.trim();
+        }
+
+        const buttonId = this.getButtonId();
+        if (buttonId !== null) {
+            obj.buttonId = buttonId;
+            obj.buttonActive = false;
+            obj.buttonInactiveColor = document.getElementById('objectButtonInactiveColor').value;
+            obj.buttonActiveColor = document.getElementById('objectButtonActiveColor').value;
+            obj.buttonInactiveImage = document.getElementById('objectButtonInactiveImage').value.trim();
+            obj.buttonActiveImage = document.getElementById('objectButtonActiveImage').value.trim();
+        }
+
         this.level.objects.push(obj);
         this.saveState();
         this.selectObject(obj);
@@ -212,6 +252,26 @@ export const objects = {
             obj.itemType = itemType;
         }
 
+        const doorId = this.getDoorId();
+        if (doorId !== null) {
+            obj.doorId = doorId;
+            obj.doorOpen = false;
+            obj.doorClosedColor = document.getElementById('objectDoorClosedColor').value;
+            obj.doorOpenColor = document.getElementById('objectDoorOpenColor').value;
+            obj.doorClosedImage = document.getElementById('objectDoorClosedImage').value.trim();
+            obj.doorOpenImage = document.getElementById('objectDoorOpenImage').value.trim();
+        }
+
+        const buttonId = this.getButtonId();
+        if (buttonId !== null) {
+            obj.buttonId = buttonId;
+            obj.buttonActive = false;
+            obj.buttonInactiveColor = document.getElementById('objectButtonInactiveColor').value;
+            obj.buttonActiveColor = document.getElementById('objectButtonActiveColor').value;
+            obj.buttonInactiveImage = document.getElementById('objectButtonInactiveImage').value.trim();
+            obj.buttonActiveImage = document.getElementById('objectButtonActiveImage').value.trim();
+        }
+
         this.level.objects.push(obj);
         this.saveState();
         this.selectObject(obj);
@@ -247,7 +307,29 @@ export const objects = {
         if (document.getElementById('objectTeleporter').checked) {
             properties.push('teleporter');
         }
+        if (document.getElementById('objectDoor').checked) {
+            properties.push('door');
+        }
+        if (document.getElementById('objectButton').checked) {
+            properties.push('button');
+        }
         return properties;
+    },
+
+    getDoorId() {
+        if (document.getElementById('objectDoor').checked) {
+            const id = parseInt(document.getElementById('objectDoorId').value);
+            return isNaN(id) || id < 1 ? null : id;
+        }
+        return null;
+    },
+
+    getButtonId() {
+        if (document.getElementById('objectButton').checked) {
+            const id = parseInt(document.getElementById('objectButtonId').value);
+            return isNaN(id) || id < 1 ? null : id;
+        }
+        return null;
     },
 
     getNextLevel() {
@@ -441,6 +523,8 @@ export const objects = {
             document.getElementById('objectPlayerEffect').checked = obj.properties.includes('playereffect');
             document.getElementById('objectTeleporter').checked = obj.properties.includes('teleporter');
             document.getElementById('objectChair').checked = obj.chair !== undefined;
+            document.getElementById('objectDoor').checked = obj.properties.includes('door');
+            document.getElementById('objectButton').checked = obj.properties.includes('button');
 
             // Show/hide nextLevel field based on goal property
             document.getElementById('nextLevelContainer').style.display =
@@ -461,6 +545,14 @@ export const objects = {
             // Show/hide chairNumber field based on chair property
             document.getElementById('chairNumberContainer').style.display =
                 obj.chair !== undefined ? 'block' : 'none';
+            document.getElementById('doorIdContainer').style.display =
+                obj.properties.includes('door') ? 'block' : 'none';
+            document.getElementById('buttonIdContainer').style.display =
+                obj.properties.includes('button') ? 'block' : 'none';
+            document.getElementById('doorVisualsContainer').style.display =
+                obj.properties.includes('door') ? 'block' : 'none';
+            document.getElementById('buttonVisualsContainer').style.display =
+                obj.properties.includes('button') ? 'block' : 'none';
 
             // Set nextLevel value if it exists
             document.getElementById('objectNextLevel').value = obj.nextLevel || '';
@@ -476,6 +568,16 @@ export const objects = {
 
             // Set chairNumber value if it exists
             document.getElementById('objectChairNumber').value = obj.chair || '';
+            document.getElementById('objectDoorId').value = obj.doorId || '';
+            document.getElementById('objectButtonId').value = obj.buttonId || '';
+            document.getElementById('objectDoorClosedColor').value = obj.doorClosedColor || '#888888';
+            document.getElementById('objectDoorOpenColor').value = obj.doorOpenColor || '#44a08d';
+            document.getElementById('objectDoorClosedImage').value = obj.doorClosedImage || '';
+            document.getElementById('objectDoorOpenImage').value = obj.doorOpenImage || '';
+            document.getElementById('objectButtonInactiveColor').value = obj.buttonInactiveColor || '#888888';
+            document.getElementById('objectButtonActiveColor').value = obj.buttonActiveColor || '#ff6b6b';
+            document.getElementById('objectButtonInactiveImage').value = obj.buttonInactiveImage || '';
+            document.getElementById('objectButtonActiveImage').value = obj.buttonActiveImage || '';
 
             // Set active properties
             document.getElementById('objectActive').checked = obj.active || false;
@@ -750,6 +852,40 @@ export const objects = {
                 obj.chair = chairNumber;
             } else if (obj.chair !== undefined) {
                 delete obj.chair;
+            }
+
+            const doorId = this.getDoorId();
+            if (doorId !== null) {
+                obj.doorId = doorId;
+                obj.doorClosedColor = document.getElementById('objectDoorClosedColor').value;
+                obj.doorOpenColor = document.getElementById('objectDoorOpenColor').value;
+                obj.doorClosedImage = document.getElementById('objectDoorClosedImage').value.trim();
+                obj.doorOpenImage = document.getElementById('objectDoorOpenImage').value.trim();
+                if (typeof obj.doorOpen !== 'boolean') obj.doorOpen = false;
+            } else {
+                delete obj.doorId;
+                delete obj.doorClosedColor;
+                delete obj.doorOpenColor;
+                delete obj.doorClosedImage;
+                delete obj.doorOpenImage;
+                delete obj.doorOpen;
+            }
+
+            const buttonId = this.getButtonId();
+            if (buttonId !== null) {
+                obj.buttonId = buttonId;
+                obj.buttonInactiveColor = document.getElementById('objectButtonInactiveColor').value;
+                obj.buttonActiveColor = document.getElementById('objectButtonActiveColor').value;
+                obj.buttonInactiveImage = document.getElementById('objectButtonInactiveImage').value.trim();
+                obj.buttonActiveImage = document.getElementById('objectButtonActiveImage').value.trim();
+                if (typeof obj.buttonActive !== 'boolean') obj.buttonActive = false;
+            } else {
+                delete obj.buttonId;
+                delete obj.buttonInactiveColor;
+                delete obj.buttonActiveColor;
+                delete obj.buttonInactiveImage;
+                delete obj.buttonActiveImage;
+                delete obj.buttonActive;
             }
 
             // Update axis lock (independent of active movement)
