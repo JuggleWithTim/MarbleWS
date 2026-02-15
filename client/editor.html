@@ -623,6 +623,42 @@
                     <input type="number" id="objectChairNumber" placeholder="1" min="1" max="99">
                 </div>
                 <div class="checkbox-group">
+                    <input type="checkbox" id="objectDoor">
+                    <label for="objectDoor">Door
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Door can open/close via matching button ID. Closed = solid, Open = pass-through.</span>
+                        </span>
+                    </label>
+                </div>
+                <div class="property-group" id="doorIdContainer" style="display: none;">
+                    <label>Door ID:
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Any button with the same ID activates this door.</span>
+                        </span>
+                    </label>
+                    <input type="number" id="objectDoorId" placeholder="22" min="1" max="9999">
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="objectButton">
+                    <label for="objectButton">Button
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">When pressed, activates and opens all doors with matching ID.</span>
+                        </span>
+                    </label>
+                </div>
+                <div class="property-group" id="buttonIdContainer" style="display: none;">
+                    <label>Button ID:
+                        <span class="tooltip-container">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Matches doors that should open when this button is pressed.</span>
+                        </span>
+                    </label>
+                    <input type="number" id="objectButtonId" placeholder="22" min="1" max="9999">
+                </div>
+                <div class="checkbox-group">
                     <input type="checkbox" id="objectActive">
                     <label for="objectActive">Active
                         <span class="tooltip-container">
@@ -795,6 +831,42 @@
                         </span>
                     </label>
                     <input type="text" id="objectBackgroundImage" placeholder="Image URL or path">
+                </div>
+                <div id="doorVisualsContainer" style="display: none; margin-left: 20px; border-left: 2px solid rgba(78, 205, 196, 0.3); padding-left: 10px;">
+                    <div class="property-group">
+                        <label>Door Closed Color:</label>
+                        <input type="color" id="objectDoorClosedColor" value="#888888">
+                    </div>
+                    <div class="property-group">
+                        <label>Door Open Color:</label>
+                        <input type="color" id="objectDoorOpenColor" value="#44a08d">
+                    </div>
+                    <div class="property-group">
+                        <label>Door Closed Image:</label>
+                        <input type="text" id="objectDoorClosedImage" placeholder="Image URL or path">
+                    </div>
+                    <div class="property-group">
+                        <label>Door Open Image:</label>
+                        <input type="text" id="objectDoorOpenImage" placeholder="Image URL or path">
+                    </div>
+                </div>
+                <div id="buttonVisualsContainer" style="display: none; margin-left: 20px; border-left: 2px solid rgba(78, 205, 196, 0.3); padding-left: 10px;">
+                    <div class="property-group">
+                        <label>Button Inactive Color:</label>
+                        <input type="color" id="objectButtonInactiveColor" value="#888888">
+                    </div>
+                    <div class="property-group">
+                        <label>Button Active Color:</label>
+                        <input type="color" id="objectButtonActiveColor" value="#ff6b6b">
+                    </div>
+                    <div class="property-group">
+                        <label>Button Inactive Image:</label>
+                        <input type="text" id="objectButtonInactiveImage" placeholder="Image URL or path">
+                    </div>
+                    <div class="property-group">
+                        <label>Button Active Image:</label>
+                        <input type="text" id="objectButtonActiveImage" placeholder="Image URL or path">
+                    </div>
                 </div>
                 <div class="property-group">
                     <label>Width:

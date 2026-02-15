@@ -169,6 +169,12 @@ class LevelManager {
         }
 
         Matter.World.add(this.world, body);
+        if (obj.properties && obj.properties.includes('door') && typeof obj.doorOpen !== 'boolean') {
+          obj.doorOpen = false;
+        }
+        if (obj.properties && obj.properties.includes('button') && typeof obj.buttonActive !== 'boolean') {
+          obj.buttonActive = false;
+        }
         this.levelObjects.push({
           ...obj,
           body

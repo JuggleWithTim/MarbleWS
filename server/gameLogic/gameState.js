@@ -64,7 +64,19 @@ class GameState {
         properties: obj.properties,
         checkpointOrder: obj.checkpointOrder,
         itemType: obj.itemType,
-        axisLock: obj.axisLock
+        axisLock: obj.axisLock,
+        doorId: obj.doorId,
+        buttonId: obj.buttonId,
+        doorOpen: obj.doorOpen,
+        buttonActive: obj.buttonActive,
+        doorClosedColor: obj.doorClosedColor,
+        doorOpenColor: obj.doorOpenColor,
+        doorClosedImage: obj.doorClosedImage,
+        doorOpenImage: obj.doorOpenImage,
+        buttonInactiveColor: obj.buttonInactiveColor,
+        buttonActiveColor: obj.buttonActiveColor,
+        buttonInactiveImage: obj.buttonInactiveImage,
+        buttonActiveImage: obj.buttonActiveImage
       })),
       connections: this.levelManager.constraints.map(constraint => ({
         id: constraint.id,
